@@ -1,0 +1,121 @@
+@import "tailwindcss";
+
+@theme {
+  /* Fonts — tokens reference next/font variables set on <html> */
+  --font-sans: var(--font-family-sans-en), sans-serif;
+  --font-serif: var(--font-family-serif-en), serif;
+
+  /* Theme Colors from Stitch */
+  --color-surface-bright: #fbf9f7;
+  --color-tertiary-container: #cca830;
+  --color-on-tertiary-fixed-variant: #574500;
+  --color-error-container: #ffdad6;
+  --color-surface-container-high: #eae8e6;
+  --color-on-primary-container: #e7a8ce;
+  --color-secondary-container: #f9d8db;
+  --color-on-primary-fixed: #340a2a;
+  --color-surface-dim: #dbdad8;
+  --color-secondary: #71585b;
+  --color-primary-fixed-dim: #f4b3db;
+  --color-on-background: #1b1c1b;
+  --color-inverse-surface: #30302f;
+  --color-secondary-fixed-dim: #debfc2;
+  --color-on-tertiary-container: #4f3e00;
+  --color-on-primary: #ffffff;
+  --color-error: #ba1a1a;
+  --color-surface-tint: #814e70;
+  --color-on-secondary-fixed-variant: #584144;
+  --color-tertiary-fixed-dim: #e9c349;
+  --color-on-tertiary: #ffffff;
+  --color-primary-container: #6b3a5b;
+  --color-inverse-primary: #f4b3db;
+  --color-primary: #512443;
+  --color-outline: #81737a;
+  --color-on-error-container: #93000a;
+  --color-on-surface: #1b1c1b;
+  --color-outline-variant: #d3c2ca;
+  --color-on-secondary-container: #755c5f;
+  --color-secondary-fixed: #fcdbde;
+  --color-surface: #fbf9f7;
+  --color-surface-variant: #e4e2e0;
+  --color-surface-container-lowest: #ffffff;
+  --color-tertiary-fixed: #ffe088;
+  --color-on-tertiary-fixed: #241a00;
+  --color-surface-container: #efedec;
+  --color-surface-container-highest: #e4e2e0;
+  --color-surface-container-low: #f5f3f1;
+  --color-on-secondary-fixed: #281719;
+  --color-primary-fixed: #ffd8ed;
+  --color-on-secondary: #ffffff;
+  --color-tertiary: #735c00;
+  --color-on-error: #ffffff;
+  --color-background: #fbf9f7;
+  --color-inverse-on-surface: #f2f0ee;
+  --color-on-primary-fixed-variant: #673657;
+
+  /* Spacing */
+  --spacing-xs: 4px;
+  --spacing-gutter: 24px;
+  --spacing-sm: 8px;
+  --spacing-unit: 4px;
+  --spacing-lg: 24px;
+  --spacing-xxl: 64px;
+  --spacing-md: 16px;
+  --spacing-xl: 40px;
+  --spacing-container-max: 1200px;
+  --spacing-margin-mobile: 20px;
+}
+
+/* Custom Styles */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.btn-tactile {
+  background-image: linear-gradient(to bottom, rgba(255,255,255,0.1) 0%, rgba(0,0,0,0.05) 100%);
+}
+
+body {
+  min-height: 100dvh;
+  background-color: var(--color-background);
+  color: var(--color-on-background);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4, h5, h6, .font-serif {
+  font-family: var(--font-serif);
+}
+
+.price-strikethrough {
+  position: relative;
+}
+.price-strikethrough::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 100%;
+  height: 1px;
+  background: var(--color-outline);
+  transform: rotate(-5deg);
+}
+
+/* Arabic Typography — swap Tailwind font tokens so font-sans/font-serif utilities follow RTL */
+[dir="rtl"] {
+  --font-sans: var(--font-family-sans-ar), sans-serif;
+  --font-serif: var(--font-family-serif-ar), serif;
+}
+
+/* RTL Layout Fixes */
+[dir="rtl"] .material-symbols-outlined {
+  transform: scaleX(-1);
+}
+/* Keep specific icons (like home, person, search) un-mirrored if needed */
+[dir="rtl"] .material-symbols-outlined.no-mirror {
+  transform: none;
+}

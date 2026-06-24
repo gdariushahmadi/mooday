@@ -1,0 +1,17 @@
+{
+  "name": "Mooday - Emirates Social Marketplace",
+  "short_name": "Mooday",
+  "description": "A premium social marketplace for fashion, lifestyle, and unique items in the UAE.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#fbf9f7",
+  "theme_color": "#512443",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    }
+  ]
+}

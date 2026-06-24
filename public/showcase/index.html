@@ -1,0 +1,1388 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mooday — Project Overview & Feature Showcase</title>
+  <meta name="description" content="A complete overview of the Mooday application — a peer-to-peer marketplace where women resell or rent out fashion items they bought or received as gifts. Built with Next.js 16, React 19, and Tailwind CSS 4." />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@300;400;500;600;700;800&family=Bodoni+Moda:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,500;1,600;1,700;1,800&family=Noto+Sans+Arabic:wght@300;400;500;600;700;800&family=El+Messiri:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <style>
+    :root {
+      --primary: #512443;
+      --primary-soft: #6b3a5b;
+      --primary-light: #f4b3db;
+      --primary-fixed: #ffd8ed;
+      --background: #fbf9f7;
+      --surface: #ffffff;
+      --surface-low: #f5f3f1;
+      --surface-container: #efedec;
+      --surface-container-high: #eae8e6;
+      --on-surface: #1b1c1b;
+      --on-surface-variant: #5a5854;
+      --outline: #81737a;
+      --outline-variant: #d3c2ca;
+      --tertiary: #cca830;
+      --secondary: #71585b;
+      --success: #2e7d32;
+
+      --font-sans: "Hanken Grotesk", system-ui, -apple-system, sans-serif;
+      --font-serif: "Bodoni Moda", "Times New Roman", serif;
+
+      --radius-sm: 8px;
+      --radius-md: 14px;
+      --radius-lg: 20px;
+      --radius-xl: 28px;
+
+      --shadow-sm: 0 1px 2px rgba(27, 28, 27, 0.04), 0 1px 3px rgba(27, 28, 27, 0.06);
+      --shadow-md: 0 4px 8px rgba(27, 28, 27, 0.06), 0 2px 4px rgba(27, 28, 27, 0.04);
+      --shadow-lg: 0 12px 24px rgba(27, 28, 27, 0.08), 0 4px 8px rgba(27, 28, 27, 0.06);
+      --shadow-xl: 0 24px 48px rgba(27, 28, 27, 0.10), 0 8px 16px rgba(27, 28, 27, 0.06);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: var(--font-sans);
+      background: var(--background);
+      color: var(--on-surface);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    h1, h2, h3, h4, h5, h6 {
+      font-family: var(--font-serif);
+      font-weight: 600;
+      letter-spacing: -0.01em;
+      line-height: 1.2;
+    }
+
+    a { color: var(--primary); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    /* ---------- LAYOUT ---------- */
+    .page {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    /* ---------- TOP NAV ---------- */
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      background: rgba(251, 249, 247, 0.85);
+      border-bottom: 1px solid var(--outline-variant);
+    }
+    .topbar-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 18px 24px;
+      max-width: 1280px;
+      margin: 0 auto;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-family: var(--font-serif);
+      font-style: italic;
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--primary);
+      letter-spacing: 0.04em;
+    }
+    .brand-mark {
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-soft) 100%);
+      display: grid;
+      place-items: center;
+      color: #fff;
+      font-family: var(--font-serif);
+      font-style: italic;
+      font-size: 18px;
+    }
+    .nav-links {
+      display: flex;
+      gap: 28px;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--on-surface-variant);
+    }
+    .nav-links a {
+      color: inherit;
+      text-decoration: none;
+      transition: color 0.15s ease;
+    }
+    .nav-links a:hover { color: var(--primary); }
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      border-radius: 999px;
+      background: var(--primary);
+      color: #fff;
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+    }
+    .pill .dot {
+      width: 8px; height: 8px;
+      background: #6ee7a7;
+      border-radius: 50%;
+      box-shadow: 0 0 0 4px rgba(110, 231, 167, 0.25);
+    }
+
+    /* ---------- HERO ---------- */
+    .hero {
+      padding: 88px 0 64px;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(800px 400px at 90% 0%, rgba(244, 179, 219, 0.35), transparent 60%),
+        radial-gradient(600px 400px at 10% 30%, rgba(204, 168, 48, 0.15), transparent 60%);
+      pointer-events: none;
+    }
+    .hero-inner {
+      position: relative;
+      display: grid;
+      grid-template-columns: 1.1fr 1fr;
+      gap: 56px;
+      align-items: center;
+    }
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      border-radius: 999px;
+      background: var(--primary-fixed);
+      color: var(--primary);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+    .hero h1 {
+      font-size: clamp(40px, 6vw, 72px);
+      line-height: 1.05;
+      margin: 20px 0 18px;
+      color: var(--on-surface);
+    }
+    .hero h1 em {
+      font-style: italic;
+      color: var(--primary);
+    }
+    .hero p.lede {
+      font-size: 18px;
+      color: var(--on-surface-variant);
+      max-width: 540px;
+    }
+    .hero-meta {
+      display: flex;
+      gap: 32px;
+      margin-top: 32px;
+      flex-wrap: wrap;
+    }
+    .meta-item .label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      color: var(--on-surface-variant);
+      font-weight: 600;
+    }
+    .meta-item .value {
+      font-family: var(--font-serif);
+      font-size: 22px;
+      font-weight: 600;
+      color: var(--on-surface);
+      margin-top: 4px;
+    }
+
+    .hero-visual {
+      position: relative;
+      display: flex;
+      justify-content: center;
+    }
+    /* ---------- PHONE FRAME (live iframe previews) ----------
+       Method: iframe always renders at logical device size (393×852, iPhone 17).
+       The visible window (.phone-screen) is smaller; iframe is scaled down
+       with transform:scale() + transform-origin:top left (method 1).
+       Viewport inside the app is set via ?mobile=1&w=393&h=852 (method 2). */
+    :root {
+      --device-logical-w: 393;
+      --device-logical-h: 852;
+      --phone-display-w: 270px;
+      --phone-display-w-sm: 220px;
+    }
+    .phone-frame-wrap {
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+    }
+    .phone-frame,
+    .device,
+    .rtl-device {
+      background: linear-gradient(145deg, #2a2a2a 0%, #1a1a1a 40%, #0d0d0d 100%);
+      border-radius: 36px;
+      padding: 6px;
+      box-shadow:
+        0 0 0 1px #3a3a3a,
+        0 24px 48px rgba(0,0,0,0.28),
+        inset 0 1px 0 rgba(255,255,255,0.06);
+      position: relative;
+      flex-shrink: 0;
+      width: fit-content;
+    }
+    /* Notch / Dynamic Island removed — user requested clean frames */
+    .phone-screen,
+    .device-screen,
+    .rtl-device .device-screen {
+      width: var(--phone-display-w);
+      border-radius: 32px;
+      overflow: hidden;
+      background: var(--background);
+      position: relative;
+      /* height set by JS after scale */
+    }
+    .device-screen--sm {
+      width: var(--phone-display-w-sm);
+    }
+    .phone-screen iframe,
+    .device-screen iframe,
+    .rtl-device iframe {
+      width: 393px;
+      height: 852px;
+      border: 0;
+      display: block;
+      transform-origin: top left;
+      /* transform + compensated size set by JS */
+    }
+    .phone-label {
+      text-align: center;
+      margin-top: 16px;
+      font-size: 12px;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--on-surface-variant);
+      font-weight: 600;
+    }
+
+    /* ---------- SECTION HEADERS ---------- */
+    section {
+      padding: 88px 0;
+      border-top: 1px solid var(--outline-variant);
+    }
+    .section-head {
+      max-width: 720px;
+      margin-bottom: 48px;
+    }
+    .section-head .num {
+      font-family: var(--font-serif);
+      font-size: 14px;
+      color: var(--primary);
+      letter-spacing: 0.16em;
+      font-weight: 700;
+    }
+    .section-head h2 {
+      font-size: clamp(32px, 4vw, 48px);
+      margin: 8px 0 14px;
+    }
+    .section-head p {
+      color: var(--on-surface-variant);
+      font-size: 17px;
+    }
+
+    /* ---------- CONCEPT GRID ---------- */
+    .concept-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 20px;
+    }
+    .concept-card {
+      background: var(--surface);
+      border: 1px solid var(--outline-variant);
+      border-radius: var(--radius-lg);
+      padding: 28px 24px;
+      transition: all 0.2s ease;
+    }
+    .concept-card:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+      border-color: var(--primary-light);
+    }
+    .concept-icon {
+      width: 48px; height: 48px;
+      border-radius: 12px;
+      background: var(--primary-fixed);
+      color: var(--primary);
+      display: grid;
+      place-items: center;
+      font-size: 24px;
+      margin-bottom: 18px;
+    }
+    .concept-card h3 {
+      font-size: 20px;
+      margin-bottom: 8px;
+      font-family: var(--font-serif);
+    }
+    .concept-card p {
+      font-size: 14px;
+      color: var(--on-surface-variant);
+    }
+
+    /* ---------- FEATURE ROW ---------- */
+    .feature {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 64px;
+      align-items: center;
+      margin-bottom: 96px;
+    }
+    .feature:last-child { margin-bottom: 0; }
+    .feature.reverse {
+      grid-template-columns: 1fr 1fr;
+    }
+    .feature.reverse .feature-copy { order: 2; }
+    .feature.reverse .feature-visual { order: 1; }
+    .feature-tag {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 999px;
+      background: var(--surface-container);
+      color: var(--primary);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      margin-bottom: 14px;
+    }
+    .feature h3 {
+      font-size: clamp(28px, 3.2vw, 40px);
+      margin-bottom: 16px;
+    }
+    .feature p {
+      font-size: 16px;
+      color: var(--on-surface-variant);
+      margin-bottom: 20px;
+    }
+    .feature ul {
+      list-style: none;
+      padding: 0;
+    }
+    .feature ul li {
+      position: relative;
+      padding: 10px 0 10px 32px;
+      font-size: 15px;
+      color: var(--on-surface);
+      border-bottom: 1px solid var(--outline-variant);
+    }
+    .feature ul li:last-child { border-bottom: 0; }
+    .feature ul li::before {
+      content: "✓";
+      position: absolute;
+      left: 0;
+      top: 10px;
+      width: 20px; height: 20px;
+      border-radius: 50%;
+      background: var(--primary);
+      color: #fff;
+      font-size: 12px;
+      display: grid;
+      place-items: center;
+      font-weight: 700;
+    }
+    .feature-visual {
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+    }
+    .device,
+    .rtl-device {
+      max-width: none;
+    }
+    .device-screen {
+      border-radius: 28px;
+    }
+    .device-tablet {
+      max-width: 720px;
+      border-radius: 24px;
+      padding: 10px;
+    }
+    .device-tablet .device-screen {
+      aspect-ratio: 16 / 10;
+      border-radius: 16px;
+    }
+
+    /* ---------- ARCHITECTURE ---------- */
+    .arch-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+    .arch-card {
+      background: var(--surface);
+      border: 1px solid var(--outline-variant);
+      border-radius: var(--radius-lg);
+      padding: 28px;
+    }
+    .arch-card .layer {
+      font-size: 11px;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--primary);
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .arch-card h4 {
+      font-family: var(--font-serif);
+      font-size: 22px;
+      margin-bottom: 14px;
+    }
+    .arch-card .stack {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+    }
+    .arch-card .tag {
+      font-size: 12px;
+      padding: 4px 10px;
+      border-radius: 6px;
+      background: var(--surface-container);
+      color: var(--on-surface);
+      font-weight: 500;
+    }
+    .arch-card p {
+      font-size: 14px;
+      color: var(--on-surface-variant);
+    }
+
+    /* ---------- STATS ---------- */
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 20px;
+      margin-top: 32px;
+    }
+    .stat {
+      background: var(--surface);
+      border: 1px solid var(--outline-variant);
+      border-radius: var(--radius-md);
+      padding: 24px;
+    }
+    .stat .num {
+      font-family: var(--font-serif);
+      font-size: 44px;
+      font-weight: 600;
+      color: var(--primary);
+      letter-spacing: -0.02em;
+    }
+    .stat .label {
+      font-size: 13px;
+      color: var(--on-surface-variant);
+      margin-top: 4px;
+    }
+
+    /* ---------- GALLERY ---------- */
+    .gallery {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 24px;
+    }
+    .gallery figure {
+      margin: 0;
+      background: var(--surface);
+      border: 1px solid var(--outline-variant);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      transition: transform 0.25s ease, box-shadow 0.25s ease;
+    }
+    .gallery figure:hover {
+      transform: translateY(-3px);
+      box-shadow: var(--shadow-lg);
+    }
+    .gallery .shot {
+      aspect-ratio: 16 / 11;
+      background: var(--surface-container);
+      overflow: hidden;
+    }
+    .gallery .shot img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: top;
+      display: block;
+    }
+    .gallery figcaption {
+      padding: 16px 20px 20px;
+    }
+    .gallery figcaption .name {
+      font-family: var(--font-serif);
+      font-size: 18px;
+      font-weight: 600;
+    }
+    .gallery figcaption .desc {
+      font-size: 13px;
+      color: var(--on-surface-variant);
+      margin-top: 4px;
+    }
+
+    /* ---------- RTL SHOWCASE ---------- */
+    .rtl-card {
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-soft) 100%);
+      border-radius: var(--radius-xl);
+      padding: 56px;
+      color: #fff;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 48px;
+      align-items: center;
+    }
+    .rtl-card h3 {
+      font-size: 36px;
+      margin-bottom: 16px;
+      color: #fff;
+    }
+    .rtl-card p {
+      color: rgba(255, 255, 255, 0.85);
+      font-size: 16px;
+      margin-bottom: 24px;
+    }
+    .rtl-card ul {
+      list-style: none;
+      padding: 0;
+    }
+    .rtl-card ul li {
+      padding: 8px 0 8px 28px;
+      position: relative;
+      font-size: 15px;
+    }
+    .rtl-card ul li::before {
+      content: "◆";
+      position: absolute;
+      left: 0;
+      color: var(--primary-fixed);
+    }
+    .rtl-device .device-screen {
+      background: #fff;
+    }
+
+    /* ---------- TIMELINE ---------- */
+    .timeline {
+      position: relative;
+      padding-left: 28px;
+      border-left: 2px solid var(--outline-variant);
+    }
+    .timeline-item {
+      position: relative;
+      padding-bottom: 32px;
+    }
+    .timeline-item::before {
+      content: "";
+      position: absolute;
+      left: -36px;
+      top: 6px;
+      width: 14px; height: 14px;
+      border-radius: 50%;
+      background: var(--primary);
+      box-shadow: 0 0 0 4px var(--primary-fixed);
+    }
+    .timeline-item h4 {
+      font-family: var(--font-serif);
+      font-size: 20px;
+    }
+    .timeline-item .step {
+      font-size: 12px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--primary);
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+    .timeline-item p {
+      font-size: 14px;
+      color: var(--on-surface-variant);
+      margin-top: 6px;
+    }
+
+    /* ---------- FOOTER ---------- */
+    footer {
+      padding: 48px 0;
+      border-top: 1px solid var(--outline-variant);
+      text-align: center;
+      color: var(--on-surface-variant);
+      font-size: 14px;
+    }
+    footer .brand {
+      justify-content: center;
+      margin-bottom: 12px;
+    }
+
+    /* ---------- IFRAME FALLBACK ---------- */
+    .live-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      font-weight: 700;
+      color: var(--primary);
+      background: var(--primary-fixed);
+      padding: 4px 10px;
+      border-radius: 999px;
+      margin-bottom: 12px;
+    }
+    .live-pill .pulse {
+      width: 6px; height: 6px;
+      background: #e11d48;
+      border-radius: 50%;
+      animation: pulse 1.5s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    /* ---------- RESPONSIVE ---------- */
+    @media (max-width: 980px) {
+      .hero-inner { grid-template-columns: 1fr; gap: 40px; }
+      .feature, .feature.reverse {
+        grid-template-columns: 1fr;
+        gap: 32px;
+      }
+      .feature.reverse .feature-copy { order: 1; }
+      .feature.reverse .feature-visual { order: 2; }
+      .concept-grid { grid-template-columns: repeat(2, 1fr); }
+      .arch-grid { grid-template-columns: 1fr; }
+      .stats { grid-template-columns: repeat(2, 1fr); }
+      .gallery { grid-template-columns: 1fr; }
+      .rtl-card { grid-template-columns: 1fr; padding: 32px; }
+      .nav-links { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <!-- TOP BAR -->
+  <div class="topbar">
+    <div class="topbar-inner">
+      <div class="brand">
+        <div class="brand-mark">M</div>
+        Mooday
+      </div>
+      <nav class="nav-links">
+        <a href="#overview">Overview</a>
+        <a href="#features">Features</a>
+        <a href="#architecture">Architecture</a>
+        <a href="#gallery">Gallery</a>
+        <a href="#roadmap">Roadmap</a>
+      </nav>
+      <div class="pill">
+        <span class="dot"></span>
+        v0.1 — Live Build
+      </div>
+    </div>
+  </div>
+
+  <main class="page">
+    <!-- HERO -->
+    <section class="hero" id="overview" style="border-top:0;padding-top:48px;">
+      <div class="hero-inner">
+        <div>
+          <span class="eyebrow">Peer-to-Peer Fashion Marketplace</span>
+          <h1>Your wardrobe has <em>more to give</em>.</h1>
+          <p class="lede">
+            Mooday is a social marketplace built for the UAE where women resell — or rent out —
+            the fashion items they've bought or received as gifts. Dresses, shoes, bags, and
+            accessories find a second life with someone new, at a price that makes sense.
+            Designed mobile-first, with a fully native Arabic &amp; English experience.
+          </p>
+          <div class="hero-meta">
+            <div class="meta-item">
+              <div class="label">Marketplace Model</div>
+              <div class="value">C2C · Resell &amp; Rent</div>
+            </div>
+            <div class="meta-item">
+              <div class="label">For</div>
+              <div class="value">Women · 18–40</div>
+            </div>
+            <div class="meta-item">
+              <div class="label">Languages</div>
+              <div class="value">EN / AR · Full RTL</div>
+            </div>
+            <div class="meta-item">
+              <div class="label">Target Market</div>
+              <div class="value">UAE · GCC</div>
+            </div>
+          </div>
+        </div>
+        <div class="hero-visual">
+          <div>
+            <div class="phone-frame">
+              <div class="phone-screen">
+                <iframe src="http://localhost:3001/?mobile=1&w=393&h=852&view=home" title="Mooday Discover Feed"></iframe>
+              </div>
+            </div>
+            <div class="phone-label">Live · Discover Feed</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- THE PROBLEM / CONCEPT -->
+    <section id="concept">
+      <div class="section-head">
+        <div class="num">— 01 / Concept</div>
+        <h2>From your closet to someone else's story.</h2>
+        <p>
+          Every woman has a wardrobe full of pieces she wore once, never wore, or simply
+          outgrew — a dress from a wedding, a handbag that doesn't match her style anymore,
+          a gift she can't use. Mooday is a peer-to-peer marketplace where she can
+          resell those items — or rent them out for a special occasion — and discover
+          pre-loved fashion from other women in the UAE along the way.
+        </p>
+      </div>
+
+      <div class="concept-grid">
+        <div class="concept-card">
+          <div class="concept-icon">↻</div>
+          <h3>Resell at a Fair Price</h3>
+          <p>List a dress, shoes, bag or accessory you no longer wear and set your own price — below retail, but worth your while.</p>
+        </div>
+        <div class="concept-card">
+          <div class="concept-icon">⌘</div>
+          <h3>Rent for an Occasion</h3>
+          <p>Need a dress for one night? Browse rental listings and wear something special without the long-term cost.</p>
+        </div>
+        <div class="concept-card">
+          <div class="concept-icon">✦</div>
+          <h3>Curated Discovery</h3>
+          <p>A "For You" feed with category lanes — Bags, Clothing, Home, Lifestyle — designed to feel like a mood board, not a spreadsheet.</p>
+        </div>
+        <div class="concept-card">
+          <div class="concept-icon">♡</div>
+          <h3>Social by Nature</h3>
+          <p>Save "Loves", follow closets you like, chat with the owner, and complete the deal with built-in escrow protection.</p>
+        </div>
+      </div>
+
+      <div class="stats">
+        <div class="stat">
+          <div class="num">9</div>
+          <div class="label">Distinct user-facing views</div>
+        </div>
+        <div class="stat">
+          <div class="num">2</div>
+          <div class="label">Modes: Resell &amp; Rent</div>
+        </div>
+        <div class="stat">
+          <div class="num">2</div>
+          <div class="label">Languages (EN/AR, full RTL)</div>
+        </div>
+        <div class="stat">
+          <div class="num">100%</div>
+          <div class="label">Mobile-first · P2P / C2C</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FEATURES -->
+    <section id="features">
+      <div class="section-head">
+        <div class="num">— 02 / Features</div>
+        <h2>Built for both sides of the deal.</h2>
+        <p>
+          Every screen below is a live iframe of the running application — for the woman
+          selling or renting out a piece she no longer wears, and for the one who will
+          love it next. The interactive prototypes respond to clicks, navigation, and
+          the in-app language switcher.
+        </p>
+      </div>
+
+      <!-- Feature 1: Discover Feed -->
+      <div class="feature">
+        <div class="feature-copy">
+          <span class="feature-tag">01 · Discovery</span>
+          <h3>A feed of pre-loved pieces, hand-picked for you</h3>
+          <p>
+            The home feed blends "For You", "Trending" and "Designers" lanes with category
+            chips and two view modes (Featured / Compact). Each card previews the original
+            retail price alongside the asking price, so buyers can see the saving at a glance
+            and sellers can highlight the value they're offering.
+          </p>
+          <ul>
+            <li>Tabbed lanes: For You · Trending · Designers</li>
+            <li>Category chips: Bags · Clothing · Home · Lifestyle</li>
+            <li>Featured &amp; compact grid view toggle</li>
+            <li>Inline like / save with animated heart — build your "Loves"</li>
+            <li>Original price vs. asking price — transparency built-in</li>
+            <li>Live currency formatting in AED</li>
+          </ul>
+        </div>
+        <div class="feature-visual">
+          <div>
+            <span class="live-pill"><span class="pulse"></span>Live Preview</span>
+            <div class="device">
+              <div class="device-screen">
+                <iframe src="http://localhost:3001/?mobile=1&w=393&h=852&view=home" title="Discover Feed"></iframe>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Feature 2: Search & Filters -->
+      <div class="feature reverse">
+        <div class="feature-copy">
+          <span class="feature-tag">02 · Search</span>
+          <h3>Smart search &amp; advanced filters</h3>
+          <p>
+            A dedicated search experience with a full-text input, category and condition filters,
+            and instant filtering. The mock catalogue covers four categories and three condition
+            tiers to demonstrate the filter engine.
+          </p>
+          <ul>
+            <li>Real-time text search across titles &amp; descriptions</li>
+            <li>Category &amp; condition multi-select</li>
+            <li>Empty-state and active-filter UI states</li>
+            <li>Direct jump from a result to product details</li>
+          </ul>
+        </div>
+        <div class="feature-visual">
+          <div>
+            <span class="live-pill"><span class="pulse"></span>Live Preview</span>
+            <div class="device">
+              <div class="device-screen">
+                <iframe src="http://localhost:3001/?mobile=1&w=393&h=852&view=search" title="Search & Filters"></iframe>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Feature 3: Product Details -->
+      <div class="feature">
+        <div class="feature-copy">
+          <span class="feature-tag">03 · Product</span>
+          <h3>Rich detail pages that build trust</h3>
+          <p>
+            A full-bleed media gallery, condition badges (New with Tags, Excellent, Gently
+            Used), and the seller's mini-profile with her own rating. Three clear CTAs let
+            a buyer "Chat with Owner", "Add to Bag" or "Buy Now" — whatever feels right
+            for the moment.
+          </p>
+          <ul>
+            <li>Image gallery with multiple angles</li>
+            <li>Condition badges: New with Tags · Excellent · Gently Used</li>
+            <li>Owner mini-card with rating &amp; profile</li>
+            <li>Three CTAs: Buy Now · Add to Bag · Chat</li>
+            <li>Original retail price shown for comparison</li>
+          </ul>
+        </div>
+        <div class="feature-visual">
+          <div>
+            <span class="live-pill"><span class="pulse"></span>Live Preview</span>
+            <div class="device">
+              <div class="device-screen">
+                <iframe src="http://localhost:3001/?mobile=1&w=393&h=852&product=handbag-tan" title="Product Details"></iframe>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Feature 4: Sell -->
+      <div class="feature reverse">
+        <div class="feature-copy">
+          <span class="feature-tag">04 · Sell</span>
+          <h3>List a piece from your closet in minutes</h3>
+          <p>
+            A guided bilingual form for the woman clearing out her wardrobe. She snaps a
+            photo (or picks from a library), fills in the title and description in both
+            English and Arabic, sets her asking price and the original retail price for
+            context, picks a condition, and publishes — her item goes straight into the feed.
+          </p>
+          <ul>
+            <li>Photo picker from camera or gallery</li>
+            <li>EN + AR title and description fields</li>
+            <li>Asking price + original retail price (so the discount % is shown automatically)</li>
+            <li>Category and condition selectors</li>
+            <li>Listings persist on the device — the foundation for a real backend later</li>
+          </ul>
+        </div>
+        <div class="feature-visual">
+          <div>
+            <span class="live-pill"><span class="pulse"></span>Live Preview</span>
+            <div class="device">
+              <div class="device-screen">
+                <iframe src="http://localhost:3001/?mobile=1&w=393&h=852&view=sell" title="Sell an Item"></iframe>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Feature 5: Checkout -->
+      <div class="feature">
+        <div class="feature-copy">
+          <span class="feature-tag">05 · Checkout</span>
+          <h3>A checkout that feels safe for both sides</h3>
+          <p>
+            A two-step flow tailored for the UAE: delivery address with all seven emirates,
+            then a payment step supporting card and Apple Pay. Shipping is automatically waived
+            for orders above AED 1,000. The buyer's money is held in escrow until she confirms
+            the item arrived as described — protecting both her and the seller.
+          </p>
+          <ul>
+            <li>Step 1: Address (name, phone, emirate, street)</li>
+            <li>Step 2: Payment (card or Apple Pay)</li>
+            <li>Live order summary &amp; total calculation</li>
+            <li>Free shipping over AED 1,000</li>
+            <li>Success animation on completion</li>
+          </ul>
+        </div>
+        <div class="feature-visual">
+          <div>
+            <span class="live-pill"><span class="pulse"></span>Live Preview</span>
+            <div class="device">
+              <div class="device-screen">
+                <iframe src="http://localhost:3001/?mobile=1&w=393&h=852&checkout=handbag-tan" title="Checkout"></iframe>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Feature 6: Profile & Vault -->
+      <div class="feature reverse">
+        <div class="feature-copy">
+          <span class="feature-tag">06 · Profile</span>
+          <h3>The Vault — your closet, loves &amp; chats</h3>
+          <p>
+            The "Vault" is the user's personal hub: a profile card with her rating and stats,
+            plus three tabs separating the items she's currently selling, the pieces she's
+            saved as "Loves", and all her conversations and offers in one place.
+          </p>
+          <ul>
+            <li>Profile card: name, handle, location, rating</li>
+            <li>Stats: followers, following, reviews</li>
+            <li>My Closet · My Loves · Chats / Offers tabs</li>
+            <li>Re-open any conversation with one tap</li>
+          </ul>
+        </div>
+        <div class="feature-visual">
+          <div>
+            <span class="live-pill"><span class="pulse"></span>Live Preview</span>
+            <div class="device">
+              <div class="device-screen">
+                <iframe src="http://localhost:3001/?mobile=1&w=393&h=852&view=profile" title="Vault / Profile"></iframe>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Feature 7: Activity & Chat -->
+      <div class="feature">
+        <div class="feature-copy">
+          <span class="feature-tag">07 · Social</span>
+          <h3>Real conversations, built into the app</h3>
+          <p>
+            The activity screen surfaces messages, offers, follows and saves as they happen.
+            The chat overlay includes a smart auto-reply that recognises keywords like
+            "authentic", "offer" and "condition" in both English and Arabic — so a quick
+            question about a dress or a handbag gets a useful answer even before the owner
+            is online.
+          </p>
+          <ul>
+            <li>Activity stream: messages, offers, follows, saves</li>
+            <li>In-app chat with the product context card</li>
+            <li>Smart auto-reply in EN + AR for common questions</li>
+            <li>"Buy Item" shortcut straight from a chat</li>
+          </ul>
+        </div>
+        <div class="feature-visual">
+          <div style="display:flex; gap:18px; align-items:flex-start;">
+            <div>
+              <span class="live-pill"><span class="pulse"></span>Activity</span>
+              <div class="device">
+                <div class="device-screen device-screen--sm">
+                  <iframe src="http://localhost:3001/?mobile=1&w=393&h=852&view=activity" title="Activity"></iframe>
+                </div>
+              </div>
+            </div>
+            <div>
+              <span class="live-pill"><span class="pulse"></span>Chat</span>
+              <div class="device">
+                <div class="device-screen device-screen--sm">
+                  <iframe src="http://localhost:3001/?mobile=1&w=393&h=852&chat=chat-handbag-tan" title="Chat Overlay"></iframe>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- BILINGUAL / RTL -->
+    <section id="bilingual">
+      <div class="section-head">
+        <div class="num">— 03 / Bilingual</div>
+        <h2>Built Arabic-first, not bolted on.</h2>
+        <p>
+          The entire UI ships with English and Arabic translations. Typography swaps to
+          <strong>El Messiri</strong> and <strong>Noto Sans Arabic</strong> in RTL, icons are
+          automatically mirrored, and every content field supports both languages — including
+          user-generated listings.
+        </p>
+      </div>
+
+      <div class="rtl-card">
+        <div>
+          <h3>One tap, two worlds.</h3>
+          <p>
+            The language switcher is available in the header of every screen and persists across
+            sessions. Layouts, fonts, icons, and content all adapt instantly.
+          </p>
+          <ul>
+            <li>Independent EN + AR titles, descriptions, categories</li>
+            <li>Auto-mirrored icons &amp; layout in RTL</li>
+            <li>Persisted preference in localStorage</li>
+            <li>Chat auto-replies translated per locale</li>
+            <li>Fonts: Bodoni Moda (EN) · El Messiri (AR)</li>
+          </ul>
+        </div>
+        <div class="rtl-device">
+          <div class="device-screen">
+            <iframe src="http://localhost:3001/?mobile=1&w=393&h=852" title="Mooday in Arabic (RTL)"></iframe>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ARCHITECTURE -->
+    <section id="architecture">
+      <div class="section-head">
+        <div class="num">— 04 / Architecture</div>
+        <h2>Modern, type-safe, opinionated.</h2>
+        <p>
+          The codebase is structured as a small, clean Next.js App Router project. State is
+          centralised in a single React Context that mirrors a typical e-commerce domain model
+          (products, cart, likes, chats, language). Everything is currently persisted in
+          <code>localStorage</code> for a self-contained frontend demo.
+        </p>
+      </div>
+
+      <div class="arch-grid">
+        <div class="arch-card">
+          <div class="layer">Frontend Framework</div>
+          <h4>Next.js 16 App Router</h4>
+          <p>Server components by default, "use client" islands for interactive views. Built-in font optimisation via <code>next/font</code>.</p>
+          <div class="stack">
+            <span class="tag">Next.js 16.2.9</span>
+            <span class="tag">React 19.2.4</span>
+            <span class="tag">TypeScript 5</span>
+          </div>
+        </div>
+        <div class="arch-card">
+          <div class="layer">Styling</div>
+          <h4>Tailwind CSS 4 + Design Tokens</h4>
+          <p>Material 3-inspired token set defined as CSS variables, with serif/sans fonts, colour roles, and spacing scale.</p>
+          <div class="stack">
+            <span class="tag">Tailwind 4</span>
+            <span class="tag">@theme tokens</span>
+            <span class="tag">Material Symbols</span>
+          </div>
+        </div>
+        <div class="arch-card">
+          <div class="layer">State &amp; Data</div>
+          <h4>AppContext + localStorage</h4>
+          <p>Centralised React Context exposes <code>useApp()</code> with products, cart, likes, chats and language. Persisted to localStorage.</p>
+          <div class="stack">
+            <span class="tag">React Context</span>
+            <span class="tag">localStorage</span>
+            <span class="tag">Hook-first</span>
+          </div>
+        </div>
+        <div class="arch-card">
+          <div class="layer">Internationalisation</div>
+          <h4>EN + AR with full RTL</h4>
+          <p>Per-string <code>isAr ? "EN" : "AR"</code> resolution, document direction toggled, fonts swap, icons auto-mirrored.</p>
+          <div class="stack">
+            <span class="tag">dir="rtl"</span>
+            <span class="tag">El Messiri</span>
+            <span class="tag">Noto Sans Arabic</span>
+          </div>
+        </div>
+        <div class="arch-card">
+          <div class="layer">Component Map</div>
+          <h4>10 view components</h4>
+          <p>DiscoverFeed · ProductDetails · ShoppingBag · CheckoutFlow · UserProfile · Activity · SearchFilters · Settings · SellItem · ChatOverlay</p>
+          <div class="stack">
+            <span class="tag">10 views</span>
+            <span class="tag">1 context</span>
+            <span class="tag">0 external libs</span>
+          </div>
+        </div>
+        <div class="arch-card">
+          <div class="layer">Tooling</div>
+          <h4>Quality &amp; DX</h4>
+          <p>ESLint with the Next.js config, Turbopack for sub-second HMR, and a strict tsconfig with path aliases.</p>
+          <div class="stack">
+            <span class="tag">ESLint 9</span>
+            <span class="tag">Turbopack</span>
+            <span class="tag">@/* alias</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- GALLERY -->
+    <section id="gallery">
+      <div class="section-head">
+        <div class="num">— 05 / Screens</div>
+        <h2>Full screen gallery.</h2>
+        <p>
+          High-resolution captures of every major view in the application. Use these as a
+          reference for stakeholder review, design QA, or marketing material.
+        </p>
+      </div>
+
+      <div class="gallery">
+        <figure>
+          <div class="shot"><img src="/showcase/discover.png" alt="Discover Feed" /></div>
+          <figcaption>
+            <div class="name">Discover Feed</div>
+            <div class="desc">Curated "For You" with category chips and view toggle.</div>
+          </figcaption>
+        </figure>
+        <figure>
+          <div class="shot"><img src="/showcase/search.png" alt="Search & Filters" /></div>
+          <figcaption>
+            <div class="name">Search &amp; Filters</div>
+            <div class="desc">Text search plus category and condition filters.</div>
+          </figcaption>
+        </figure>
+        <figure>
+          <div class="shot"><img src="/showcase/sell.png" alt="List an Item" /></div>
+          <figcaption>
+            <div class="name">List an Item</div>
+            <div class="desc">Bilingual listing creation with photo, price, and condition.</div>
+          </figcaption>
+        </figure>
+        <figure>
+          <div class="shot"><img src="/showcase/product.png" alt="Product Details" /></div>
+          <figcaption>
+            <div class="name">Product Details</div>
+            <div class="desc">Rich gallery, owner card, and three CTAs (Buy / Bag / Chat).</div>
+          </figcaption>
+        </figure>
+        <figure>
+          <div class="shot"><img src="/showcase/checkout.png" alt="Checkout Flow" /></div>
+          <figcaption>
+            <div class="name">Checkout</div>
+            <div class="desc">Address + payment flow with UAE-aware emirate selector.</div>
+          </figcaption>
+        </figure>
+        <figure>
+          <div class="shot"><img src="/showcase/profile.png" alt="Vault / Profile" /></div>
+          <figcaption>
+            <div class="name">The Vault</div>
+            <div class="desc">Closet, Loves, and Chats — the user's personal hub.</div>
+          </figcaption>
+        </figure>
+        <figure>
+          <div class="shot"><img src="/showcase/activity.png" alt="Activity" /></div>
+          <figcaption>
+            <div class="name">Activity</div>
+            <div class="desc">Real-time stream of messages, offers, follows, and saves.</div>
+          </figcaption>
+        </figure>
+        <figure>
+          <div class="shot"><img src="/showcase/chat.png" alt="Chat" /></div>
+          <figcaption>
+            <div class="name">Chat Overlay</div>
+            <div class="desc">In-app chat with smart auto-replies in EN + AR.</div>
+          </figcaption>
+        </figure>
+        <figure style="grid-column: 1 / -1;">
+          <div class="shot" style="aspect-ratio: 21 / 9;"><img src="/showcase/discover-rtl.png" alt="Discover Feed in Arabic (RTL)" /></div>
+          <figcaption>
+            <div class="name">Arabic (RTL) Experience</div>
+            <div class="desc">Same Discover Feed rendered with Arabic content, mirrored layout, and El Messiri typography.</div>
+          </figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <!-- ROADMAP -->
+    <section id="roadmap">
+      <div class="section-head">
+        <div class="num">— 06 / Roadmap</div>
+        <h2>What ships next.</h2>
+        <p>
+          The current build covers the full user journey end-to-end on the frontend. The next
+          phases plug in real authentication, payments, and a backend API.
+        </p>
+      </div>
+
+      <div class="timeline">
+        <div class="timeline-item">
+          <div class="step">Phase 1 · Now</div>
+          <h4>Frontend prototype (v0.1)</h4>
+          <p>
+            All 9 user-facing views of the buyer journey (Discover, Search, Product, Sell,
+            Checkout, Vault, Activity, Chat, Settings) are wired together in Next.js 16 / React 19
+            with a single bilingual EN+AR data model. Every listing, cart line, chat and like
+            persists to <code>localStorage</code> so the full loop — from browsing to checkout
+            success animation — runs offline. The Sell form already accepts bilingual title and
+            description, asking price vs. original retail price, category and condition, and
+            queues new items straight into the Discover feed. This is the artifact we use for
+            stakeholder review, design QA and copywriting sign-off.
+          </p>
+        </div>
+        <div class="timeline-item">
+          <div class="step">Phase 2 · Next</div>
+          <h4>Admin panel &amp; content moderation</h4>
+          <p>
+            Build the internal web console the team will use day-to-day before any real users
+            land. A staff-only <code>/admin</code> route in the same Next.js app, gated by a
+            role check on the future auth layer: listings queue with approve / reject / request
+            edits, user management (suspend, verify, refund flag), category &amp; condition
+            dictionaries, translation QA (side-by-side EN/AR string editor), featured-curation
+            for the Discover feed, and basic analytics (DAU, listings/day, conversion). Also
+            defines the contract between admin actions and the future backend, so every
+            moderation event is an audit log entry from day one.
+          </p>
+        </div>
+        <div class="timeline-item">
+          <div class="step">Phase 3</div>
+          <h4>Backend API &amp; database</h4>
+          <p>
+            Stand up the real backend so the prototype stops living in <code>localStorage</code>.
+            NestJS (or Next.js Route Handlers) exposing a versioned REST + WebSocket API, with
+            Postgres + Prisma as the system of record for users, listings, orders, chats and
+            reviews. Auth: email / phone OTP, with UAE Pass as a stretch goal. Image pipeline on
+            S3 + CloudFront with on-the-fly resizing. Algolia (or Meilisearch) for the search
+            index, kept in sync via DB triggers. Replace the <code>useApp()</code> mock layer
+            view-by-view without changing the UI contracts.
+          </p>
+        </div>
+        <div class="timeline-item">
+          <div class="step">Phase 4</div>
+          <h4>Rent mode — listing &amp; booking engine</h4>
+          <p>
+            Introduce the second listing mode alongside Resell. Owners toggle a listing to
+            "Rentable", set a daily rate, a refundable security deposit and a min/max rental
+            window. Buyers pick start and end dates from an availability calendar that respects
+            blocked dates, existing holds and the owner's lead time. Each booking produces a
+            rental contract with pickup / return logistics and a damage-checklist flow on
+            return. Rent pricing, deposits and late fees all flow through the same payment
+            primitives that Phase 5 introduces — so payments and rent land in the right order.
+          </p>
+        </div>
+        <div class="timeline-item">
+          <div class="step">Phase 5</div>
+          <h4>Payments &amp; escrow</h4>
+          <p>
+            Plug a UAE-friendly PSP — Checkout.com or Stripe with AED — behind a single
+            <code>PaymentProvider</code> interface. Card + Apple Pay at checkout, with the
+            shipping-over-AED-1,000 waiver preserved. Buyer funds move into an escrow ledger,
+            released only after the buyer confirms the item arrived as described (or auto-released
+            after N days). Refunds, partial refunds and dispute holds are first-class states.
+            The same engine handles rent: rental fee + deposit held, deposit returned on clean
+            return. Webhooks are the source of truth — no client-side status mutations.
+          </p>
+        </div>
+        <div class="timeline-item">
+          <div class="step">Phase 6</div>
+          <h4>Native apps &amp; push</h4>
+          <p>
+            Wrap the web app with Expo / React Native for iOS and Android so we get a real store
+            presence and platform integrations. Push notifications for new offers, follows,
+            chat messages and order-status changes. Deep links from push straight into the
+            relevant product, chat or order. In-app review prompt on delivery confirmation.
+            Native camera for the Sell flow so listings get better photos than a web file picker.
+          </p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="brand">
+      <div class="brand-mark">M</div>
+      Mooday
+    </div>
+    <div>Peer-to-peer fashion marketplace · UAE · Project Overview &amp; Feature Showcase</div>
+    <div style="margin-top:8px; font-size:12px; opacity:0.7;">Built with Next.js 16 · React 19 · Tailwind CSS 4</div>
+  </footer>
+
+  <script>
+    // Smoothly scroll iframes into a paused/loaded state on visibility
+    document.addEventListener('visibilitychange', () => {
+      document.querySelectorAll('iframe').forEach(f => {
+        // re-trigger scroll on the iframe content
+        try { f.contentWindow?.dispatchEvent(new Event('blur')); } catch (e) {}
+      });
+    });
+
+    /* ---------- IFRAME SCALE (method 1 + 4) ----------
+       iframe always renders at 393×852 (logical iPhone size).
+       .phone-screen is the visible window; iframe is scaled to fit. */
+    const LOGICAL_W = 393;
+    const LOGICAL_H = 852;
+
+    function scalePreviewIframes() {
+      document.querySelectorAll('.phone-screen, .device-screen').forEach((screen) => {
+        const iframe = screen.querySelector('iframe');
+        if (!iframe) return;
+
+        const displayW = screen.getBoundingClientRect().width;
+        if (displayW <= 0) return;
+
+        const scale = displayW / LOGICAL_W;
+        iframe.style.width = LOGICAL_W + 'px';
+        iframe.style.height = LOGICAL_H + 'px';
+        iframe.style.transform = 'scale(' + scale + ')';
+        iframe.style.transformOrigin = 'top left';
+        screen.style.height = Math.round(LOGICAL_H * scale) + 'px';
+      });
+    }
+
+    scalePreviewIframes();
+    window.addEventListener('resize', scalePreviewIframes);
+    document.querySelectorAll('iframe').forEach((f) => {
+      f.addEventListener('load', scalePreviewIframes);
+    });
+    if (document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(scalePreviewIframes);
+    }
+    setTimeout(scalePreviewIframes, 400);
+    setTimeout(scalePreviewIframes, 1500);
+  </script>
+</body>
+</html>
