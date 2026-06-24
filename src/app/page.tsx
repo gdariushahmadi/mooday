@@ -13,6 +13,7 @@ import { SearchFiltersView } from "@/components/SearchFiltersView";
 import { SettingsView } from "@/components/SettingsView";
 import { SellItemView } from "@/components/SellItemView";
 import { ChatOverlay } from "@/components/ChatOverlay";
+import { InstallPrompt } from "@/components/InstallPrompt";
 
 type ViewState = "home" | "search" | "sell" | "activity" | "profile" | "bag" | "checkout" | "settings" | "loves";
 
@@ -306,6 +307,8 @@ export default function Home() {
           </button>
         </nav>
       )}
+
+      <InstallPrompt />
     </div>
   );
 }

@@ -1,17 +1,97 @@
 {
-  "name": "Mooday - Emirates Social Marketplace",
+  "name": "Mooday - Resell & Rent Pre-loved Fashion",
   "short_name": "Mooday",
-  "description": "A premium social marketplace for fashion, lifestyle, and unique items in the UAE.",
+  "description": "A peer-to-peer marketplace for women in the UAE to resell or rent out fashion items they bought or received as gifts.",
+  "lang": "en",
+  "dir": "ltr",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone", "browser"],
+  "orientation": "portrait-primary",
   "background_color": "#fbf9f7",
   "theme_color": "#512443",
-  "orientation": "portrait-primary",
+  "categories": ["shopping", "lifestyle", "social"],
+  "id": "/?source=pwa",
+  "prefer_related_applications": false,
   "icons": [
     {
-      "src": "/favicon.ico",
-      "sizes": "64x64 32x32 24x24 16x16",
-      "type": "image/x-icon"
+      "src": "/icons/favicon-16x16.png",
+      "sizes": "16x16",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/favicon-32x32.png",
+      "sizes": "32x32",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-maskable-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icons/icon-maskable-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Search",
+      "short_name": "Search",
+      "description": "Find pre-loved fashion to resell or rent",
+      "url": "/?view=search",
+      "icons": [
+        { "src": "/icons/icon-192x192.png", "sizes": "192x192" }
+      ]
+    },
+    {
+      "name": "Sell an item",
+      "short_name": "Sell",
+      "description": "List something from your closet",
+      "url": "/?view=sell",
+      "icons": [
+        { "src": "/icons/icon-192x192.png", "sizes": "192x192" }
+      ]
+    },
+    {
+      "name": "My Vault",
+      "short_name": "Vault",
+      "description": "Open your saved items and chats",
+      "url": "/?view=profile",
+      "icons": [
+        { "src": "/icons/icon-192x192.png", "sizes": "192x192" }
+      ]
+    }
+  ],
+  "edge_side_panel": {
+    "preferred_width": 480
+  },
+  "launch_handler": {
+    "client_mode": "auto"
+  },
+  "handle_links": "preferred",
+  "protocol_handlers": [
+    {
+      "protocol": "web+mooday",
+      "url": "/?source=protocol&%s"
     }
   ]
 }

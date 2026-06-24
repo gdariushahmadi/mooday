@@ -436,50 +436,6 @@
       border-radius: 16px;
     }
 
-    /* ---------- ARCHITECTURE ---------- */
-    .arch-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 20px;
-    }
-    .arch-card {
-      background: var(--surface);
-      border: 1px solid var(--outline-variant);
-      border-radius: var(--radius-lg);
-      padding: 28px;
-    }
-    .arch-card .layer {
-      font-size: 11px;
-      letter-spacing: 0.16em;
-      text-transform: uppercase;
-      color: var(--primary);
-      font-weight: 700;
-      margin-bottom: 8px;
-    }
-    .arch-card h4 {
-      font-family: var(--font-serif);
-      font-size: 22px;
-      margin-bottom: 14px;
-    }
-    .arch-card .stack {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin-top: 12px;
-    }
-    .arch-card .tag {
-      font-size: 12px;
-      padding: 4px 10px;
-      border-radius: 6px;
-      background: var(--surface-container);
-      color: var(--on-surface);
-      font-weight: 500;
-    }
-    .arch-card p {
-      font-size: 14px;
-      color: var(--on-surface-variant);
-    }
-
     /* ---------- STATS ---------- */
     .stats {
       display: grid;
@@ -803,7 +759,6 @@
         <a href="#overview">Overview</a>
         <a href="#features">Features</a>
         <a href="#inventory">Page Inventory</a>
-        <a href="#architecture">Architecture</a>
         <a href="#gallery">Gallery</a>
         <a href="#roadmap">Roadmap</a>
       </nav>
@@ -1196,30 +1151,30 @@
         <div class="num">— 04 / Page Inventory</div>
         <h2>Every screen in the app, mapped out.</h2>
         <p>
-          The full inventory of pages that ship in the Mooday application, organised by the
-          user journey: from discovery to listing, from purchase to chat. Each row is a real
-          view in the running app — clickable above in the Features section, or viewable in
-          the Gallery below.
+          The complete MVP inventory of pages needed for Mooday to launch, organised by the
+          full user journey — from first open to post-purchase trust, on both sides of the
+          marketplace (buyer &amp; seller). Each row is a real view in the running app or a
+          planned screen for the next milestone.
         </p>
       </div>
 
-      <!-- Group 1: Discovery & Browsing -->
+      <!-- Group A: Onboarding & Authentication -->
       <div class="inv-group">
         <div class="inv-group-head">
           <span class="inv-group-num">A</span>
-          <h3 class="inv-group-title">Discovery &amp; Browsing</h3>
-          <span class="inv-group-sub">4 pages · How users find items</span>
+          <h3 class="inv-group-title">Onboarding &amp; Authentication</h3>
+          <span class="inv-group-sub">5 pages · First run &amp; sign-in</span>
         </div>
         <div class="inv-list">
 
           <div class="inv-item">
             <div class="inv-icon">01</div>
             <div class="inv-body">
-              <div class="inv-name">Discover Feed (Home)</div>
-              <div class="inv-desc">The main landing page. Curated "For You" feed with category chips (Bags, Clothing, Home, Lifestyle), tabbed lanes (For You · Trending · Designers), Featured &amp; Compact view toggle, and inline save-to-Vault hearts.</div>
+              <div class="inv-name">Splash &amp; Welcome</div>
+              <div class="inv-desc">The first screen on cold launch. Brand mark, tagline, language picker (EN/AR), and two CTAs: "Sign up" and "I already have an account".</div>
               <div class="inv-meta">
-                <span class="inv-tag primary">Bottom nav · Home tab</span>
-                <span class="inv-tag">Default landing</span>
+                <span class="inv-tag primary">Pre-auth · cold launch</span>
+                <span class="inv-tag">Language switcher</span>
               </div>
             </div>
           </div>
@@ -1227,11 +1182,11 @@
           <div class="inv-item">
             <div class="inv-icon alt">02</div>
             <div class="inv-body">
-              <div class="inv-name">Search &amp; Filters</div>
-              <div class="inv-desc">Full-text search across titles, descriptions and categories. Multi-select category and condition filters with live results, empty state, and direct jump into product details.</div>
+              <div class="inv-name">Onboarding Carousel (3 slides)</div>
+              <div class="inv-desc">Three illustrated slides explaining the core promise: resell, rent, meet other women. Skip CTA and dot indicators. Sets the tone for the social marketplace.</div>
               <div class="inv-meta">
-                <span class="inv-tag primary">Bottom nav · Search tab</span>
-                <span class="inv-tag">Real-time filtering</span>
+                <span class="inv-tag primary">First launch only</span>
+                <span class="inv-tag">3 slides</span>
               </div>
             </div>
           </div>
@@ -1239,22 +1194,120 @@
           <div class="inv-item">
             <div class="inv-icon">03</div>
             <div class="inv-body">
-              <div class="inv-name">Product Details</div>
-              <div class="inv-desc">Full-bleed media gallery, condition badge, original vs. asking price comparison, owner mini-card with rating. Three CTAs: Buy Now, Add to Bag, Chat with Owner.</div>
+              <div class="inv-name">Sign Up</div>
+              <div class="inv-desc">Phone or email registration. Fields: name, phone (+971 prefix), email, password. T&amp;C checkbox. Social sign-in options: Apple, Google.</div>
               <div class="inv-meta">
-                <span class="inv-tag primary">Modal · opens on tap</span>
-                <span class="inv-tag">Authenticity info</span>
+                <span class="inv-tag primary">From Welcome</span>
+                <span class="inv-tag">UAE phone</span>
+                <span class="inv-tag">Social login</span>
               </div>
             </div>
           </div>
 
           <div class="inv-item">
-            <div class="inv-icon soft">04</div>
+            <div class="inv-icon alt">04</div>
             <div class="inv-body">
-              <div class="inv-name">Other User's Profile</div>
-              <div class="inv-desc">Public profile of a seller: avatar, handle, location, rating, follower stats, and the full grid of items they currently have listed. Tap any item to open its product page.</div>
+              <div class="inv-name">OTP Verification</div>
+              <div class="inv-desc">6-digit SMS code entry with auto-fill on iOS/Android. Resend timer (60s). Shown right after Sign Up and on Sign In if 2FA is enabled.</div>
               <div class="inv-meta">
-                <span class="inv-tag primary">Drill-down from chat / card</span>
+                <span class="inv-tag primary">After Sign Up / Sign In</span>
+                <span class="inv-tag">SMS OTP</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="inv-item">
+            <div class="inv-icon soft">05</div>
+            <div class="inv-body">
+              <div class="inv-name">Sign In</div>
+              <div class="inv-desc">Returning users. Email/phone + password. "Forgot password" link, social sign-in (Apple/Google), and a link to the Sign Up flow.</div>
+              <div class="inv-meta">
+                <span class="inv-tag primary">From Welcome</span>
+                <span class="inv-tag">Password recovery</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Group B: Discovery & Browsing -->
+      <div class="inv-group">
+        <div class="inv-group-head">
+          <span class="inv-group-num">B</span>
+          <h3 class="inv-group-title">Discovery &amp; Browsing</h3>
+          <span class="inv-group-sub">6 pages · How users find items</span>
+        </div>
+        <div class="inv-list">
+
+          <div class="inv-item">
+            <div class="inv-icon">06</div>
+            <div class="inv-body">
+              <div class="inv-name">Discover Feed (Home)</div>
+              <div class="inv-desc">Main landing. Curated "For You" feed with category chips (Bags · Clothing · Home · Lifestyle), tabbed lanes (For You · Trending · Designers · New In), Featured/Compact view toggle, and inline save-to-Vault hearts.</div>
+              <div class="inv-meta">
+                <span class="inv-tag primary">Bottom nav · Home</span>
+                <span class="inv-tag">Default landing</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="inv-item">
+            <div class="inv-icon alt">07</div>
+            <div class="inv-body">
+              <div class="inv-name">Search &amp; Filters</div>
+              <div class="inv-desc">Full-text search across titles, descriptions and categories. Multi-select category, condition, size, colour, price range, and listing mode (Resell · Rent · Both). Empty state with suggestions.</div>
+              <div class="inv-meta">
+                <span class="inv-tag primary">Bottom nav · Search</span>
+                <span class="inv-tag">Real-time</span>
+                <span class="inv-tag">6 filters</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="inv-item">
+            <div class="inv-icon">08</div>
+            <div class="inv-body">
+              <div class="inv-name">Search Results</div>
+              <div class="inv-desc">The result list after applying search/filters. Sort by: Relevance, Newest, Price (low→high), Price (high→low). Result count and "no results" empty state.</div>
+              <div class="inv-meta">
+                <span class="inv-tag primary">From Search</span>
+                <span class="inv-tag">4 sort options</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="inv-item">
+            <div class="inv-icon alt">09</div>
+            <div class="inv-body">
+              <div class="inv-name">Product Details</div>
+              <div class="inv-desc">Full-bleed media gallery, condition badge, original vs. asking price, owner mini-card with rating, full description (EN/AR), shipping info. Three CTAs: Buy Now · Add to Bag · Chat with Owner.</div>
+              <div class="inv-meta">
+                <span class="inv-tag primary">Modal · from feed/search</span>
+                <span class="inv-tag">Bilingual</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="inv-item">
+            <div class="inv-icon">10</div>
+            <div class="inv-body">
+              <div class="inv-name">Category Landing Page</div>
+              <div class="inv-desc">Top-level category page (e.g. "Bags"). Hero banner, sub-categories (Handbags · Clutches · Totes), curated collections within the category, and featured sellers.</div>
+              <div class="inv-meta">
+                <span class="inv-tag primary">From category chip</span>
+                <span class="inv-tag">Sub-categories</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="inv-item">
+            <div class="inv-icon soft">11</div>
+            <div class="inv-body">
+              <div class="inv-name">Other User's Public Profile</div>
+              <div class="inv-desc">Public closet of another user. Avatar, handle, location, bio, rating, follower/following counts, the full grid of their active listings, and reviews. Follow / Message CTAs.</div>
+              <div class="inv-meta">
+                <span class="inv-tag primary">From product / chat / search</span>
                 <span class="inv-tag">Follow CTA</span>
               </div>
             </div>
@@ -1263,170 +1316,50 @@
         </div>
       </div>
 
-      <!-- Group 2: Buying & Checkout -->
-      <div class="inv-group">
-        <div class="inv-group-head">
-          <span class="inv-group-num">B</span>
-          <h3 class="inv-group-title">Buying &amp; Checkout</h3>
-          <span class="inv-group-sub">3 pages · From cart to confirmation</span>
-        </div>
-        <div class="inv-list">
-
-          <div class="inv-item">
-            <div class="inv-icon">05</div>
-            <div class="inv-body">
-              <div class="inv-name">Shopping Bag (Cart)</div>
-              <div class="inv-desc">All items the user has saved to buy. Shows original price, asking price, total discount and shipping (free over AED 1,000). Quantity controls, remove, and a single "Checkout" CTA.</div>
-              <div class="inv-meta">
-                <span class="inv-tag primary">Top bar · Bag icon + badge</span>
-                <span class="inv-tag">Live total</span>
-              </div>
-            </div>
-          </div>
-
-          <div class="inv-item">
-            <div class="inv-icon alt">06</div>
-            <div class="inv-body">
-              <div class="inv-name">Checkout Flow</div>
-              <div class="inv-desc">Two-step flow tailored for the UAE. Step 1: delivery address (name, phone, all seven emirates, street). Step 2: payment (card or Apple Pay). Live order summary, escrow protection note, free-shipping badge.</div>
-              <div class="inv-meta">
-                <span class="inv-tag primary">From Bag or Buy Now</span>
-                <span class="inv-tag">2 steps</span>
-                <span class="inv-tag">Escrow</span>
-              </div>
-            </div>
-          </div>
-
-          <div class="inv-item">
-            <div class="inv-icon">07</div>
-            <div class="inv-body">
-              <div class="inv-name">Order Confirmation</div>
-              <div class="inv-desc">Success state shown after payment: animated checkmark, order ID, summary of items bought, and a "Browse more" CTA back to the Discover feed.</div>
-              <div class="inv-meta">
-                <span class="inv-tag primary">End of checkout</span>
-                <span class="inv-tag">Success animation</span>
-              </div>
-            </div>
-          </div>
-
-        </div>
-      </div>
-
-      <!-- Group 3: Listing & Selling -->
+      <!-- Group C: Buying & Checkout -->
       <div class="inv-group">
         <div class="inv-group-head">
           <span class="inv-group-num">C</span>
-          <h3 class="inv-group-title">Listing &amp; Selling</h3>
-          <span class="inv-group-sub">2 pages · Putting items up for sale</span>
+          <h3 class="inv-group-title">Buying &amp; Checkout</h3>
+          <span class="inv-group-sub">6 pages · Cart to post-purchase</span>
         </div>
         <div class="inv-list">
-
-          <div class="inv-item">
-            <div class="inv-icon">08</div>
-            <div class="inv-body">
-              <div class="inv-name">Sell an Item (Create Listing)</div>
-              <div class="inv-desc">Bilingual form for a user to put a piece from her closet up for sale. Fields: photo, EN+AR title, EN+AR description, asking price, original retail price, category, condition. Publishes straight into the feed.</div>
-              <div class="inv-meta">
-                <span class="inv-tag primary">Bottom nav · Sell button (center)</span>
-                <span class="inv-tag">Bilingual</span>
-                <span class="inv-tag">Discount auto-calc</span>
-              </div>
-            </div>
-          </div>
-
-          <div class="inv-item">
-            <div class="inv-icon alt">09</div>
-            <div class="inv-body">
-              <div class="inv-name">My Closet (Active Listings)</div>
-              <div class="inv-desc">The "My Closet" tab inside the Vault. Grid view of every item the user has put up for sale, with status (Active, Pending, Sold) and quick-edit actions.</div>
-              <div class="inv-meta">
-                <span class="inv-tag primary">Vault · tab 1 of 3</span>
-                <span class="inv-tag">Edit &amp; remove</span>
-              </div>
-            </div>
-          </div>
-
-        </div>
-      </div>
-
-      <!-- Group 4: Social & Communication -->
-      <div class="inv-group">
-        <div class="inv-group-head">
-          <span class="inv-group-num">D</span>
-          <h3 class="inv-group-title">Social &amp; Communication</h3>
-          <span class="inv-group-sub">4 pages · Conversation, offers, follow</span>
-        </div>
-        <div class="inv-list">
-
-          <div class="inv-item">
-            <div class="inv-icon">10</div>
-            <div class="inv-body">
-              <div class="inv-name">Activity Feed</div>
-              <div class="inv-desc">Chronological stream of everything happening to the user: new messages, price drops on saved items, offers received, new followers, and "item saved" events. Tap a row to jump to its source.</div>
-              <div class="inv-meta">
-                <span class="inv-tag primary">Bottom nav · Activity tab</span>
-                <span class="inv-tag">Unread badges</span>
-              </div>
-            </div>
-          </div>
-
-          <div class="inv-item">
-            <div class="inv-icon alt">11</div>
-            <div class="inv-body">
-              <div class="inv-name">In-app Chat (Overlay)</div>
-              <div class="inv-desc">A full chat thread between buyer and owner, opened from a product page. Shows product context card at the top, smart auto-replies in EN+AR for keywords like "authentic" and "condition", and a "Buy Item" shortcut that jumps to checkout.</div>
-              <div class="inv-meta">
-                <span class="inv-tag primary">From product details</span>
-                <span class="inv-tag">Bilingual</span>
-                <span class="inv-tag">Smart auto-reply</span>
-              </div>
-            </div>
-          </div>
 
           <div class="inv-item">
             <div class="inv-icon">12</div>
             <div class="inv-body">
-              <div class="inv-name">Chats / Offers List</div>
-              <div class="inv-desc">All active conversations and offer threads in one place, with last-message preview, timestamp, and unread indicator. Tap any row to reopen the chat overlay.</div>
+              <div class="inv-name">Shopping Bag (Cart)</div>
+              <div class="inv-desc">All items saved to buy. Per row: thumbnail, title, condition, original vs. asking price, quantity stepper, remove. Footer: subtotal, savings, shipping, total, "Checkout" CTA.</div>
               <div class="inv-meta">
-                <span class="inv-tag primary">Vault · tab 3 of 3</span>
-                <span class="inv-tag">Unread count</span>
+                <span class="inv-tag primary">Top bar · Bag icon</span>
+                <span class="inv-tag">Live total</span>
+                <span class="inv-tag">Empty state</span>
               </div>
             </div>
           </div>
 
           <div class="inv-item">
-            <div class="inv-icon soft">13</div>
+            <div class="inv-icon alt">13</div>
             <div class="inv-body">
-              <div class="inv-name">My Loves (Saved Items)</div>
-              <div class="inv-desc">A grid of every item the user has hearted across the app. Acts as a wishlist — items here may still be available or already sold. Tap to revisit the product page.</div>
+              <div class="inv-name">Checkout — Address</div>
+              <div class="inv-desc">Step 1 of checkout. Pick from saved addresses or fill a new one: full name, phone, all seven emirates dropdown, street + building + villa/apt. Save-as-default toggle.</div>
               <div class="inv-meta">
-                <span class="inv-tag primary">Vault · tab 2 of 3</span>
-                <span class="inv-tag">Wishlist</span>
+                <span class="inv-tag primary">From Bag / Buy Now</span>
+                <span class="inv-tag">7 emirates</span>
+                <span class="inv-tag">Saved addresses</span>
               </div>
             </div>
           </div>
-
-        </div>
-      </div>
-
-      <!-- Group 5: Profile & Account -->
-      <div class="inv-group">
-        <div class="inv-group-head">
-          <span class="inv-group-num">E</span>
-          <h3 class="inv-group-title">Profile, Account &amp; Settings</h3>
-          <span class="inv-group-sub">3 pages · The user's personal hub</span>
-        </div>
-        <div class="inv-list">
 
           <div class="inv-item">
             <div class="inv-icon">14</div>
             <div class="inv-body">
-              <div class="inv-name">The Vault (My Profile)</div>
-              <div class="inv-desc">The user's personal hub. Profile card (avatar, name, handle, location, rating, followers, following) on top, and three tabs below: My Closet · My Loves · Chats / Offers.</div>
+              <div class="inv-name">Checkout — Payment</div>
+              <div class="inv-desc">Step 2. Methods: Card (with saved cards), Apple Pay, Cash on Delivery (disabled for orders over AED 5,000). Live order summary, escrow protection note, free-shipping badge.</div>
               <div class="inv-meta">
-                <span class="inv-tag primary">Bottom nav · Vault tab</span>
-                <span class="inv-tag">3 tabs</span>
+                <span class="inv-tag primary">Step 2 of checkout</span>
+                <span class="inv-tag">3 methods</span>
+                <span class="inv-tag">Escrow</span>
               </div>
             </div>
           </div>
@@ -1434,11 +1367,11 @@
           <div class="inv-item">
             <div class="inv-icon alt">15</div>
             <div class="inv-body">
-              <div class="inv-name">Settings &amp; Account</div>
-              <div class="inv-desc">All account preferences in one place. Sections: Account Preferences (Personal Info, Language), Security &amp; Policy (Security &amp; Password, Privacy Policy, Mooday Safe Escrow Policy).</div>
+              <div class="inv-name">Order Confirmation</div>
+              <div class="inv-desc">Success state after payment. Animated checkmark, order ID, summary of items bought, ETA, and a "Browse more" CTA. Triggers a notification to the seller.</div>
               <div class="inv-meta">
-                <span class="inv-tag primary">Top bar · Gear icon</span>
-                <span class="inv-tag">Language switcher</span>
+                <span class="inv-tag primary">End of checkout</span>
+                <span class="inv-tag">Success animation</span>
               </div>
             </div>
           </div>
@@ -1446,11 +1379,429 @@
           <div class="inv-item">
             <div class="inv-icon">16</div>
             <div class="inv-body">
-              <div class="inv-name">Edit Listing (modal)</div>
-              <div class="inv-desc">Quick-edit flow opened from My Closet. Lets a user update price, condition, description, or remove an item from the marketplace without leaving the app.</div>
+              <div class="inv-name">My Purchases (Orders List)</div>
+              <div class="inv-desc">All orders the user has placed, sorted newest first. Each row: order ID, date, items thumbnail collage, total, status badge (Processing · Shipped · Delivered · Returned). Tap to open Order Details.</div>
+              <div class="inv-meta">
+                <span class="inv-tag primary">Vault · Purchases tab</span>
+                <span class="inv-tag">4 statuses</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="inv-item">
+            <div class="inv-icon soft">17</div>
+            <div class="inv-body">
+              <div class="inv-name">Order Details &amp; Tracking</div>
+              <div class="inv-desc">Single-order detail. Items, payment breakdown, shipping address, courier name + tracking number, status timeline (Confirmed → Packed → Shipped → Out for delivery → Delivered), and a "Contact seller" / "Request return" action.</div>
+              <div class="inv-meta">
+                <span class="inv-tag primary">From Purchases</span>
+                <span class="inv-tag">Status timeline</span>
+                <span class="inv-tag">Tracking</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Group D: Listing & Selling -->
+      <div class="inv-group">
+        <div class="inv-group-head">
+          <span class="inv-group-num">D</span>
+          <h3 class="inv-group-title">Listing &amp; Selling (Resell)</h3>
+          <span class="inv-group-sub">5 pages · Putting items up for sale</span>
+        </div>
+        <div class="inv-list">
+
+          <div class="inv-item">
+            <div class="inv-icon">18</div>
+            <div class="inv-body">
+              <div class="inv-name">Sell an Item — Mode Picker</div>
+              <div class="inv-desc">First step of the Sell flow. User picks between "Sell outright" (Resell) and "Rent out" (Rent). Shows a one-line explanation for each, with a "What's this?" link.</div>
+              <div class="inv-meta">
+                <span class="inv-tag primary">Bottom nav · Sell</span>
+                <span class="inv-tag">2 modes</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="inv-item">
+            <div class="inv-icon alt">19</div>
+            <div class="inv-body">
+              <div class="inv-name">Create Listing — Resell</div>
+              <div class="inv-desc">Multi-step bilingual form. Photos (up to 8), EN+AR title, EN+AR description, category, brand, size, colour, condition, asking price, original retail price (auto-calculates discount %).</div>
+              <div class="inv-meta">
+                <span class="inv-tag primary">From Mode Picker</span>
+                <span class="inv-tag">Bilingual</span>
+                <span class="inv-tag">Up to 8 photos</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="inv-item">
+            <div class="inv-icon">20</div>
+            <div class="inv-body">
+              <div class="inv-name">My Closet (Active Listings)</div>
+              <div class="inv-desc">All items the user has listed for sale. Grid view with status pills (Active · Pending · Sold · Expired). Bulk actions: relist, mark sold, delete. Per-item quick-edit.</div>
+              <div class="inv-meta">
+                <span class="inv-tag primary">Vault · Closet tab</span>
+                <span class="inv-tag">4 statuses</span>
+                <span class="inv-tag">Bulk actions</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="inv-item">
+            <div class="inv-icon alt">21</div>
+            <div class="inv-body">
+              <div class="inv-name">Edit Listing</div>
+              <div class="inv-desc">Re-open the Create Listing form pre-filled, so the user can update price, photos, description, condition, or take the item down without losing the listing data.</div>
               <div class="inv-meta">
                 <span class="inv-tag primary">From My Closet</span>
-                <span class="inv-tag">Inline edit</span>
+                <span class="inv-tag">Pre-filled form</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="inv-item">
+            <div class="inv-icon soft">22</div>
+            <div class="inv-body">
+              <div class="inv-name">My Sales (Orders Received)</div>
+              <div class="inv-desc">The seller-side counterpart of "My Purchases". Lists all orders received, with buyer's name, items, total, payout status (Pending · Available · Paid out), and a "Mark as shipped" action.</div>
+              <div class="inv-meta">
+                <span class="inv-tag primary">Vault · Sales tab</span>
+                <span class="inv-tag">3 payout states</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Group E: Rent Mode -->
+      <div class="inv-group">
+        <div class="inv-group-head">
+          <span class="inv-group-num">E</span>
+          <h3 class="inv-group-title">Rent Mode</h3>
+          <span class="inv-group-sub">4 pages · Rentals &amp; calendar booking</span>
+        </div>
+        <div class="inv-list">
+
+          <div class="inv-item">
+            <div class="inv-icon">23</div>
+            <div class="inv-body">
+              <div class="inv-name">Create Listing — Rent</div>
+              <div class="inv-desc">Rent-specific form. Same fields as Resell, plus: daily rate, refundable security deposit, min/max rental duration, available-from date, and blackout dates. Calendar preview.</div>
+              <div class="inv-meta">
+                <span class="inv-tag primary">From Mode Picker</span>
+                <span class="inv-tag">Calendar</span>
+                <span class="inv-tag">Deposit</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="inv-item">
+            <div class="inv-icon alt">24</div>
+            <div class="inv-body">
+              <div class="inv-name">Product Details — Rental View</div>
+              <div class="inv-desc">A variant of Product Details shown when a listing is in Rent mode. Rate per day, deposit amount, an availability calendar with date picker, and a "Request rental" CTA instead of Buy Now.</div>
+              <div class="inv-meta">
+                <span class="inv-tag primary">From feed/search</span>
+                <span class="inv-tag">Date picker</span>
+                <span class="inv-tag">Deposit</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="inv-item">
+            <div class="inv-icon">25</div>
+            <div class="inv-body">
+              <div class="inv-name">Rental Request</div>
+              <div class="inv-desc">Buyer confirms the date range, sees the price breakdown (days × daily rate + deposit), accepts the rental T&amp;C, and submits. The owner gets a notification to approve or decline.</div>
+              <div class="inv-meta">
+                <span class="inv-tag primary">From rental product page</span>
+                <span class="inv-tag">Price breakdown</span>
+                <span class="inv-tag">Owner approval</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="inv-item">
+            <div class="inv-icon soft">26</div>
+            <div class="inv-body">
+              <div class="inv-name">My Rentals</div>
+              <div class="inv-desc">Both sides of active rentals. Tabs: "I'm renting" and "Renting out". Each rental shows the item, date range, status (Requested · Approved · Active · Returned), and chat shortcut.</div>
+              <div class="inv-meta">
+                <span class="inv-tag primary">Vault · Rentals tab</span>
+                <span class="inv-tag">2 perspectives</span>
+                <span class="inv-tag">4 statuses</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Group F: Social & Communication -->
+      <div class="inv-group">
+        <div class="inv-group-head">
+          <span class="inv-group-num">F</span>
+          <h3 class="inv-group-title">Social &amp; Communication</h3>
+          <span class="inv-group-sub">5 pages · Conversation, offers, follow</span>
+        </div>
+        <div class="inv-list">
+
+          <div class="inv-item">
+            <div class="inv-icon">27</div>
+            <div class="inv-body">
+              <div class="inv-name">Activity Feed</div>
+              <div class="inv-desc">Chronological stream of everything happening around the user: new messages, price drops on saved items, offers received, new followers, and "item saved" events. Tap to jump to source.</div>
+              <div class="inv-meta">
+                <span class="inv-tag primary">Bottom nav · Activity</span>
+                <span class="inv-tag">5 event types</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="inv-item">
+            <div class="inv-icon alt">28</div>
+            <div class="inv-body">
+              <div class="inv-name">Chats List</div>
+              <div class="inv-desc">All active conversations, with the other party's avatar, name, last-message preview, time, and unread badge. Pinned chats at the top, sorted by most recent.</div>
+              <div class="inv-meta">
+                <span class="inv-tag primary">Vault · Chats tab</span>
+                <span class="inv-tag">Unread count</span>
+                <span class="inv-tag">Pinned</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="inv-item">
+            <div class="inv-icon">29</div>
+            <div class="inv-body">
+              <div class="inv-name">In-app Chat Thread</div>
+              <div class="inv-desc">Full chat between buyer and owner. Product context card at the top, message bubbles, image attachments, voice notes, and quick replies. "Make offer" and "Buy / Rent now" shortcuts inline.</div>
+              <div class="inv-meta">
+                <span class="inv-tag primary">From product / chat list</span>
+                <span class="inv-tag">Bilingual</span>
+                <span class="inv-tag">Voice notes</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="inv-item">
+            <div class="inv-icon alt">30</div>
+            <div class="inv-body">
+              <div class="inv-name">Make an Offer</div>
+              <div class="inv-desc">Buyer proposes a different price (or rental rate). Sent through the chat thread as a special message card. The seller can Accept, Decline, or Counter within the same card.</div>
+              <div class="inv-meta">
+                <span class="inv-tag primary">Inside chat</span>
+                <span class="inv-tag">Negotiation</span>
+                <span class="inv-tag">3 actions</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="inv-item">
+            <div class="inv-icon soft">31</div>
+            <div class="inv-body">
+              <div class="inv-name">Notifications Centre</div>
+              <div class="inv-desc">System-level push history in one place. Sections: Orders, Messages, Offers, Followers, Price drops, App updates. Mark all as read and per-notification deep links.</div>
+              <div class="inv-meta">
+                <span class="inv-tag primary">From top bar bell</span>
+                <span class="inv-tag">6 sections</span>
+                <span class="inv-tag">Deep links</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Group G: Profile, Account & Settings -->
+      <div class="inv-group">
+        <div class="inv-group-head">
+          <span class="inv-group-num">G</span>
+          <h3 class="inv-group-title">Profile, Account &amp; Settings</h3>
+          <span class="inv-group-sub">7 pages · The user's personal hub</span>
+        </div>
+        <div class="inv-list">
+
+          <div class="inv-item">
+            <div class="inv-icon">32</div>
+            <div class="inv-body">
+              <div class="inv-name">The Vault (My Profile Hub)</div>
+              <div class="inv-desc">The personal hub. Profile card (avatar, name, handle, bio, location, rating) + stats (followers, following, sales, rating). Tabs: Closet · Loves · Chats · Purchases · Sales · Rentals.</div>
+              <div class="inv-meta">
+                <span class="inv-tag primary">Bottom nav · Vault</span>
+                <span class="inv-tag">6 tabs</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="inv-item">
+            <div class="inv-icon alt">33</div>
+            <div class="inv-body">
+              <div class="inv-name">Edit Profile</div>
+              <div class="inv-desc">Form to update avatar, display name, handle, bio, location, and style preferences (sizes, favourite categories). Used to power recommendations in the Discover feed.</div>
+              <div class="inv-meta">
+                <span class="inv-tag primary">From Vault</span>
+                <span class="inv-tag">Style preferences</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="inv-item">
+            <div class="inv-icon">34</div>
+            <div class="inv-body">
+              <div class="inv-name">My Loves (Saved Items)</div>
+              <div class="inv-desc">Wishlist grid of every item hearted across the app. Filter: Available / Sold / Price dropped. Tap to revisit the product page. Share-my-Loves link for friends.</div>
+              <div class="inv-meta">
+                <span class="inv-tag primary">Vault · Loves tab</span>
+                <span class="inv-tag">3 filters</span>
+                <span class="inv-tag">Share link</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="inv-item">
+            <div class="inv-icon alt">35</div>
+            <div class="inv-body">
+              <div class="inv-name">Saved Addresses</div>
+              <div class="inv-desc">List of delivery addresses. Add, edit, set default, delete. Used at checkout to skip Step 1. Per-address label (Home · Work · Other).</div>
+              <div class="inv-meta">
+                <span class="inv-tag primary">From checkout / settings</span>
+                <span class="inv-tag">3 labels</span>
+                <span class="inv-tag">Default flag</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="inv-item">
+            <div class="inv-icon">36</div>
+            <div class="inv-body">
+              <div class="inv-name">Saved Payment Methods</div>
+              <div class="inv-desc">List of saved cards (last 4 digits, brand, expiry). Add new card (tokenised via PSP), remove, set default. Apple Pay toggle for one-tap checkout.</div>
+              <div class="inv-meta">
+                <span class="inv-tag primary">From checkout / settings</span>
+                <span class="inv-tag">Tokenised</span>
+                <span class="inv-tag">Apple Pay toggle</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="inv-item">
+            <div class="inv-icon alt">37</div>
+            <div class="inv-body">
+              <div class="inv-name">Settings &amp; Account</div>
+              <div class="inv-desc">All account preferences. Sections: Account (Personal Info · Language · Region), Security (Password · 2FA · Biometric login), Notifications (push toggles per event type), Legal (Privacy · T&amp;C · Escrow Policy), About (Version · Log out).</div>
+              <div class="inv-meta">
+                <span class="inv-tag primary">Top bar · Gear icon</span>
+                <span class="inv-tag">5 sections</span>
+                <span class="inv-tag">20+ settings</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="inv-item">
+            <div class="inv-icon soft">38</div>
+            <div class="inv-body">
+              <div class="inv-name">Help &amp; Support</div>
+              <div class="inv-desc">Searchable FAQ (top 20 questions), contact-us form (category, order ID, description, photo), live chat with Mooday support, and links to Community Guidelines and the Escrow Policy.</div>
+              <div class="inv-meta">
+                <span class="inv-tag primary">From settings</span>
+                <span class="inv-tag">FAQ</span>
+                <span class="inv-tag">Live chat</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Group H: Trust, Safety & Post-Purchase -->
+      <div class="inv-group">
+        <div class="inv-group-head">
+          <span class="inv-group-num">H</span>
+          <h3 class="inv-group-title">Trust, Safety &amp; Post-Purchase</h3>
+          <span class="inv-group-sub">6 pages · Reviews, returns, payouts</span>
+        </div>
+        <div class="inv-list">
+
+          <div class="inv-item">
+            <div class="inv-icon">39</div>
+            <div class="inv-body">
+              <div class="inv-name">Leave a Review</div>
+              <div class="inv-desc">Shown after a purchase is delivered. Star rating (1-5), text (optional), and 4 quick-tag chips (As described · Fast shipping · Great communication · Loved it). Photos optional.</div>
+              <div class="inv-meta">
+                <span class="inv-tag primary">After delivery</span>
+                <span class="inv-tag">4 quick tags</span>
+                <span class="inv-tag">Photo reviews</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="inv-item">
+            <div class="inv-icon alt">40</div>
+            <div class="inv-body">
+              <div class="inv-name">User Reviews (Public)</div>
+              <div class="inv-desc">All reviews left for a user, shown on their public profile. Filter by rating (5★, 4★, …). Verified-purchase badge. Reply option for the reviewed user.</div>
+              <div class="inv-meta">
+                <span class="inv-tag primary">From public profile</span>
+                <span class="inv-tag">5★ filter</span>
+                <span class="inv-tag">Verified badge</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="inv-item">
+            <div class="inv-icon">41</div>
+            <div class="inv-body">
+              <div class="inv-name">Report an Item / User</div>
+              <div class="inv-desc">Modal opened from the "…" menu on a product page or profile. Reason chips (Counterfeit · Offensive · Spam · Doesn't match description · Other), free-text, screenshot attach.</div>
+              <div class="inv-meta">
+                <span class="inv-tag primary">From any item / profile</span>
+                <span class="inv-tag">5 reasons</span>
+                <span class="inv-tag">Screenshots</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="inv-item">
+            <div class="inv-icon alt">42</div>
+            <div class="inv-body">
+              <div class="inv-name">Request a Return / Refund</div>
+              <div class="inv-desc">For purchases within the return window. Reason chips, description, photo proof. Triggers an escrow dispute that's reviewed by Mooday support. Status timeline.</div>
+              <div class="inv-meta">
+                <span class="inv-tag primary">From Order Details</span>
+                <span class="inv-tag">Escrow dispute</span>
+                <span class="inv-tag">Status timeline</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="inv-item">
+            <div class="inv-icon">43</div>
+            <div class="inv-body">
+              <div class="inv-name">Payouts &amp; Earnings (Seller)</div>
+              <div class="inv-desc">Seller dashboard. Available balance, pending balance, lifetime earnings. Payout history (date, amount, method) and a "Cash out" CTA to a linked bank account.</div>
+              <div class="inv-meta">
+                <span class="inv-tag primary">From Vault · Sales</span>
+                <span class="inv-tag">2 balances</span>
+                <span class="inv-tag">Bank transfer</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="inv-item">
+            <div class="inv-icon soft">44</div>
+            <div class="inv-body">
+              <div class="inv-name">Block / Report User</div>
+              <div class="inv-desc">Privacy settings. List of blocked users (their listings and messages are hidden). Unblock + confirmation modal. Report-user flow for harassment or fraud.</div>
+              <div class="inv-meta">
+                <span class="inv-tag primary">From settings</span>
+                <span class="inv-tag">Privacy</span>
+                <span class="inv-tag">Anti-harassment</span>
               </div>
             </div>
           </div>
@@ -1460,87 +1811,10 @@
 
     </section>
 
-    <!-- ARCHITECTURE -->
-    <section id="architecture">
-      <div class="section-head">
-        <div class="num">— 05 / Architecture</div>
-        <h2>Modern, type-safe, opinionated.</h2>
-        <p>
-          The codebase is structured as a small, clean Next.js App Router project. State is
-          centralised in a single React Context that mirrors a typical e-commerce domain model
-          (products, cart, likes, chats, language). Everything is currently persisted in
-          <code>localStorage</code> for a self-contained frontend demo.
-        </p>
-      </div>
-
-      <div class="arch-grid">
-        <div class="arch-card">
-          <div class="layer">Frontend Framework</div>
-          <h4>Next.js 16 App Router</h4>
-          <p>Server components by default, "use client" islands for interactive views. Built-in font optimisation via <code>next/font</code>.</p>
-          <div class="stack">
-            <span class="tag">Next.js 16.2.9</span>
-            <span class="tag">React 19.2.4</span>
-            <span class="tag">TypeScript 5</span>
-          </div>
-        </div>
-        <div class="arch-card">
-          <div class="layer">Styling</div>
-          <h4>Tailwind CSS 4 + Design Tokens</h4>
-          <p>Material 3-inspired token set defined as CSS variables, with serif/sans fonts, colour roles, and spacing scale.</p>
-          <div class="stack">
-            <span class="tag">Tailwind 4</span>
-            <span class="tag">@theme tokens</span>
-            <span class="tag">Material Symbols</span>
-          </div>
-        </div>
-        <div class="arch-card">
-          <div class="layer">State &amp; Data</div>
-          <h4>AppContext + localStorage</h4>
-          <p>Centralised React Context exposes <code>useApp()</code> with products, cart, likes, chats and language. Persisted to localStorage.</p>
-          <div class="stack">
-            <span class="tag">React Context</span>
-            <span class="tag">localStorage</span>
-            <span class="tag">Hook-first</span>
-          </div>
-        </div>
-        <div class="arch-card">
-          <div class="layer">Internationalisation</div>
-          <h4>EN + AR with full RTL</h4>
-          <p>Per-string <code>isAr ? "EN" : "AR"</code> resolution, document direction toggled, fonts swap, icons auto-mirrored.</p>
-          <div class="stack">
-            <span class="tag">dir="rtl"</span>
-            <span class="tag">El Messiri</span>
-            <span class="tag">Noto Sans Arabic</span>
-          </div>
-        </div>
-        <div class="arch-card">
-          <div class="layer">Component Map</div>
-          <h4>10 view components</h4>
-          <p>DiscoverFeed · ProductDetails · ShoppingBag · CheckoutFlow · UserProfile · Activity · SearchFilters · Settings · SellItem · ChatOverlay</p>
-          <div class="stack">
-            <span class="tag">10 views</span>
-            <span class="tag">1 context</span>
-            <span class="tag">0 external libs</span>
-          </div>
-        </div>
-        <div class="arch-card">
-          <div class="layer">Tooling</div>
-          <h4>Quality &amp; DX</h4>
-          <p>ESLint with the Next.js config, Turbopack for sub-second HMR, and a strict tsconfig with path aliases.</p>
-          <div class="stack">
-            <span class="tag">ESLint 9</span>
-            <span class="tag">Turbopack</span>
-            <span class="tag">@/* alias</span>
-          </div>
-        </div>
-      </div>
-    </section>
-
     <!-- GALLERY -->
     <section id="gallery">
       <div class="section-head">
-        <div class="num">— 06 / Screens</div>
+        <div class="num">— 05 / Screens</div>
         <h2>Full screen gallery.</h2>
         <p>
           High-resolution captures of every major view in the application. Use these as a
@@ -1618,7 +1892,7 @@
     <!-- ROADMAP -->
     <section id="roadmap">
       <div class="section-head">
-        <div class="num">— 07 / Roadmap</div>
+        <div class="num">— 06 / Roadmap</div>
         <h2>What ships next.</h2>
         <p>
           The current build covers the full user journey end-to-end on the frontend. The next
