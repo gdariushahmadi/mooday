@@ -39,10 +39,12 @@ export const ProductDetailsView: React.FC<ProductDetailsViewProps> = ({
       <div className="flex items-center justify-between border-b border-outline-variant pb-4">
         <button
           onClick={onBack}
-          aria-label="Back"
+          aria-label={isAr ? "رجوع" : "Back"}
           className="text-on-surface hover:bg-surface-container-low transition-colors rounded-full p-2 flex items-center justify-center active:scale-95"
         >
-          <span className="material-symbols-outlined">arrow_back</span>
+          <span className="material-symbols-outlined" aria-hidden="true">
+            arrow_back
+          </span>
         </button>
         <div className="font-serif text-headline-sm text-primary tracking-widest uppercase text-center flex-grow">
           {isAr ? "تفاصيل المنتج" : "Product Details"}
@@ -77,8 +79,15 @@ export const ProductDetailsView: React.FC<ProductDetailsViewProps> = ({
             />
             {product.isAuthentic && (
               <div className="absolute top-4 left-4 bg-primary text-on-primary font-bold text-label-md px-3 py-1.5 rounded-lg shadow-md flex items-center gap-1.5 backdrop-blur-sm bg-opacity-90">
-                <span className="material-symbols-outlined text-[18px]">verified</span>
-                <span className="uppercase tracking-wider">{isAr ? "أصلي" : "Authentic"}</span>
+                <span
+                  className="material-symbols-outlined text-[18px]"
+                  aria-hidden="true"
+                >
+                  verified
+                </span>
+                <span className="uppercase tracking-wider">
+                  {isAr ? "أصلي" : "Authentic"}
+                </span>
               </div>
             )}
           </div>
@@ -117,13 +126,23 @@ export const ProductDetailsView: React.FC<ProductDetailsViewProps> = ({
               </h1>
               <button
                 onClick={() => toggleLike(product.id)}
-                aria-label="Save"
+                aria-label={
+                  isLiked
+                    ? isAr
+                      ? "إزالة من المفضلة"
+                      : "Remove from saved"
+                    : isAr
+                      ? "حفظ"
+                      : "Save"
+                }
+                aria-pressed={isLiked}
                 className={`text-outline hover:text-primary transition-colors p-2 rounded-full ${
                   isLiked ? "text-primary" : ""
                 }`}
               >
                 <span
                   className="material-symbols-outlined"
+                  aria-hidden="true"
                   style={{ fontVariationSettings: `'FILL' ${isLiked ? 1 : 0}` }}
                 >
                   favorite
@@ -144,7 +163,9 @@ export const ProductDetailsView: React.FC<ProductDetailsViewProps> = ({
                 <span className="text-label-md uppercase tracking-widest font-bold">
                   {isAr ? "سعر مودي:" : "Mooday Price:"}
                 </span>
-                <span className="text-headline-md font-bold">AED {product.price}</span>
+                <span className="text-headline-md font-bold">
+                  AED {product.price}
+                </span>
               </div>
             </div>
           </div>
@@ -182,7 +203,12 @@ export const ProductDetailsView: React.FC<ProductDetailsViewProps> = ({
               onClick={() => onStartChat(product)}
               className="text-primary hover:bg-primary-fixed/20 active:scale-95 transition-all text-label-sm border border-primary px-4 py-2 rounded-full font-bold flex items-center gap-1.5"
             >
-              <span className="material-symbols-outlined text-[18px]">chat</span>
+              <span
+                className="material-symbols-outlined text-[18px]"
+                aria-hidden="true"
+              >
+                chat
+              </span>
               {isAr ? "تحدث مع البائع" : "Chat with Seller"}
             </button>
           </div>

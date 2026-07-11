@@ -16,7 +16,7 @@ export const CheckoutFlowView: React.FC<CheckoutFlowViewProps> = ({
 }) => {
   const { language, cart, clearCart } = useApp();
   const isAr = language === "ar";
-  
+
   const [step, setStep] = useState<1 | 2>(1); // 1: Shipping/Address, 2: Payment
   const [paymentMethod, setPaymentMethod] = useState<"card" | "apple">("card");
   const [isProcessing, setIsProcessing] = useState(false);
@@ -28,15 +28,29 @@ export const CheckoutFlowView: React.FC<CheckoutFlowViewProps> = ({
   const [city, setCity] = useState("Dubai");
   const [address, setAddress] = useState("");
 
-  const items = checkoutProduct ? [{ product: checkoutProduct, quantity: 1 }] : cart;
-  const subtotal = items.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
+  // Payment fields
+  const [cardNumber, setCardNumber] = useState("");
+  const [expiry, setExpiry] = useState("");
+  const [cvv, setCvv] = useState("");
+
+  const items = checkoutProduct
+    ? [{ product: checkoutProduct, quantity: 1 }]
+    : cart;
+  const subtotal = items.reduce(
+    (sum, item) => sum + item.product.price * item.quantity,
+    0,
+  );
   const shipping = subtotal > 1000 || subtotal === 0 ? 0 : 25;
   const total = subtotal + shipping;
 
   const handleNextStep = (e: React.FormEvent) => {
     e.preventDefault();
     if (!fullName || !phone || !address) {
-      alert(isAr ? "يرجى ملء جميع الحقول المطلوبة!" : "Please fill in all required fields!");
+      alert(
+        isAr
+          ? "يرجى ملء جميع الحقول المطلوبة!"
+          : "Please fill in all required fields!",
+      );
       return;
     }
     setStep(2);
@@ -59,16 +73,19 @@ export const CheckoutFlowView: React.FC<CheckoutFlowViewProps> = ({
   if (isDone) {
     return (
       <div className="w-full max-w-[600px] mx-auto bg-surface-container-lowest border border-surface-container-high rounded-xl p-xl flex flex-col items-center text-center gap-lg my-10 shadow-lg">
-        <span className="material-symbols-outlined text-[72px] text-primary animate-bounce">
+        <span
+          className="material-symbols-outlined text-[72px] text-primary animate-bounce"
+          aria-hidden="true"
+        >
           check_circle
         </span>
-        
+
         <div>
           <h2 className="font-serif text-headline-md text-primary mb-2">
             {isAr ? "تم تسجيل طلبك بنجاح!" : "Order Placed Successfully!"}
           </h2>
           <p className="text-body-lg text-on-surface-variant font-sans">
-            {isAr 
+            {isAr
               ? "لقد تم خصم المبلغ بنجاح وحفظه في حساب مودي الآمن (الضمان). لن يتم تسليم المبلغ للبائع إلا بعد تأكيد استلامك للمنتج ومطابقته للوصف."
               : "Your payment has been successfully secured in Mooday's Escrow vault. Funds will only be released to the seller after you receive the item and confirm it matches the description."}
           </p>
@@ -77,38 +94,62 @@ export const CheckoutFlowView: React.FC<CheckoutFlowViewProps> = ({
         {/* Mock Tracking Timeline */}
         <div className="w-full bg-surface-container-low p-lg rounded-xl flex flex-col gap-md text-left font-sans">
           <h4 className="text-label-md uppercase tracking-wider text-primary font-bold">
-            {isAr ? "تتبع الشحنة (مودي اكسبريس)" : "Order Tracking (Mooday Express)"}
+            {isAr
+              ? "تتبع الشحنة (مودي اكسبريس)"
+              : "Order Tracking (Mooday Express)"}
           </h4>
           <div className="flex flex-col gap-4 mt-2">
             <div className="flex gap-md items-start">
               <div className="flex flex-col items-center">
-                <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center text-white text-[12px]">✓</div>
+                <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center text-white text-[12px]">
+                  ✓
+                </div>
                 <div className="w-[2px] h-10 bg-primary/20"></div>
               </div>
               <div>
-                <p className="text-label-md font-bold text-on-surface">{isAr ? "تم الدفع وتأكيد الطلب" : "Payment Secured & Escrow Activated"}</p>
-                <p className="text-label-sm text-on-surface-variant">Just now</p>
+                <p className="text-label-md font-bold text-on-surface">
+                  {isAr
+                    ? "تم الدفع وتأكيد الطلب"
+                    : "Payment Secured & Escrow Activated"}
+                </p>
+                <p className="text-label-sm text-on-surface-variant">
+                  Just now
+                </p>
               </div>
             </div>
 
             <div className="flex gap-md items-start">
               <div className="flex flex-col items-center">
-                <div className="w-6 h-6 rounded-full bg-surface-container-high border border-outline-variant flex items-center justify-center text-outline text-[12px]">2</div>
+                <div className="w-6 h-6 rounded-full bg-surface-container-high border border-outline-variant flex items-center justify-center text-outline text-[12px]">
+                  2
+                </div>
                 <div className="w-[2px] h-10 bg-surface-container-high"></div>
               </div>
               <div>
-                <p className="text-label-md font-bold text-on-surface-variant">{isAr ? "جاري استلام الطرد من البائع" : "Awaiting Seller Pickup"}</p>
-                <p className="text-label-sm text-on-surface-variant">Estimated within 24 hours</p>
+                <p className="text-label-md font-bold text-on-surface-variant">
+                  {isAr
+                    ? "جاري استلام الطرد من البائع"
+                    : "Awaiting Seller Pickup"}
+                </p>
+                <p className="text-label-sm text-on-surface-variant">
+                  Estimated within 24 hours
+                </p>
               </div>
             </div>
 
             <div className="flex gap-md items-start">
               <div className="flex flex-col items-center">
-                <div className="w-6 h-6 rounded-full bg-surface-container-high border border-outline-variant flex items-center justify-center text-outline text-[12px]">3</div>
+                <div className="w-6 h-6 rounded-full bg-surface-container-high border border-outline-variant flex items-center justify-center text-outline text-[12px]">
+                  3
+                </div>
               </div>
               <div>
-                <p className="text-label-md font-bold text-on-surface-variant">{isAr ? "التوصيل عبر آرامكس" : "In-Transit via Aramex"}</p>
-                <p className="text-label-sm text-on-surface-variant">Estimated 2-3 business days</p>
+                <p className="text-label-md font-bold text-on-surface-variant">
+                  {isAr ? "التوصيل عبر آرامكس" : "In-Transit via Aramex"}
+                </p>
+                <p className="text-label-sm text-on-surface-variant">
+                  Estimated 2-3 business days
+                </p>
               </div>
             </div>
           </div>
@@ -130,10 +171,12 @@ export const CheckoutFlowView: React.FC<CheckoutFlowViewProps> = ({
       <div className="flex items-center justify-between border-b border-outline-variant pb-4">
         <button
           onClick={() => (step === 2 ? setStep(1) : onBack())}
-          aria-label="Back"
+          aria-label={isAr ? "رجوع" : "Back"}
           className="text-on-surface hover:bg-surface-container-low transition-colors rounded-full p-2 flex items-center justify-center active:scale-95"
         >
-          <span className="material-symbols-outlined">arrow_back</span>
+          <span className="material-symbols-outlined" aria-hidden="true">
+            arrow_back
+          </span>
         </button>
         <div className="font-serif text-headline-sm text-primary tracking-widest uppercase text-center flex-grow">
           {isAr ? "إتمام عملية الشراء" : "Checkout Flow"}
@@ -144,23 +187,35 @@ export const CheckoutFlowView: React.FC<CheckoutFlowViewProps> = ({
       {/* Steps Indicator */}
       <div className="flex items-center justify-center gap-gutter my-2 font-sans">
         <div className="flex items-center gap-sm">
-          <div className={`w-8 h-8 rounded-full flex items-center justify-center text-label-sm font-bold ${
-            step >= 1 ? "bg-primary text-on-primary" : "bg-surface-container-high text-outline"
-          }`}>
+          <div
+            className={`w-8 h-8 rounded-full flex items-center justify-center text-label-sm font-bold ${
+              step >= 1
+                ? "bg-primary text-on-primary"
+                : "bg-surface-container-high text-outline"
+            }`}
+          >
             1
           </div>
-          <span className={`text-label-sm uppercase tracking-wider ${step >= 1 ? "text-primary font-bold" : "text-outline"}`}>
+          <span
+            className={`text-label-sm uppercase tracking-wider ${step >= 1 ? "text-primary font-bold" : "text-outline"}`}
+          >
             {isAr ? "العنوان" : "Shipping"}
           </span>
         </div>
         <div className="w-12 h-[2px] bg-outline-variant"></div>
         <div className="flex items-center gap-sm">
-          <div className={`w-8 h-8 rounded-full flex items-center justify-center text-label-sm font-bold ${
-            step === 2 ? "bg-primary text-on-primary" : "bg-surface-container-high text-outline"
-          }`}>
+          <div
+            className={`w-8 h-8 rounded-full flex items-center justify-center text-label-sm font-bold ${
+              step === 2
+                ? "bg-primary text-on-primary"
+                : "bg-surface-container-high text-outline"
+            }`}
+          >
             2
           </div>
-          <span className={`text-label-sm uppercase tracking-wider ${step === 2 ? "text-primary font-bold" : "text-outline"}`}>
+          <span
+            className={`text-label-sm uppercase tracking-wider ${step === 2 ? "text-primary font-bold" : "text-outline"}`}
+          >
             {isAr ? "الدفع والضمان" : "Escrow Payment"}
           </span>
         </div>
@@ -170,11 +225,14 @@ export const CheckoutFlowView: React.FC<CheckoutFlowViewProps> = ({
         {/* Forms side */}
         <div className="md:col-span-7 bg-surface-container-lowest border border-surface-container-high rounded-xl p-lg shadow-sm">
           {step === 1 ? (
-            <form onSubmit={handleNextStep} className="flex flex-col gap-md font-sans">
+            <form
+              onSubmit={handleNextStep}
+              className="flex flex-col gap-md font-sans"
+            >
               <h3 className="font-serif text-headline-sm text-on-surface mb-2 border-b border-surface-container-high pb-2">
                 {isAr ? "عنوان التوصيل" : "Delivery Address"}
               </h3>
-              
+
               <div className="flex flex-col gap-xs">
                 <label className="text-label-sm uppercase tracking-wider text-on-surface-variant font-bold">
                   {isAr ? "الاسم الكامل *" : "Full Name *"}
@@ -182,7 +240,9 @@ export const CheckoutFlowView: React.FC<CheckoutFlowViewProps> = ({
                 <input
                   type="text"
                   required
-                  placeholder={isAr ? "ادخل اسمك الكامل" : "Enter your full name"}
+                  placeholder={
+                    isAr ? "ادخل اسمك الكامل" : "Enter your full name"
+                  }
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
                   className="p-md bg-surface border border-outline-variant rounded-lg text-body-md focus:border-primary focus:ring-1 focus:ring-primary outline-none"
@@ -213,23 +273,39 @@ export const CheckoutFlowView: React.FC<CheckoutFlowViewProps> = ({
                   className="p-md bg-surface border border-outline-variant rounded-lg text-body-md focus:border-primary focus:ring-1 focus:ring-primary outline-none"
                 >
                   <option value="Dubai">{isAr ? "دبي" : "Dubai"}</option>
-                  <option value="Abu Dhabi">{isAr ? "أبوظبي" : "Abu Dhabi"}</option>
-                  <option value="Sharjah">{isAr ? "الشارقة" : "Sharjah"}</option>
+                  <option value="Abu Dhabi">
+                    {isAr ? "أبوظبي" : "Abu Dhabi"}
+                  </option>
+                  <option value="Sharjah">
+                    {isAr ? "الشارقة" : "Sharjah"}
+                  </option>
                   <option value="Ajman">{isAr ? "عجمان" : "Ajman"}</option>
-                  <option value="Ras Al Khaimah">{isAr ? "رأس الخيمة" : "Ras Al Khaimah"}</option>
-                  <option value="Fujairah">{isAr ? "الفجيرة" : "Fujairah"}</option>
-                  <option value="Umm Al Quwain">{isAr ? "أم القيوين" : "Umm Al Quwain"}</option>
+                  <option value="Ras Al Khaimah">
+                    {isAr ? "رأس الخيمة" : "Ras Al Khaimah"}
+                  </option>
+                  <option value="Fujairah">
+                    {isAr ? "الفجيرة" : "Fujairah"}
+                  </option>
+                  <option value="Umm Al Quwain">
+                    {isAr ? "أم القيوين" : "Umm Al Quwain"}
+                  </option>
                 </select>
               </div>
 
               <div className="flex flex-col gap-xs">
                 <label className="text-label-sm uppercase tracking-wider text-on-surface-variant font-bold">
-                  {isAr ? "عنوان الشارع والشقة *" : "Street & Villa/Apartment *" }
+                  {isAr
+                    ? "عنوان الشارع والشقة *"
+                    : "Street & Villa/Apartment *"}
                 </label>
                 <textarea
                   required
                   rows={3}
-                  placeholder={isAr ? "ادخل تفاصيل العنوان مثل اسم الشارع ورقم المبنى" : "Enter street name, building number, apartment/villa number"}
+                  placeholder={
+                    isAr
+                      ? "ادخل تفاصيل العنوان مثل اسم الشارع ورقم المبنى"
+                      : "Enter street name, building number, apartment/villa number"
+                  }
                   value={address}
                   onChange={(e) => setAddress(e.target.value)}
                   className="p-md bg-surface border border-outline-variant rounded-lg text-body-md focus:border-primary focus:ring-1 focus:ring-primary outline-none"
@@ -244,13 +320,18 @@ export const CheckoutFlowView: React.FC<CheckoutFlowViewProps> = ({
               </button>
             </form>
           ) : (
-            <form onSubmit={handlePaymentSubmit} className="flex flex-col gap-md font-sans">
+            <form
+              onSubmit={handlePaymentSubmit}
+              className="flex flex-col gap-md font-sans"
+            >
               <h3 className="font-serif text-headline-sm text-on-surface mb-2 border-b border-surface-container-high pb-2">
                 {isAr ? "الدفع الآمن والضمان" : "Secure Escrow Payment"}
               </h3>
 
               <div className="bg-primary/5 border border-primary/10 p-md rounded-lg text-body-md text-on-primary-fixed-variant mb-2">
-                <strong>{isAr ? "ضمان مودي الآمن:" : "Mooday Safe Escrow Policy:"}</strong>
+                <strong>
+                  {isAr ? "ضمان مودي الآمن:" : "Mooday Safe Escrow Policy:"}
+                </strong>
                 <p className="text-[13px] mt-1 leading-normal opacity-90">
                   {isAr
                     ? "أموالك بأمان! لن نقوم بتحويل المبلغ للبائع إلا بعد استلامك للمنتج وتأكيد مطابقته للوصف خلال ٢٤ ساعة من التسليم."
@@ -259,23 +340,61 @@ export const CheckoutFlowView: React.FC<CheckoutFlowViewProps> = ({
               </div>
 
               {/* Payment Methods */}
-              <div className="grid grid-cols-2 gap-md">
+              <div
+                className="grid grid-cols-2 gap-md"
+                role="radiogroup"
+                aria-label={isAr ? "طريقة الدفع" : "Payment Method"}
+              >
                 <div
                   onClick={() => setPaymentMethod("card")}
+                  role="radio"
+                  tabIndex={0}
+                  aria-checked={paymentMethod === "card"}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      setPaymentMethod("card");
+                    }
+                  }}
                   className={`border-2 p-md rounded-xl flex flex-col items-center justify-center gap-sm cursor-pointer active:scale-95 transition-all ${
-                    paymentMethod === "card" ? "border-primary bg-primary/5 text-primary" : "border-outline-variant text-outline"
+                    paymentMethod === "card"
+                      ? "border-primary bg-primary/5 text-primary"
+                      : "border-outline-variant text-outline"
                   }`}
                 >
-                  <span className="material-symbols-outlined text-[32px]">credit_card</span>
-                  <span className="text-label-sm font-bold">{isAr ? "بطاقة ائتمان" : "Credit Card"}</span>
+                  <span
+                    className="material-symbols-outlined text-[32px]"
+                    aria-hidden="true"
+                  >
+                    credit_card
+                  </span>
+                  <span className="text-label-sm font-bold">
+                    {isAr ? "بطاقة ائتمان" : "Credit Card"}
+                  </span>
                 </div>
                 <div
                   onClick={() => setPaymentMethod("apple")}
+                  role="radio"
+                  tabIndex={0}
+                  aria-checked={paymentMethod === "apple"}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      setPaymentMethod("apple");
+                    }
+                  }}
                   className={`border-2 p-md rounded-xl flex flex-col items-center justify-center gap-sm cursor-pointer active:scale-95 transition-all ${
-                    paymentMethod === "apple" ? "border-primary bg-primary/5 text-primary" : "border-outline-variant text-outline"
+                    paymentMethod === "apple"
+                      ? "border-primary bg-primary/5 text-primary"
+                      : "border-outline-variant text-outline"
                   }`}
                 >
-                  <span className="material-symbols-outlined text-[32px]">touch_id</span>
+                  <span
+                    className="material-symbols-outlined text-[32px]"
+                    aria-hidden="true"
+                  >
+                    touch_id
+                  </span>
                   <span className="text-label-sm font-bold">Apple Pay</span>
                 </div>
               </div>
@@ -288,7 +407,19 @@ export const CheckoutFlowView: React.FC<CheckoutFlowViewProps> = ({
                     </label>
                     <input
                       type="text"
+                      inputMode="numeric"
+                      autoComplete="cc-number"
                       placeholder="4000 1234 5678 9010"
+                      value={cardNumber}
+                      onChange={(e) => {
+                        const digits = e.target.value
+                          .replace(/\D/g, "")
+                          .slice(0, 16);
+                        const formatted = digits
+                          .replace(/(\d{4})(?=\d)/g, "$1 ")
+                          .trim();
+                        setCardNumber(formatted);
+                      }}
                       className="p-md bg-surface border border-outline-variant rounded-lg text-body-md focus:border-primary outline-none"
                     />
                   </div>
@@ -299,7 +430,22 @@ export const CheckoutFlowView: React.FC<CheckoutFlowViewProps> = ({
                       </label>
                       <input
                         type="text"
+                        inputMode="numeric"
+                        autoComplete="cc-exp"
                         placeholder="MM/YY"
+                        value={expiry}
+                        onChange={(e) => {
+                          const digits = e.target.value
+                            .replace(/\D/g, "")
+                            .slice(0, 4);
+                          if (digits.length <= 2) {
+                            setExpiry(digits);
+                          } else {
+                            setExpiry(
+                              `${digits.slice(0, 2)}/${digits.slice(2)}`,
+                            );
+                          }
+                        }}
                         className="p-md bg-surface border border-outline-variant rounded-lg text-body-md focus:border-primary outline-none"
                       />
                     </div>
@@ -309,7 +455,13 @@ export const CheckoutFlowView: React.FC<CheckoutFlowViewProps> = ({
                       </label>
                       <input
                         type="password"
+                        inputMode="numeric"
+                        autoComplete="cc-csc"
                         placeholder="***"
+                        value={cvv}
+                        onChange={(e) =>
+                          setCvv(e.target.value.replace(/\D/g, "").slice(0, 4))
+                        }
                         className="p-md bg-surface border border-outline-variant rounded-lg text-body-md focus:border-primary outline-none"
                       />
                     </div>
@@ -317,27 +469,47 @@ export const CheckoutFlowView: React.FC<CheckoutFlowViewProps> = ({
                 </div>
               ) : (
                 <div className="bg-surface-container-low p-lg border border-outline-variant rounded-xl flex flex-col items-center justify-center gap-md my-4">
-                  <div className="w-12 h-12 bg-black rounded-full flex items-center justify-center text-white">
-                    
+                  <div className="w-12 h-12 bg-black rounded-full flex items-center justify-center text-white font-semibold text-lg">
+                    Pay
                   </div>
                   <span className="text-label-sm font-bold text-on-surface text-center">
-                    {isAr ? "ادفع نقرة واحدة عبر Apple Pay" : "One-tap payment via Apple Pay"}
+                    {isAr
+                      ? "ادفع نقرة واحدة عبر Apple Pay"
+                      : "One-tap payment via Apple Pay"}
                   </span>
                 </div>
               )}
 
               <button
                 type="submit"
-                disabled={isProcessing}
+                aria-busy={isProcessing}
+                disabled={
+                  isProcessing ||
+                  (paymentMethod === "card" &&
+                    (cardNumber.replace(/\s/g, "").length < 15 ||
+                      !/^\d{2}\/\d{2}$/.test(expiry) ||
+                      cvv.length < 3))
+                }
                 className="btn-primary w-full py-4 rounded-xl text-label-md uppercase tracking-widest font-bold shadow-md btn-tactile text-center flex items-center justify-center gap-sm active:scale-95 transition-transform mt-4 disabled:opacity-50"
               >
                 {isProcessing ? (
                   <>
-                    <span className="material-symbols-outlined animate-spin text-[20px]">progress_activity</span>
-                    {isAr ? "جاري معالجة الدفع والضمان..." : "Securing Escrow Payment..."}
+                    <span
+                      className="material-symbols-outlined animate-spin text-[20px]"
+                      aria-hidden="true"
+                    >
+                      progress_activity
+                    </span>
+                    {isAr
+                      ? "جاري معالجة الدفع والضمان..."
+                      : "Securing Escrow Payment..."}
                   </>
                 ) : (
-                  <>{isAr ? "تأكيد الدفع (AED " + total + ")" : "Secure Checkout (AED " + total + ")"}</>
+                  <>
+                    {isAr
+                      ? "تأكيد الدفع (AED " + total + ")"
+                      : "Secure Checkout (AED " + total + ")"}
+                  </>
                 )}
               </button>
             </form>
@@ -354,7 +526,10 @@ export const CheckoutFlowView: React.FC<CheckoutFlowViewProps> = ({
             {/* Items list */}
             <div className="flex flex-col gap-sm max-h-[300px] overflow-y-auto no-scrollbar">
               {items.map((item) => (
-                <div key={item.product.id} className="flex gap-sm border-b border-surface-container-high pb-sm last:border-b-0 last:pb-0">
+                <div
+                  key={item.product.id}
+                  className="flex gap-sm border-b border-surface-container-high pb-sm last:border-b-0 last:pb-0"
+                >
                   <img
                     alt={isAr ? item.product.titleAr : item.product.titleEn}
                     src={item.product.image}
@@ -365,7 +540,9 @@ export const CheckoutFlowView: React.FC<CheckoutFlowViewProps> = ({
                       {isAr ? item.product.titleAr : item.product.titleEn}
                     </h5>
                     <span className="text-[11px] text-outline">
-                      {isAr ? `الكمية: ${item.quantity}` : `Qty: ${item.quantity}`}
+                      {isAr
+                        ? `الكمية: ${item.quantity}`
+                        : `Qty: ${item.quantity}`}
                     </span>
                   </div>
                   <span className="text-label-sm font-bold text-primary self-center">
@@ -383,8 +560,18 @@ export const CheckoutFlowView: React.FC<CheckoutFlowViewProps> = ({
                 <span>AED {subtotal}</span>
               </div>
               <div className="flex justify-between">
-                <span>{isAr ? "الشحن (مودي اكسبريس):" : "Shipping (Mooday Express):"}</span>
-                <span>{shipping === 0 ? (isAr ? "مجاني" : "FREE") : `AED ${shipping}`}</span>
+                <span>
+                  {isAr
+                    ? "الشحن (مودي اكسبريس):"
+                    : "Shipping (Mooday Express):"}
+                </span>
+                <span>
+                  {shipping === 0
+                    ? isAr
+                      ? "مجاني"
+                      : "FREE"
+                    : `AED ${shipping}`}
+                </span>
               </div>
             </div>
 

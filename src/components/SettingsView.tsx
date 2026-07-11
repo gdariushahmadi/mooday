@@ -56,9 +56,21 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onBack }) => {
       titleEn: "Security & Policy",
       titleAr: "الأمان والسياسة",
       items: [
-        { labelEn: "Security & Password", labelAr: "الأمان وكلمة المرور", icon: "security" },
-        { labelEn: "Privacy Policy", labelAr: "سياسة الخصوصية", icon: "policy" },
-        { labelEn: "Mooday Safe Escrow Policy", labelAr: "سياسة ضمان مودي الآمن", icon: "shield" },
+        {
+          labelEn: "Security & Password",
+          labelAr: "الأمان وكلمة المرور",
+          icon: "security",
+        },
+        {
+          labelEn: "Privacy Policy",
+          labelAr: "سياسة الخصوصية",
+          icon: "policy",
+        },
+        {
+          labelEn: "Mooday Safe Escrow Policy",
+          labelAr: "سياسة ضمان مودي الآمن",
+          icon: "shield",
+        },
       ],
     },
   ];
@@ -69,10 +81,12 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onBack }) => {
       <div className="flex items-center justify-between border-b border-outline-variant pb-4">
         <button
           onClick={onBack}
-          aria-label="Back"
+          aria-label={isAr ? "رجوع" : "Back"}
           className="text-on-surface hover:bg-surface-container-low transition-colors rounded-full p-2 flex items-center justify-center active:scale-95"
         >
-          <span className="material-symbols-outlined">arrow_back</span>
+          <span className="material-symbols-outlined" aria-hidden="true">
+            arrow_back
+          </span>
         </button>
         <div className="font-serif text-headline-sm text-primary tracking-widest uppercase text-center flex-grow">
           {isAr ? "الإعدادات والحساب" : "Settings & Account"}
@@ -95,7 +109,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onBack }) => {
                   className="flex items-center justify-between p-md border-b border-surface-container-high last:border-b-0"
                 >
                   <div className="flex items-center gap-md">
-                    <span className="material-symbols-outlined text-outline">
+                    <span
+                      className="material-symbols-outlined text-outline"
+                      aria-hidden="true"
+                    >
                       {item.icon}
                     </span>
                     <span className="text-body-lg text-on-surface font-bold">
@@ -117,7 +134,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onBack }) => {
                       {isAr ? item.valueAr : item.valueEn}
                     </span>
                   ) : (
-                    <span className="material-symbols-outlined text-outline text-[20px]">
+                    <span
+                      className="material-symbols-outlined text-outline text-[20px]"
+                      aria-hidden="true"
+                    >
                       chevron_right
                     </span>
                   )}
@@ -128,7 +148,16 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onBack }) => {
         ))}
 
         {/* Log out */}
-        <button className="border border-error text-error hover:bg-error/5 active:scale-95 transition-all text-label-sm uppercase tracking-widest font-bold py-4 rounded-xl text-center mt-md">
+        <button
+          type="button"
+          disabled
+          title={
+            isAr
+              ? "هذه الميزة ستصبح متاحة قريباً"
+              : "This feature will be available soon"
+          }
+          className="border border-error text-error hover:bg-error/5 active:scale-95 transition-all text-label-sm uppercase tracking-widest font-bold py-4 rounded-xl text-center mt-md disabled:opacity-50 disabled:cursor-not-allowed"
+        >
           {isAr ? "تسجيل الخروج" : "Log Out"}
         </button>
       </main>

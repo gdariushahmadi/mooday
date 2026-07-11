@@ -52,7 +52,7 @@ export const SellItemView: React.FC<SellItemViewProps> = ({
       conditionAr,
       sellerNameEn: "Fatima AlMansoori",
       sellerNameAr: "فاطمة المنصوري",
-      sellerAvatar: "https://lh3.googleusercontent.com/aida-public/AB6AXuBvXVMd9yf_cKLCM9iTBl0hkMxU8qwGlmR5zem59BMB4KmmPqnBFhlgGAdKm4hXbMRi5WoJABe4HbXGvd5qUOM6ZDdF_v3QXh_J7RBOYPZl9bLKp3s7gEOzyEsENfrnZzBStCslQ15yhaIRsRcqDRAkriyyBE2jAXKQX-5NSo1i0jTR9DtITlHUH9Ygpo__Ov153J2Qo5j1U9G-7y_7dmLZQHKqe7ikbz2dHf0i3lX-pmK23BFOKsRXCXiniZprDQ11X91fLpDsmUBq",
+      sellerAvatar: "/sellers/fatima-almansoori.jpg",
       sellerTypeEn: "Verified Closet",
       sellerTypeAr: "خزانة معتمدة",
       image: mockImageOptions[selectedImageIdx].url,
@@ -85,7 +85,6 @@ export const SellItemView: React.FC<SellItemViewProps> = ({
 
       <main className="bg-surface-container-lowest border border-surface-container-high rounded-xl p-lg mt-md shadow-sm font-sans">
         <form onSubmit={handleSubmit} className="flex flex-col gap-md">
-          
           {/* Mock Image Picker */}
           <div className="flex flex-col gap-xs">
             <label className="text-label-sm uppercase tracking-wider text-on-surface-variant font-bold">
@@ -97,7 +96,9 @@ export const SellItemView: React.FC<SellItemViewProps> = ({
                   key={idx}
                   onClick={() => setSelectedImageIdx(idx)}
                   className={`relative aspect-square rounded-xl overflow-hidden cursor-pointer border-2 active:scale-95 transition-all ${
-                    idx === selectedImageIdx ? "border-primary ring-2 ring-primary/20 scale-100" : "border-outline-variant opacity-70"
+                    idx === selectedImageIdx
+                      ? "border-primary ring-2 ring-primary/20 scale-100"
+                      : "border-outline-variant opacity-70"
                   }`}
                 >
                   <img
@@ -107,7 +108,9 @@ export const SellItemView: React.FC<SellItemViewProps> = ({
                   />
                   {idx === selectedImageIdx && (
                     <div className="absolute inset-0 bg-primary/20 flex items-center justify-center text-white">
-                      <span className="material-symbols-outlined text-[32px]">check_circle</span>
+                      <span className="material-symbols-outlined text-[32px]">
+                        check_circle
+                      </span>
                     </div>
                   )}
                 </div>
@@ -163,7 +166,9 @@ export const SellItemView: React.FC<SellItemViewProps> = ({
             </div>
             <div className="flex flex-col gap-xs">
               <label className="text-label-sm uppercase tracking-wider text-on-surface-variant font-bold">
-                {isAr ? "السعر الأصلي بالتجزئة (AED) *" : "Original Retail Price (AED) *"}
+                {isAr
+                  ? "السعر الأصلي بالتجزئة (AED) *"
+                  : "Original Retail Price (AED) *"}
               </label>
               <input
                 type="number"
@@ -202,9 +207,15 @@ export const SellItemView: React.FC<SellItemViewProps> = ({
               onChange={handleConditionChange}
               className="p-md bg-surface border border-outline-variant rounded-lg text-body-md focus:border-primary outline-none"
             >
-              <option value="New with Tags">{isAr ? "جديد بالملصقات" : "New with Tags"}</option>
-              <option value="Excellent Condition">{isAr ? "حالة ممتازة" : "Excellent Condition"}</option>
-              <option value="Gently Used">{isAr ? "مستعمل خفيف" : "Gently Used"}</option>
+              <option value="New with Tags">
+                {isAr ? "جديد بالملصقات" : "New with Tags"}
+              </option>
+              <option value="Excellent Condition">
+                {isAr ? "حالة ممتازة" : "Excellent Condition"}
+              </option>
+              <option value="Gently Used">
+                {isAr ? "مستعمل خفيف" : "Gently Used"}
+              </option>
             </select>
           </div>
 

@@ -1,7 +1,15 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, {
+  createContext,
+  useContext,
+  useCallback,
+  useEffect,
+  useMemo,
+  useSyncExternalStore,
+} from "react";
 import { defaultProducts, SEED_VERSION } from "@/data/products";
+import { useLocalStorageState } from "@/lib/hooks";
 
 export interface Product {
   id: string;
@@ -38,6 +46,7 @@ export interface ChatThread {
   sellerAvatar: string;
   productTitle: string;
   productImage: string;
+  productPrice: number;
   lastMessage: string;
   lastMessageTime: string;
   messages: ChatMessage[];
@@ -58,6 +67,7 @@ interface AppContextType {
   cart: CartItem[];
   addToCart: (product: Product) => void;
   removeFromCart: (productId: string) => void;
+  updateQuantity: (productId: string, quantity: number) => void;
   clearCart: () => void;
   chats: ChatThread[];
   sendChatMessage: (threadId: string, text: string) => void;
@@ -66,233 +76,387 @@ interface AppContextType {
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
-export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [language, setLanguageState] = useState<"en" | "ar">("en");
-  const [listings, setListings] = useState<Product[]>(defaultProducts);
-  const [likes, setLikes] = useState<string[]>([]);
-  const [cart, setCart] = useState<CartItem[]>([]);
-  const [chats, setChats] = useState<ChatThread[]>([]);
+const STORAGE_KEYS = {
+  lang: "mooday_lang",
+  likes: "mooday_likes",
+  cart: "mooday_cart",
+  chats: "mooday_chats",
+  listings: "mooday_listings",
+  seedVersion: "mooday_seed_version",
+} as const;
 
-  // Load from LocalStorage
-  useEffect(() => {
-    const savedLanguage = localStorage.getItem("mooday_lang") as "en" | "ar";
-    if (savedLanguage) {
-      setLanguageState(savedLanguage);
-      document.documentElement.dir = savedLanguage === "ar" ? "rtl" : "ltr";
-      document.documentElement.lang = savedLanguage;
-    }
+const DEFAULT_CHATS: ChatThread[] = [
+  {
+    id: "chat-handbag-tan",
+    sellerName: "Sarah's Vintage",
+    sellerAvatar: defaultProducts[0].sellerAvatar,
+    productTitle: "Vintage Classic Handbag in Tan Leather",
+    productImage: defaultProducts[0].image,
+    productPrice: defaultProducts[0].price,
+    lastMessage: "Let me know if you would like to make an offer!",
+    lastMessageTime: "Yesterday",
+    messages: [
+      {
+        id: "1",
+        sender: "user",
+        text: "Hi, is this handbag still available?",
+        time: "Yesterday, 3:45 PM",
+      },
+      {
+        id: "2",
+        sender: "seller",
+        text: "Hi there! Yes, it is still available. It's in excellent condition.",
+        time: "Yesterday, 3:50 PM",
+      },
+      {
+        id: "3",
+        sender: "seller",
+        text: "Let me know if you would like to make an offer!",
+        time: "Yesterday, 3:51 PM",
+      },
+    ],
+  },
+];
 
-    const savedLikes = localStorage.getItem("mooday_likes");
-    if (savedLikes) setLikes(JSON.parse(savedLikes));
+// ---------- listings store (with seed migration) ----------
 
-    const savedCart = localStorage.getItem("mooday_cart");
-    if (savedCart) setCart(JSON.parse(savedCart));
+function subscribeStorage(callback: () => void): () => void {
+  window.addEventListener("storage", callback);
+  return () => window.removeEventListener("storage", callback);
+}
 
-    const savedSeedVersion = localStorage.getItem("mooday_seed_version");
-    const savedListings = localStorage.getItem("mooday_listings");
+function getListingsSnapshot(): Product[] {
+  try {
+    const savedSeedVersion = localStorage.getItem(STORAGE_KEYS.seedVersion);
+    const savedListings = localStorage.getItem(STORAGE_KEYS.listings);
+
     if (savedSeedVersion !== SEED_VERSION) {
-      localStorage.setItem("mooday_seed_version", SEED_VERSION);
-      localStorage.setItem("mooday_listings", JSON.stringify(defaultProducts));
-      setListings(defaultProducts);
-    } else if (savedListings) {
-      setListings(JSON.parse(savedListings));
+      // Migration: preserve user-created listings, refresh seed products.
+      let customListings: Product[] = [];
+      if (savedListings) {
+        try {
+          const parsed = JSON.parse(savedListings);
+          if (Array.isArray(parsed)) {
+            customListings = parsed.filter(
+              (p: Product) =>
+                typeof p?.id === "string" && p.id.startsWith("custom-"),
+            );
+          }
+        } catch {
+          // Corrupted data — start fresh.
+        }
+      }
+      const merged = [...customListings, ...defaultProducts];
+      localStorage.setItem(STORAGE_KEYS.seedVersion, SEED_VERSION);
+      localStorage.setItem(STORAGE_KEYS.listings, JSON.stringify(merged));
+      return merged;
     }
 
-    const savedChats = localStorage.getItem("mooday_chats");
-    if (savedChats) {
-      setChats(JSON.parse(savedChats));
-    } else {
-      // Setup a default demo chat thread
-      const initialThread: ChatThread = {
-        id: "chat-handbag-tan",
-        sellerName: "Sarah's Vintage",
-        sellerAvatar: defaultProducts[0].sellerAvatar,
-        productTitle: "Vintage Classic Handbag in Tan Leather",
-        productImage: defaultProducts[0].image,
-        lastMessage: "Let me know if you would like to make an offer!",
-        lastMessageTime: "Yesterday",
-        messages: [
-          { id: "1", sender: "user", text: "Hi, is this handbag still available?", time: "Yesterday, 3:45 PM" },
-          { id: "2", sender: "seller", text: "Hi there! Yes, it is still available. It's in excellent condition.", time: "Yesterday, 3:50 PM" },
-          { id: "3", sender: "seller", text: "Let me know if you would like to make an offer!", time: "Yesterday, 3:51 PM" }
-        ]
-      };
-      setChats([initialThread]);
+    if (savedListings) {
+      const parsed = JSON.parse(savedListings);
+      return Array.isArray(parsed) ? parsed : defaultProducts;
     }
-  }, []);
+    return defaultProducts;
+  } catch {
+    return defaultProducts;
+  }
+}
 
-  const setLanguage = (lang: "en" | "ar") => {
-    setLanguageState(lang);
-    localStorage.setItem("mooday_lang", lang);
-    document.documentElement.dir = lang === "ar" ? "rtl" : "ltr";
-    document.documentElement.lang = lang;
-  };
+function writeListings(next: Product[]) {
+  localStorage.setItem(STORAGE_KEYS.listings, JSON.stringify(next));
+  window.dispatchEvent(
+    new StorageEvent("storage", { key: STORAGE_KEYS.listings }),
+  );
+}
 
-  const addListing = (product: Omit<Product, "id" | "saves">) => {
+// ---------- provider ----------
+
+export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
+  const [language, setLang] = useLocalStorageState<"en" | "ar">(
+    STORAGE_KEYS.lang,
+    "en",
+    {
+      serialize: (v) => v,
+      deserialize: (v) => (v === "ar" ? "ar" : "en"),
+    },
+  );
+
+  const listings = useSyncExternalStore(
+    subscribeStorage,
+    getListingsSnapshot,
+    () => defaultProducts,
+  );
+
+  const [likes, setLikes] = useLocalStorageState<string[]>(
+    STORAGE_KEYS.likes,
+    [],
+  );
+  const [cart, setCart] = useLocalStorageState<CartItem[]>(
+    STORAGE_KEYS.cart,
+    [],
+  );
+  const [chats, setChats] = useLocalStorageState<ChatThread[]>(
+    STORAGE_KEYS.chats,
+    DEFAULT_CHATS,
+  );
+
+  // Sync document direction with language — side effect only, no setState.
+  useEffect(() => {
+    document.documentElement.dir = language === "ar" ? "rtl" : "ltr";
+    document.documentElement.lang = language;
+  }, [language]);
+
+  const setLanguage = useCallback(
+    (lang: "en" | "ar") => {
+      setLang(lang);
+    },
+    [setLang],
+  );
+
+  const addListing = useCallback((product: Omit<Product, "id" | "saves">) => {
     const newProduct: Product = {
       ...product,
       id: `custom-${Date.now()}`,
-      saves: 0
+      saves: 0,
     };
-    const updated = [newProduct, ...listings];
-    setListings(updated);
-    localStorage.setItem("mooday_listings", JSON.stringify(updated));
-  };
+    const current = getListingsSnapshot();
+    writeListings([newProduct, ...current]);
+  }, []);
 
-  const toggleLike = (productId: string) => {
-    let updatedLikes: string[];
-    if (likes.includes(productId)) {
-      updatedLikes = likes.filter(id => id !== productId);
-    } else {
-      updatedLikes = [...likes, productId];
-    }
-    setLikes(updatedLikes);
-    localStorage.setItem("mooday_likes", JSON.stringify(updatedLikes));
-  };
-
-  const addToCart = (product: Product) => {
-    let updatedCart = [...cart];
-    const existingIndex = updatedCart.findIndex(item => item.product.id === product.id);
-
-    if (existingIndex > -1) {
-      updatedCart[existingIndex].quantity += 1;
-    } else {
-      updatedCart.push({ product, quantity: 1 });
-    }
-    setCart(updatedCart);
-    localStorage.setItem("mooday_cart", JSON.stringify(updatedCart));
-  };
-
-  const removeFromCart = (productId: string) => {
-    const updatedCart = cart.filter(item => item.product.id !== productId);
-    setCart(updatedCart);
-    localStorage.setItem("mooday_cart", JSON.stringify(updatedCart));
-  };
-
-  const clearCart = () => {
-    setCart([]);
-    localStorage.setItem("mooday_cart", JSON.stringify([]));
-  };
-
-  const createChatThread = (product: Product): string => {
-    const threadId = `chat-${product.id}`;
-    const existing = chats.find(c => c.id === threadId);
-    if (existing) return threadId;
-
-    const newThread: ChatThread = {
-      id: threadId,
-      sellerName: language === "ar" ? product.sellerNameAr : product.sellerNameEn,
-      sellerAvatar: product.sellerAvatar,
-      productTitle: language === "ar" ? product.titleAr : product.titleEn,
-      productImage: product.image,
-      lastMessage: language === "ar" ? "مرحباً! كيف يمكنني مساعدتك؟" : "Hi! How can I help you?",
-      lastMessageTime: "Just now",
-      messages: [
-        {
-          id: "1",
-          sender: "seller",
-          text: language === "ar" 
-            ? `مرحباً! أنا سعيد باهتمامك بـ "${product.titleAr}". كيف يمكنني مساعدتك؟`
-            : `Hi there! Glad you're interested in my "${product.titleEn}". How can I help you today?`,
-          time: "Just now"
-        }
-      ]
-    };
-
-    const updated = [newThread, ...chats];
-    setChats(updated);
-    localStorage.setItem("mooday_chats", JSON.stringify(updated));
-    return threadId;
-  };
-
-  const sendChatMessage = (threadId: string, text: string) => {
-    const threadIndex = chats.findIndex(c => c.id === threadId);
-    if (threadIndex === -1) return;
-
-    const now = new Date();
-    const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    
-    const userMsg: ChatMessage = {
-      id: `msg-${Date.now()}`,
-      sender: "user",
-      text,
-      time: timeStr
-    };
-
-    const updatedThreads = [...chats];
-    const thread = { ...updatedThreads[threadIndex] };
-    thread.messages = [...thread.messages, userMsg];
-    thread.lastMessage = text;
-    thread.lastMessageTime = timeStr;
-    
-    updatedThreads[threadIndex] = thread;
-    setChats(updatedThreads);
-    localStorage.setItem("mooday_chats", JSON.stringify(updatedThreads));
-
-    // Simulate smart auto-reply from seller
-    setTimeout(() => {
-      let replyText = "";
-      const lowerText = text.toLowerCase();
-
-      // Simple keywords in English & Arabic
-      if (lowerText.includes("authentic") || lowerText.includes("اصل") || lowerText.includes("أصلي")) {
-        replyText = language === "ar"
-          ? "نعم، هذا أصلي 100٪. لقد اشتريته من المتجر الرسمي ويمكنني تقديم الإيصال إذا لزم الأمر."
-          : "Yes, it is 100% authentic! I purchased it from the official store and can share receipts if needed.";
-      } else if (lowerText.includes("offer") || lowerText.includes("price") || lowerText.includes("discount") || lowerText.includes("سعره") || lowerText.includes("خصم") || lowerText.includes("تخفيض")) {
-        replyText = language === "ar"
-          ? "أنا منفتح على العروض المعقولة، لكن يرجى العلم أنه معروض بالفعل بسعر جيد جداً مقارنة بسعر التجزئة الأصلي!"
-          : "I am open to reasonable offers, but please note it's already priced very low compared to its retail price!";
-      } else if (lowerText.includes("condition") || lowerText.includes("damage") || lowerText.includes("نظيف") || lowerText.includes("عيوب")) {
-        replyText = language === "ar"
-          ? "الحالة ممتازة كما هو موضح بالصور. لا توجد خدوش أو تلف، واستخدمته بضع مرات فقط."
-          : "The condition is excellent, just like in the photos. No scratches or damage, lightly used only a few times.";
-      } else {
-        replyText = language === "ar"
-          ? "شكراً لك. سأتحقق من ذلك وأرد عليك بالتفاصيل قريباً!"
-          : "Thanks! Let me check on that and get back to you with the details shortly.";
-      }
-
-      const sellerMsg: ChatMessage = {
-        id: `msg-${Date.now() + 1}`,
-        sender: "seller",
-        text: replyText,
-        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-      };
-
-      const finalThreads = [...updatedThreads];
-      const targetThread = { ...finalThreads[threadIndex] };
-      targetThread.messages = [...targetThread.messages, sellerMsg];
-      targetThread.lastMessage = replyText;
-      targetThread.lastMessageTime = sellerMsg.time;
-
-      finalThreads[threadIndex] = targetThread;
-      setChats(finalThreads);
-      localStorage.setItem("mooday_chats", JSON.stringify(finalThreads));
-    }, 1500);
-  };
-
-  return (
-    <AppContext.Provider
-      value={{
-        language,
-        setLanguage,
-        listings,
-        addListing,
-        likes,
-        toggleLike,
-        cart,
-        addToCart,
-        removeFromCart,
-        clearCart,
-        chats,
-        sendChatMessage,
-        createChatThread,
-      }}
-    >
-      {children}
-    </AppContext.Provider>
+  const toggleLike = useCallback(
+    (productId: string) => {
+      setLikes((prev) =>
+        prev.includes(productId)
+          ? prev.filter((id) => id !== productId)
+          : [...prev, productId],
+      );
+    },
+    [setLikes],
   );
+
+  const addToCart = useCallback(
+    (product: Product) => {
+      setCart((prev) => {
+        const idx = prev.findIndex((item) => item.product.id === product.id);
+        if (idx > -1) {
+          return prev.map((item, i) =>
+            i === idx ? { ...item, quantity: item.quantity + 1 } : item,
+          );
+        }
+        return [...prev, { product, quantity: 1 }];
+      });
+    },
+    [setCart],
+  );
+
+  const removeFromCart = useCallback(
+    (productId: string) => {
+      setCart((prev) => prev.filter((item) => item.product.id !== productId));
+    },
+    [setCart],
+  );
+
+  const clearCart = useCallback(() => {
+    setCart([]);
+  }, [setCart]);
+
+  const updateQuantity = useCallback(
+    (productId: string, quantity: number) => {
+      if (quantity <= 0) {
+        removeFromCart(productId);
+        return;
+      }
+      setCart((prev) =>
+        prev.map((item) =>
+          item.product.id === productId ? { ...item, quantity } : item,
+        ),
+      );
+    },
+    [setCart, removeFromCart],
+  );
+
+  const createChatThread = useCallback(
+    (product: Product): string => {
+      const threadId = `chat-${product.id}`;
+
+      setChats((prev) => {
+        if (prev.find((c) => c.id === threadId)) return prev;
+
+        const newThread: ChatThread = {
+          id: threadId,
+          sellerName:
+            language === "ar" ? product.sellerNameAr : product.sellerNameEn,
+          sellerAvatar: product.sellerAvatar,
+          productTitle: language === "ar" ? product.titleAr : product.titleEn,
+          productImage: product.image,
+          productPrice: product.price,
+          lastMessage:
+            language === "ar"
+              ? "مرحباً! كيف يمكنني مساعدتك؟"
+              : "Hi! How can I help you?",
+          lastMessageTime: "Just now",
+          messages: [
+            {
+              id: "1",
+              sender: "seller",
+              text:
+                language === "ar"
+                  ? `مرحباً! أنا سعيد باهتمامك بـ "${product.titleAr}". كيف يمكنني مساعدتك؟`
+                  : `Hi there! Glad you're interested in my "${product.titleEn}". How can I help you today?`,
+              time: "Just now",
+            },
+          ],
+        };
+
+        return [newThread, ...prev];
+      });
+
+      return threadId;
+    },
+    [setChats, language],
+  );
+
+  const sendChatMessage = useCallback(
+    (threadId: string, text: string) => {
+      const now = new Date();
+      const timeStr = now.toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+
+      // Add the user's message immediately.
+      setChats((prev) => {
+        const idx = prev.findIndex((c) => c.id === threadId);
+        if (idx === -1) return prev;
+
+        const userMsg: ChatMessage = {
+          id: `msg-${Date.now()}`,
+          sender: "user",
+          text,
+          time: timeStr,
+        };
+
+        const updatedThread: ChatThread = {
+          ...prev[idx],
+          messages: [...prev[idx].messages, userMsg],
+          lastMessage: text,
+          lastMessageTime: timeStr,
+        };
+
+        return prev.map((c, i) => (i === idx ? updatedThread : c));
+      });
+
+      // Simulate smart auto-reply from seller.
+      setTimeout(() => {
+        let replyText = "";
+        const lowerText = text.toLowerCase();
+
+        if (
+          lowerText.includes("authentic") ||
+          lowerText.includes("اصل") ||
+          lowerText.includes("أصلي")
+        ) {
+          replyText =
+            language === "ar"
+              ? "نعم، هذا أصلي 100٪. لقد اشتريته من المتجر الرسمي ويمكنني تقديم الإيصال إذا لزم الأمر."
+              : "Yes, it is 100% authentic! I purchased it from the official store and can share receipts if needed.";
+        } else if (
+          lowerText.includes("offer") ||
+          lowerText.includes("price") ||
+          lowerText.includes("discount") ||
+          lowerText.includes("سعره") ||
+          lowerText.includes("خصم") ||
+          lowerText.includes("تخفيض")
+        ) {
+          replyText =
+            language === "ar"
+              ? "أنا منفتح على العروض المعقولة، لكن يرجى العلم أنه معروض بالفعل بسعر جيد جداً مقارنة بسعر التجزئة الأصلي!"
+              : "I am open to reasonable offers, but please note it's already priced very low compared to its retail price!";
+        } else if (
+          lowerText.includes("condition") ||
+          lowerText.includes("damage") ||
+          lowerText.includes("نظيف") ||
+          lowerText.includes("عيوب")
+        ) {
+          replyText =
+            language === "ar"
+              ? "الحالة ممتازة كما هو موضح بالصور. لا توجد خدوش أو تلف، واستخدمته بضع مرات فقط."
+              : "The condition is excellent, just like in the photos. No scratches or damage, lightly used only a few times.";
+        } else {
+          replyText =
+            language === "ar"
+              ? "شكراً لك. سأتحقق من ذلك وأرد عليك بالتفاصيل قريباً!"
+              : "Thanks! Let me check on that and get back to you with the details shortly.";
+        }
+
+        const sellerTime = new Date().toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+
+        setChats((prev) => {
+          const idx = prev.findIndex((c) => c.id === threadId);
+          if (idx === -1) return prev;
+
+          const sellerMsg: ChatMessage = {
+            id: `msg-${Date.now() + 1}`,
+            sender: "seller",
+            text: replyText,
+            time: sellerTime,
+          };
+
+          const updatedThread: ChatThread = {
+            ...prev[idx],
+            messages: [...prev[idx].messages, sellerMsg],
+            lastMessage: replyText,
+            lastMessageTime: sellerTime,
+          };
+
+          return prev.map((c, i) => (i === idx ? updatedThread : c));
+        });
+      }, 1500);
+    },
+    [setChats, language],
+  );
+
+  const value = useMemo(
+    () => ({
+      language,
+      setLanguage,
+      listings,
+      addListing,
+      likes,
+      toggleLike,
+      cart,
+      addToCart,
+      removeFromCart,
+      updateQuantity,
+      clearCart,
+      chats,
+      sendChatMessage,
+      createChatThread,
+    }),
+    [
+      language,
+      setLanguage,
+      listings,
+      addListing,
+      likes,
+      toggleLike,
+      cart,
+      addToCart,
+      removeFromCart,
+      updateQuantity,
+      clearCart,
+      chats,
+      sendChatMessage,
+      createChatThread,
+    ],
+  );
+
+  return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 };
 
 export const useApp = () => {

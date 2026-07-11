@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { useApp, Product } from "@/context/AppContext";
+import { ClickableCard } from "./ClickableCard";
 
 interface UserProfileViewProps {
   onSelectProduct: (product: Product) => void;
@@ -14,14 +15,16 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({
 }) => {
   const { language, listings, likes, chats } = useApp();
   const isAr = language === "ar";
-  
-  const [activeTab, setActiveTab] = useState<"listings" | "likes" | "chats">("listings");
+
+  const [activeTab, setActiveTab] = useState<"listings" | "likes" | "chats">(
+    "listings",
+  );
 
   // Mock current user profile
   const userProfile = {
     nameEn: "Fatima AlMansoori",
     nameAr: "فاطمة المنصوري",
-    avatar: "https://lh3.googleusercontent.com/aida-public/AB6AXuBvXVMd9yf_cKLCM9iTBl0hkMxU8qwGlmR5zem59BMB4KmmPqnBFhlgGAdKm4hXbMRi5WoJABe4HbXGvd5qUOM6ZDdF_v3QXh_J7RBOYPZl9bLKp3s7gEOzyEsENfrnZzBStCslQ15yhaIRsRcqDRAkriyyBE2jAXKQX-5NSo1i0jTR9DtITlHUH9Ygpo__Ov153J2Qo5j1U9G-7y_7dmLZQHKqe7ikbz2dHf0i3lX-pmK23BFOKsRXCXiniZprDQ11X91fLpDsmUBq",
+    avatar: "/sellers/fatima-almansoori.jpg",
     handle: "@fatima_dxb",
     rating: 4.9,
     reviewsCount: 28,
@@ -32,8 +35,8 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({
   };
 
   // User's custom created listings (for simplicity, we assume custom listings belong to this user)
-  const userListings = listings.filter(item => item.id.startsWith("custom-"));
-  const likedItems = listings.filter(item => likes.includes(item.id));
+  const userListings = listings.filter((item) => item.id.startsWith("custom-"));
+  const likedItems = listings.filter((item) => likes.includes(item.id));
 
   return (
     <div className="w-full max-w-[1000px] mx-auto flex flex-col gap-lg pb-10">
@@ -49,22 +52,38 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({
           <h2 className="font-serif text-headline-sm sm:text-headline-md text-on-surface">
             {isAr ? userProfile.nameAr : userProfile.nameEn}
           </h2>
-          <p className="text-label-md text-primary font-bold">{userProfile.handle}</p>
+          <p className="text-label-md text-primary font-bold">
+            {userProfile.handle}
+          </p>
           <p className="text-label-sm text-on-surface-variant flex items-center gap-1 mt-1 justify-center sm:justify-start">
-            <span className="material-symbols-outlined text-[16px] text-primary">location_on</span>
+            <span
+              className="material-symbols-outlined text-[16px] text-primary"
+              aria-hidden="true"
+            >
+              location_on
+            </span>
             {isAr ? userProfile.locationAr : userProfile.locationEn}
           </p>
 
           {/* Review stars */}
-          <div className="flex items-center gap-1 mt-2 justify-center sm:justify-start">
-            <div className="flex text-tertiary-container">
+          <div
+            className="flex items-center gap-1 mt-2 justify-center sm:justify-start"
+            aria-label={`${userProfile.rating} ${isAr ? "تقييم" : "stars"}`}
+          >
+            <div className="flex text-tertiary-container" aria-hidden="true">
               {[...Array(5)].map((_, i) => (
-                <span key={i} className="material-symbols-outlined text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>
+                <span
+                  key={i}
+                  className="material-symbols-outlined text-[18px]"
+                  style={{ fontVariationSettings: "'FILL' 1" }}
+                >
                   star
                 </span>
               ))}
             </div>
-            <span className="text-label-sm text-on-surface font-bold ml-1">{userProfile.rating}</span>
+            <span className="text-label-sm text-on-surface font-bold ml-1">
+              {userProfile.rating}
+            </span>
             <span className="text-[11px] text-on-surface-variant font-sans">
               ({userProfile.reviewsCount} {isAr ? "تقييم" : "reviews"})
             </span>
@@ -104,24 +123,36 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({
       <nav className="flex border-b border-surface-variant justify-around sm:justify-start sm:gap-lg">
         <button
           onClick={() => setActiveTab("listings")}
+          aria-selected={activeTab === "listings"}
+          role="tab"
           className={`pb-3 font-bold uppercase tracking-widest text-label-md whitespace-nowrap px-2 border-b-2 transition-all ${
-            activeTab === "listings" ? "border-primary text-primary" : "border-transparent text-on-surface-variant hover:text-on-surface"
+            activeTab === "listings"
+              ? "border-primary text-primary"
+              : "border-transparent text-on-surface-variant hover:text-on-surface"
           }`}
         >
           {isAr ? "خزانتي معروضاتي" : "My Closet"} ({userListings.length})
         </button>
         <button
           onClick={() => setActiveTab("likes")}
+          aria-selected={activeTab === "likes"}
+          role="tab"
           className={`pb-3 font-bold uppercase tracking-widest text-label-md whitespace-nowrap px-2 border-b-2 transition-all ${
-            activeTab === "likes" ? "border-primary text-primary" : "border-transparent text-on-surface-variant hover:text-on-surface"
+            activeTab === "likes"
+              ? "border-primary text-primary"
+              : "border-transparent text-on-surface-variant hover:text-on-surface"
           }`}
         >
           {isAr ? "المفضلات" : "My Loves"} ({likedItems.length})
         </button>
         <button
           onClick={() => setActiveTab("chats")}
+          aria-selected={activeTab === "chats"}
+          role="tab"
           className={`pb-3 font-bold uppercase tracking-widest text-label-md whitespace-nowrap px-2 border-b-2 transition-all ${
-            activeTab === "chats" ? "border-primary text-primary" : "border-transparent text-on-surface-variant hover:text-on-surface"
+            activeTab === "chats"
+              ? "border-primary text-primary"
+              : "border-transparent text-on-surface-variant hover:text-on-surface"
           }`}
         >
           {isAr ? "المحادثات" : "Chats / Offers"} ({chats.length})
@@ -129,109 +160,138 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({
       </nav>
 
       {/* Tab Content */}
-      <main className="w-full mt-md">
+      <main className="w-full mt-md" role="tabpanel">
         {/* Listings Tab */}
-        {activeTab === "listings" && (
-          userListings.length === 0 ? (
+        {activeTab === "listings" &&
+          (userListings.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 gap-md text-center">
-              <span className="material-symbols-outlined text-[48px] text-outline opacity-40">
+              <span
+                className="material-symbols-outlined text-[48px] text-outline opacity-40"
+                aria-hidden="true"
+              >
                 apparel
               </span>
               <p className="text-body-lg text-on-surface-variant font-sans">
-                {isAr ? "لم تقم بعرض أي منتجات للبيع بعد." : "You haven't listed any items for sale yet."}
+                {isAr
+                  ? "لم تقم بعرض أي منتجات للبيع بعد."
+                  : "You haven't listed any items for sale yet."}
               </p>
             </div>
           ) : (
             <div className="grid grid-cols-2 md:grid-cols-3 gap-md">
-              {userListings.map((item) => (
-                <div
-                  key={item.id}
-                  onClick={() => onSelectProduct(item)}
-                  className="bg-surface-container-lowest rounded-xl border border-surface-container-high overflow-hidden group cursor-pointer hover:shadow-md transition-all relative"
-                >
-                  <div className="aspect-[4/5] bg-surface-container-low overflow-hidden">
-                    <img
-                      alt={isAr ? item.titleAr : item.titleEn}
-                      src={item.image}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    />
-                  </div>
-                  <div className="p-md flex flex-col gap-1">
-                    <h4 className="font-serif text-label-md text-on-surface line-clamp-1">
-                      {isAr ? item.titleAr : item.titleEn}
-                    </h4>
-                    <span className="font-bold text-primary text-label-sm">
-                      AED {item.price}
-                    </span>
-                  </div>
-                </div>
-              ))}
+              {userListings.map((item) => {
+                const title = isAr ? item.titleAr : item.titleEn;
+                return (
+                  <ClickableCard
+                    key={item.id}
+                    onClick={() => onSelectProduct(item)}
+                    ariaLabel={title}
+                    className="bg-surface-container-lowest rounded-xl border border-surface-container-high overflow-hidden group cursor-pointer hover:shadow-md transition-all relative"
+                  >
+                    <div className="aspect-[4/5] bg-surface-container-low overflow-hidden">
+                      <img
+                        alt={title}
+                        src={item.image}
+                        loading="lazy"
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      />
+                    </div>
+                    <div className="p-md flex flex-col gap-1">
+                      <h4 className="font-serif text-label-md text-on-surface line-clamp-1">
+                        {title}
+                      </h4>
+                      <span className="font-bold text-primary text-label-sm">
+                        AED {item.price}
+                      </span>
+                    </div>
+                  </ClickableCard>
+                );
+              })}
             </div>
-          )
-        )}
+          ))}
 
         {/* Likes Tab */}
-        {activeTab === "likes" && (
-          likedItems.length === 0 ? (
+        {activeTab === "likes" &&
+          (likedItems.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 gap-md text-center">
-              <span className="material-symbols-outlined text-[48px] text-outline opacity-40">
+              <span
+                className="material-symbols-outlined text-[48px] text-outline opacity-40"
+                aria-hidden="true"
+              >
                 favorite
               </span>
               <p className="text-body-lg text-on-surface-variant font-sans">
-                {isAr ? "لم تقم بالإعجاب بأي منتجات بعد." : "You haven't liked any items yet."}
+                {isAr
+                  ? "لم تقم بالإعجاب بأي منتجات بعد."
+                  : "You haven't liked any items yet."}
               </p>
             </div>
           ) : (
             <div className="grid grid-cols-2 md:grid-cols-3 gap-md">
-              {likedItems.map((item) => (
-                <div
-                  key={item.id}
-                  onClick={() => onSelectProduct(item)}
-                  className="bg-surface-container-lowest rounded-xl border border-surface-container-high overflow-hidden group cursor-pointer hover:shadow-md transition-all relative"
-                >
-                  <div className="aspect-[4/5] bg-surface-container-low overflow-hidden">
-                    <img
-                      alt={isAr ? item.titleAr : item.titleEn}
-                      src={item.image}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    />
-                  </div>
-                  <div className="p-md flex flex-col gap-1">
-                    <h4 className="font-serif text-label-md text-on-surface line-clamp-1">
-                      {isAr ? item.titleAr : item.titleEn}
-                    </h4>
-                    <span className="font-bold text-primary text-label-sm">
-                      AED {item.price}
-                    </span>
-                  </div>
-                </div>
-              ))}
+              {likedItems.map((item) => {
+                const title = isAr ? item.titleAr : item.titleEn;
+                return (
+                  <ClickableCard
+                    key={item.id}
+                    onClick={() => onSelectProduct(item)}
+                    ariaLabel={title}
+                    className="bg-surface-container-lowest rounded-xl border border-surface-container-high overflow-hidden group cursor-pointer hover:shadow-md transition-all relative"
+                  >
+                    <div className="aspect-[4/5] bg-surface-container-low overflow-hidden">
+                      <img
+                        alt={title}
+                        src={item.image}
+                        loading="lazy"
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      />
+                    </div>
+                    <div className="p-md flex flex-col gap-1">
+                      <h4 className="font-serif text-label-md text-on-surface line-clamp-1">
+                        {title}
+                      </h4>
+                      <span className="font-bold text-primary text-label-sm">
+                        AED {item.price}
+                      </span>
+                    </div>
+                  </ClickableCard>
+                );
+              })}
             </div>
-          )
-        )}
+          ))}
 
         {/* Chats Tab */}
-        {activeTab === "chats" && (
-          chats.length === 0 ? (
+        {activeTab === "chats" &&
+          (chats.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 gap-md text-center">
-              <span className="material-symbols-outlined text-[48px] text-outline opacity-40">
+              <span
+                className="material-symbols-outlined text-[48px] text-outline opacity-40"
+                aria-hidden="true"
+              >
                 chat
               </span>
               <p className="text-body-lg text-on-surface-variant font-sans">
-                {isAr ? "لا توجد رسائل نشطة حالياً." : "No active messages yet."}
+                {isAr
+                  ? "لا توجد رسائل نشطة حالياً."
+                  : "No active messages yet."}
               </p>
             </div>
           ) : (
             <div className="flex flex-col gap-sm max-w-[600px] mx-auto font-sans">
               {chats.map((chat) => (
-                <div
+                <ClickableCard
                   key={chat.id}
                   onClick={() => onOpenChat(chat.id)}
+                  ariaLabel={
+                    isAr
+                      ? `محادثة مع ${chat.sellerName}`
+                      : `Chat with ${chat.sellerName}`
+                  }
                   className="bg-surface-container-low border border-surface-container-high rounded-xl p-md flex items-center gap-md cursor-pointer hover:bg-surface-container-high transition-colors"
                 >
                   <img
                     alt={chat.sellerName}
                     src={chat.sellerAvatar}
+                    loading="lazy"
                     className="w-12 h-12 rounded-full object-cover border border-outline-variant flex-shrink-0"
                   />
                   <div className="flex-grow min-w-0">
@@ -250,11 +310,10 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({
                       {chat.lastMessage}
                     </p>
                   </div>
-                </div>
+                </ClickableCard>
               ))}
             </div>
-          )
-        )}
+          ))}
       </main>
     </div>
   );

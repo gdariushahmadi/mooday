@@ -5,7 +5,7 @@ function img(path: string): string {
   return `/products/${path}`;
 }
 
-export const SEED_VERSION = "3";
+export const SEED_VERSION = "4";
 
 import { batch2Products } from "./products-batch2";
 
@@ -24,12 +24,8 @@ const baseProducts: Product[] = [
     sellerTypeEn: SELLERS.sarah.typeEn,
     sellerTypeAr: SELLERS.sarah.typeAr,
     saves: 432,
-    image:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuDLhHOURRkPkOBcYhtGV1X5d-EEIWtyrO93mcenCpHyZpm3Eu0mCv-q6fO9JpUE8dKji2Vhwe_Qk-q5PycmLbSf6MW_2iZ38tMecjTakEqagD_xdbkuaqW2nXvIz1J8Vvk0hgkuZxmglrmokdm9OTrC9-ziPh5czpAsDAmUuxq_t3T6Nw1-3-J20cz3FpUuTCNQbWLyYyR9Vql2JKlTqwHVZq19KY7JacsV3OXFhAhCNft751Ya2rbFMmPurJYLa3_BB5QgO3FlPGem",
-    images: [
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuDLhHOURRkPkOBcYhtGV1X5d-EEIWtyrO93mcenCpHyZpm3Eu0mCv-q6fO9JpUE8dKji2Vhwe_Qk-q5PycmLbSf6MW_2iZ38tMecjTakEqagD_xdbkuaqW2nXvIz1J8Vvk0hgkuZxmglrmokdm9OTrC9-ziPh5czpAsDAmUuxq_t3T6Nw1-3-J20cz3FpUuTCNQbWLyYyR9Vql2JKlTqwHVZq19KY7JacsV3OXFhAhCNft751Ya2rbFMmPurJYLa3_BB5QgO3FlPGem",
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuBJ556kDzKsxlwMNlszy-QPJ3aw9Rw5KX3SVpLUbOvAgq1W09CjGQV2BpapmvaH-9w2dkkGs3rvJzYuAPSSJMzjSEy-xGCMmrqt_RF1lkW7Up6DqEQOtfHMV1BCkNi5mpPWR_rqt_HYK40wR-kaJjJTIU7_QUJDKQJMQReQcOEuCtdTVnf_YGj-iMEZbXmzjgAKe3SgVVsx0bQXF5fecHTorsNVeT8SbEVs84p0W0TUt5TNlAlJsu7m2McQvrSMNSWnsGhSacwyd5PM",
-    ],
+    image: img("handbag-tan-1.jpg"),
+    images: [img("handbag-tan-1.jpg"), img("handbag-tan-2.jpg")],
     descriptionEn:
       "A beautiful vintage tan leather handbag with buttery soft leather and subtle gold hardware. Perfect everyday statement piece — 100% authentic, lightly carried to brunches in Dubai Marina.",
     descriptionAr:
@@ -97,11 +93,8 @@ const baseProducts: Product[] = [
     sellerTypeEn: SELLERS.noor.typeEn,
     sellerTypeAr: SELLERS.noor.typeAr,
     saves: 342,
-    image:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuC0PlzmkgiUsm4s6YZ25dm9nfrh1VoES41f7Q18lBCqXfHCCIvGiX0Py5HRJCcuGvrfvow8V067mB1pe6Daq3nfyxaS_RFCJ6bRlRHV3TsaABu_lz3FCe8vi5W-LT_GPue1_N8GG5-BFnHhfuxl7Iq44z52xeLjBj9cD6Z-oY0OaSn08wujQwmRbv01btbABLkqWSiGKxorjnXMKanImUmxoyNpWQK1j0ValY1ocQqDad84yTDpImn9Xt1-IUQcunGMFF2Bs258B0kT",
-    images: [
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuC0PlzmkgiUsm4s6YZ25dm9nfrh1VoES41f7Q18lBCqXfHCCIvGiX0Py5HRJCcuGvrfvow8V067mB1pe6Daq3nfyxaS_RFCJ6bRlRHV3TsaABu_lz3FCe8vi5W-LT_GPue1_N8GG5-BFnHhfuxl7Iq44z52xeLjBj9cD6Z-oY0OaSn08wujQwmRbv01btbABLkqWSiGKxorjnXMKanImUmxoyNpWQK1j0ValY1ocQqDad84yTDpImn9Xt1-IUQcunGMFF2Bs258B0kT",
-    ],
+    image: img("midi-dress-1.jpg"),
+    images: [img("midi-dress-1.jpg")],
     descriptionEn:
       "Lightweight, breathable linen midi dress in a warm sand tone. Elegant A-line silhouette — ideal for Dubai summer afternoons, beach club lunches, or casual Friday brunches.",
     descriptionAr:

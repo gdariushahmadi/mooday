@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useHydrated } from "@/lib/hooks";
 
 type BIPEvent = Event & {
   prompt: () => Promise<void>;
@@ -21,24 +22,25 @@ function isStandalone() {
 
 function isIOS() {
   if (typeof navigator === "undefined") return false;
-  return /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as unknown as { MSStream?: unknown }).MSStream;
+  return (
+    /iPad|iPhone|iPod/.test(navigator.userAgent) &&
+    !(window as unknown as { MSStream?: unknown }).MSStream
+  );
 }
 
 export function InstallPrompt() {
+  const hydrated = useHydrated();
   const [deferred, setDeferred] = useState<BIPEvent | null>(null);
   const [visible, setVisible] = useState(false);
   const [installed, setInstalled] = useState(false);
-  const [ios, setIos] = useState(false);
   const [installedHint, setInstalledHint] = useState(false);
 
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    if (isStandalone()) {
-      setInstalled(true);
-      return;
-    }
+  // If the app is already installed (standalone mode), render nothing.
+  const isCurrentlyInstalled = (hydrated && isStandalone()) || installed;
+  const isCurrentlyIOS = hydrated && isIOS();
 
-    setIos(isIOS());
+  useEffect(() => {
+    if (!hydrated || isCurrentlyInstalled) return;
 
     // Respect the 7-day dismissal cooldown.
     const dismissedAt = Number(window.localStorage.getItem(STORAGE_KEY) || 0);
@@ -60,7 +62,7 @@ export function InstallPrompt() {
 
     // On iOS, the only way to install is via the share sheet, so we surface
     // a small instruction banner after a short delay.
-    if (isIOS()) {
+    if (isCurrentlyIOS) {
       window.setTimeout(() => setVisible(true), 4000);
     }
 
@@ -68,7 +70,7 @@ export function InstallPrompt() {
       window.removeEventListener("beforeinstallprompt", onBIP);
       window.removeEventListener("appinstalled", onInstalled);
     };
-  }, []);
+  }, [hydrated, isCurrentlyInstalled, isCurrentlyIOS]);
 
   const handleInstall = async () => {
     if (deferred) {
@@ -76,7 +78,7 @@ export function InstallPrompt() {
       const choice = await deferred.userChoice;
       if (choice.outcome === "accepted") setInstalled(true);
       setVisible(false);
-    } else if (ios) {
+    } else if (isCurrentlyIOS) {
       setInstalledHint(true);
     }
   };
@@ -88,7 +90,7 @@ export function InstallPrompt() {
     }
   };
 
-  if (installed || !visible) return null;
+  if (isCurrentlyInstalled || !visible) return null;
 
   return (
     <div
@@ -104,13 +106,14 @@ export function InstallPrompt() {
       <div className="flex-1 min-w-0">
         <p className="text-on-surface font-semibold text-sm">Install Mooday</p>
         <p className="text-on-surface-variant text-xs mt-0.5">
-          {ios
+          {isCurrentlyIOS
             ? "Tap the share button, then “Add to Home Screen”."
             : "Add to your home screen for a faster, app-like experience."}
         </p>
-        {installedHint && ios && (
+        {installedHint && isCurrentlyIOS && (
           <p className="text-primary text-[11px] mt-1">
-            Look for the share icon <span className="font-bold">⎋</span> at the bottom of Safari.
+            Look for the share icon <span className="font-bold">⎋</span> at the
+            bottom of Safari.
           </p>
         )}
       </div>
@@ -119,7 +122,7 @@ export function InstallPrompt() {
           onClick={handleInstall}
           className="bg-primary text-on-primary text-xs font-semibold px-3 py-1.5 rounded-full active:scale-95 transition-transform"
         >
-          {ios ? "How to" : "Install"}
+          {isCurrentlyIOS ? "How to" : "Install"}
         </button>
         <button
           onClick={handleDismiss}

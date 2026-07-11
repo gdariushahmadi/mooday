@@ -2,7 +2,13 @@
 
 import React, { useState } from "react";
 import { useApp, Product } from "@/context/AppContext";
-import { CATEGORIES, CATEGORIES_AR, CONDITIONS, CONDITIONS_AR } from "@/data/categories";
+import {
+  CATEGORIES,
+  CATEGORIES_AR,
+  CONDITIONS,
+  CONDITIONS_AR,
+} from "@/data/categories";
+import { ClickableCard } from "./ClickableCard";
 
 interface SearchFiltersViewProps {
   onSelectProduct: (product: Product) => void;
@@ -28,10 +34,11 @@ export const SearchFiltersView: React.FC<SearchFiltersViewProps> = ({
 
   // Filter listings
   const filteredListings = listings.filter((item) => {
+    const q = searchQuery.toLowerCase();
     const matchesSearch =
-      item.titleEn.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.titleEn.toLowerCase().includes(q) ||
       item.titleAr.includes(searchQuery) ||
-      item.category.toLowerCase().includes(searchQuery.toLowerCase());
+      item.category.toLowerCase().includes(q);
 
     const matchesCategory =
       selectedCategory === "All" || item.category === selectedCategory;
@@ -48,25 +55,46 @@ export const SearchFiltersView: React.FC<SearchFiltersViewProps> = ({
       <div className="flex items-center gap-md border-b border-outline-variant pb-4">
         <button
           onClick={onBack}
-          aria-label="Back"
+          aria-label={isAr ? "رجوع" : "Back"}
           className="text-on-surface hover:bg-surface-container-low transition-colors rounded-full p-2 flex items-center justify-center active:scale-95"
         >
-          <span className="material-symbols-outlined">arrow_back</span>
+          <span className="material-symbols-outlined" aria-hidden="true">
+            arrow_back
+          </span>
         </button>
-        
+
         {/* Search Input Box */}
         <div className="flex-grow flex items-center gap-sm bg-surface-container-low border border-outline-variant rounded-full px-md py-sm font-sans">
-          <span className="material-symbols-outlined text-outline">search</span>
+          <span
+            className="material-symbols-outlined text-outline"
+            aria-hidden="true"
+          >
+            search
+          </span>
           <input
             type="text"
-            placeholder={isAr ? "ابحث عن حقيبة، فستان، ديكور..." : "Search for bags, dresses, decor..."}
+            placeholder={
+              isAr
+                ? "ابحث عن حقيبة، فستان، ديكور..."
+                : "Search for bags, dresses, decor..."
+            }
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
+            aria-label={isAr ? "بحث" : "Search"}
             className="w-full bg-transparent outline-none border-none text-body-md text-on-surface placeholder-outline-variant"
           />
           {searchQuery && (
-            <button onClick={() => setSearchQuery("")} className="text-outline">
-              <span className="material-symbols-outlined text-[18px]">close</span>
+            <button
+              onClick={() => setSearchQuery("")}
+              aria-label={isAr ? "مسح البحث" : "Clear search"}
+              className="text-outline"
+            >
+              <span
+                className="material-symbols-outlined text-[18px]"
+                aria-hidden="true"
+              >
+                close
+              </span>
             </button>
           )}
         </div>
@@ -85,6 +113,7 @@ export const SearchFiltersView: React.FC<SearchFiltersViewProps> = ({
                 <button
                   key={cat}
                   onClick={() => setSelectedCategory(cat)}
+                  aria-pressed={selectedCategory === cat}
                   className={`text-label-sm text-left px-3 py-2 rounded-lg transition-all border ${
                     selectedCategory === cat
                       ? "bg-primary text-on-primary border-primary font-bold"
@@ -107,6 +136,7 @@ export const SearchFiltersView: React.FC<SearchFiltersViewProps> = ({
                 <button
                   key={cond}
                   onClick={() => setSelectedCondition(cond)}
+                  aria-pressed={selectedCondition === cond}
                   className={`text-label-sm text-left px-3 py-2 rounded-lg transition-all border ${
                     selectedCondition === cond
                       ? "bg-primary text-on-primary border-primary font-bold"
@@ -124,7 +154,7 @@ export const SearchFiltersView: React.FC<SearchFiltersViewProps> = ({
         <main className="lg:col-span-9 flex flex-col gap-md">
           <div className="flex justify-between items-center text-body-md text-on-surface-variant font-sans">
             <span>
-              {isAr 
+              {isAr
                 ? `تم العثور على ${filteredListings.length} منتج`
                 : `Found ${filteredListings.length} items`}
             </span>
@@ -132,21 +162,28 @@ export const SearchFiltersView: React.FC<SearchFiltersViewProps> = ({
 
           {filteredListings.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 gap-md text-center">
-              <span className="material-symbols-outlined text-[64px] text-outline opacity-40">
+              <span
+                className="material-symbols-outlined text-[64px] text-outline opacity-40"
+                aria-hidden="true"
+              >
                 search_off
               </span>
               <p className="text-body-lg text-on-surface-variant">
-                {isAr ? "لم نجد أي منتجات تطابق بحثك." : "We couldn't find any items matching your search."}
+                {isAr
+                  ? "لم نجد أي منتجات تطابق بحثك."
+                  : "We couldn't find any items matching your search."}
               </p>
             </div>
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-md">
               {filteredListings.map((product) => {
                 const isLiked = likes.includes(product.id);
+                const productTitle = isAr ? product.titleAr : product.titleEn;
                 return (
-                  <div
+                  <ClickableCard
                     key={product.id}
                     onClick={() => onSelectProduct(product)}
+                    ariaLabel={productTitle}
                     className="bg-surface-container-lowest rounded-xl border border-surface-container-high overflow-hidden group cursor-pointer hover:shadow-md transition-all relative"
                   >
                     {/* Heart/Like Button */}
@@ -155,13 +192,24 @@ export const SearchFiltersView: React.FC<SearchFiltersViewProps> = ({
                         e.stopPropagation();
                         toggleLike(product.id);
                       }}
+                      aria-pressed={isLiked}
+                      aria-label={
+                        isLiked
+                          ? `Remove ${productTitle} from saved`
+                          : `Save ${productTitle}`
+                      }
                       className={`absolute top-2 right-2 z-10 w-8 h-8 rounded-full bg-white/70 backdrop-blur-md flex items-center justify-center transition-colors ${
-                        isLiked ? "text-primary" : "text-on-surface-variant hover:text-primary"
+                        isLiked
+                          ? "text-primary"
+                          : "text-on-surface-variant hover:text-primary"
                       }`}
                     >
                       <span
                         className="material-symbols-outlined text-[18px]"
-                        style={{ fontVariationSettings: `'FILL' ${isLiked ? 1 : 0}` }}
+                        aria-hidden="true"
+                        style={{
+                          fontVariationSettings: `'FILL' ${isLiked ? 1 : 0}`,
+                        }}
                       >
                         favorite
                       </span>
@@ -169,8 +217,9 @@ export const SearchFiltersView: React.FC<SearchFiltersViewProps> = ({
 
                     <div className="aspect-[4/5] bg-surface-container-low overflow-hidden">
                       <img
-                        alt={isAr ? product.titleAr : product.titleEn}
+                        alt={productTitle}
                         src={product.image}
+                        loading="lazy"
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                       />
                     </div>
@@ -179,13 +228,13 @@ export const SearchFiltersView: React.FC<SearchFiltersViewProps> = ({
                         {isAr ? product.conditionAr : product.conditionEn}
                       </span>
                       <h4 className="font-serif text-label-md text-on-surface line-clamp-1 group-hover:text-primary transition-colors">
-                        {isAr ? product.titleAr : product.titleEn}
+                        {productTitle}
                       </h4>
                       <span className="font-bold text-primary text-label-sm">
                         AED {product.price}
                       </span>
                     </div>
-                  </div>
+                  </ClickableCard>
                 );
               })}
             </div>

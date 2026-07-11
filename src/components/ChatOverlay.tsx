@@ -16,7 +16,7 @@ export const ChatOverlay: React.FC<ChatOverlayProps> = ({
 }) => {
   const { language, chats, sendChatMessage } = useApp();
   const isAr = language === "ar";
-  
+
   const [inputText, setInputText] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -31,7 +31,12 @@ export const ChatOverlay: React.FC<ChatOverlayProps> = ({
     return (
       <div className="p-xl text-center">
         <p className="text-on-surface-variant font-sans">Chat not found.</p>
-        <button onClick={onBack} className="btn-primary mt-md px-md py-sm rounded-full">Back</button>
+        <button
+          onClick={onBack}
+          className="btn-primary mt-md px-md py-sm rounded-full"
+        >
+          Back
+        </button>
       </div>
     );
   }
@@ -45,18 +50,30 @@ export const ChatOverlay: React.FC<ChatOverlayProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-background flex flex-col md:max-w-[600px] md:mx-auto md:shadow-2xl md:border-x border-surface-container-high font-sans">
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label={
+        isAr
+          ? `محادثة مع ${thread.sellerName}`
+          : `Chat with ${thread.sellerName}`
+      }
+      dir={isAr ? "rtl" : "ltr"}
+      className="fixed inset-0 z-50 bg-background flex flex-col md:max-w-[600px] md:mx-auto md:shadow-2xl md:border-x border-surface-container-high font-sans"
+    >
       {/* Header */}
       <header className="bg-surface sticky top-0 z-10 border-b border-surface-container-high px-margin-mobile py-md flex items-center justify-between">
         <div className="flex items-center gap-md">
           <button
             onClick={onBack}
             className="text-on-surface hover:bg-surface-container-low transition-colors rounded-full p-2 flex items-center justify-center active:scale-95"
-            aria-label="Back"
+            aria-label={isAr ? "رجوع" : "Back"}
           >
-            <span className="material-symbols-outlined">arrow_back</span>
+            <span className="material-symbols-outlined" aria-hidden="true">
+              arrow_back
+            </span>
           </button>
-          
+
           <img
             alt={thread.sellerName}
             src={thread.sellerAvatar}
@@ -90,7 +107,9 @@ export const ChatOverlay: React.FC<ChatOverlayProps> = ({
           <p className="text-label-sm font-bold text-on-surface truncate">
             {thread.productTitle}
           </p>
-          <span className="text-[11px] text-outline font-bold">AED 1,250</span>
+          <span className="text-[11px] text-outline font-bold">
+            AED {thread.productPrice}
+          </span>
         </div>
       </div>
 
@@ -126,19 +145,29 @@ export const ChatOverlay: React.FC<ChatOverlayProps> = ({
       {/* Input box form */}
       <footer className="bg-surface border-t border-surface-container-high p-md">
         <form onSubmit={handleSend} className="flex gap-sm items-center">
+          <label htmlFor="chat-input" className="sr-only">
+            {isAr ? "اكتب رسالة" : "Type your message"}
+          </label>
           <input
+            id="chat-input"
             type="text"
             placeholder={isAr ? "اكتب رسالة..." : "Type your message..."}
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
+            autoComplete="off"
             className="flex-grow p-md bg-surface-container-low border border-outline-variant rounded-full text-body-md outline-none focus:border-primary placeholder-outline-variant"
           />
           <button
             type="submit"
             className="w-12 h-12 rounded-full bg-primary text-on-primary flex items-center justify-center active:scale-95 transition-transform shadow-md"
-            aria-label="Send"
+            aria-label={isAr ? "إرسال" : "Send"}
           >
-            <span className="material-symbols-outlined text-[20px]">send</span>
+            <span
+              className="material-symbols-outlined text-[20px]"
+              aria-hidden="true"
+            >
+              send
+            </span>
           </button>
         </form>
       </footer>

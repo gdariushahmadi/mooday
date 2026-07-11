@@ -34,7 +34,8 @@ export const ActivityView: React.FC<ActivityViewProps> = ({
       type: "offer",
       titleEn: "Price drop on Gold Silk Kaftan",
       titleAr: "انخفاض سعر قفطان الحرير الذهبي",
-      descEn: "Amira Style reduced the price to AED 1,200 — save 50% off retail.",
+      descEn:
+        "Amira Style reduced the price to AED 1,200 — save 50% off retail.",
       descAr: "خفضت أميرة ستايل السعر إلى 1200 درهم — وفر 50٪ من سعر التجزئة.",
       timeEn: "25m ago",
       timeAr: "منذ ۲۵ دقيقة",
@@ -46,7 +47,8 @@ export const ActivityView: React.FC<ActivityViewProps> = ({
       type: "like",
       titleEn: "3 people saved your Emerald Abaya",
       titleAr: "۳ أشخاص حفظوا عباءتك الزمردية",
-      descEn: "Your listed Emerald Evening Abaya is getting attention this week.",
+      descEn:
+        "Your listed Emerald Evening Abaya is getting attention this week.",
       descAr: "عباءة السهرة الزمردية المعروضة تحظى باهتمام هذا الأسبوع.",
       timeEn: "1h ago",
       timeAr: "منذ ساعة",
@@ -97,10 +99,12 @@ export const ActivityView: React.FC<ActivityViewProps> = ({
       <div className="flex items-center justify-between border-b border-outline-variant pb-4">
         <button
           onClick={onBack}
-          aria-label="Back"
+          aria-label={isAr ? "رجوع" : "Back"}
           className="text-on-surface hover:bg-surface-container-low transition-colors rounded-full p-2 flex items-center justify-center active:scale-95"
         >
-          <span className="material-symbols-outlined">arrow_back</span>
+          <span className="material-symbols-outlined" aria-hidden="true">
+            arrow_back
+          </span>
         </button>
         <div className="font-serif text-headline-sm text-primary tracking-widest uppercase text-center flex-grow">
           {isAr ? "النشاطات والتنبيهات" : "Activity & Notifications"}
@@ -114,24 +118,51 @@ export const ActivityView: React.FC<ActivityViewProps> = ({
           <div
             key={notif.id}
             onClick={notif.action}
+            role={notif.action ? "button" : undefined}
+            tabIndex={notif.action ? 0 : undefined}
+            onKeyDown={
+              notif.action
+                ? (e: React.KeyboardEvent<HTMLDivElement>) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      notif.action?.();
+                    }
+                  }
+                : undefined
+            }
             className={`border border-surface-container-high rounded-xl p-md flex items-start gap-md transition-colors ${
-              notif.isUnread ? "bg-primary/5 hover:bg-primary/10" : "bg-surface-container-low hover:bg-surface-container-high"
-            } ${notif.action ? "cursor-pointer" : ""}`}
+              notif.isUnread
+                ? `bg-primary/5${notif.action ? " hover:bg-primary/10" : ""}`
+                : `bg-surface-container-low${notif.action ? " hover:bg-surface-container-high" : ""}`
+            }${notif.action ? " cursor-pointer" : ""}`}
           >
             {/* Icon */}
-            <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
-              notif.isUnread ? "bg-primary text-on-primary" : "bg-surface-container-high text-outline"
-            }`}>
-              <span className="material-symbols-outlined text-[20px]">{notif.icon}</span>
+            <div
+              className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
+                notif.isUnread
+                  ? "bg-primary text-on-primary"
+                  : "bg-surface-container-high text-outline"
+              }`}
+            >
+              <span
+                className="material-symbols-outlined text-[20px]"
+                aria-hidden="true"
+              >
+                {notif.icon}
+              </span>
             </div>
 
             {/* Content */}
             <div className="flex-grow min-w-0">
               <div className="flex justify-between items-baseline mb-1">
-                <h4 className={`text-label-md truncate ${notif.isUnread ? "font-bold text-on-surface" : "text-on-surface"}`}>
+                <h4
+                  className={`text-label-md truncate ${notif.isUnread ? "font-bold text-on-surface" : "text-on-surface"}`}
+                >
                   {isAr ? notif.titleAr : notif.titleEn}
                 </h4>
-                <span className="text-[11px] text-outline flex-shrink-0">{isAr ? notif.timeAr : notif.timeEn}</span>
+                <span className="text-[11px] text-outline flex-shrink-0">
+                  {isAr ? notif.timeAr : notif.timeEn}
+                </span>
               </div>
               <p className="text-body-md text-on-surface-variant line-clamp-2">
                 {isAr ? notif.descAr : notif.descEn}
