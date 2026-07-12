@@ -9,6 +9,16 @@ import React, {
   useSyncExternalStore,
 } from "react";
 import { defaultProducts, SEED_VERSION } from "@/data/products";
+import { type Address, DEFAULT_ADDRESSES } from "@/data/addresses";
+import {
+  type PaymentMethod,
+  DEFAULT_PAYMENT_METHODS,
+} from "@/data/paymentMethods";
+import { type Order, DEFAULT_ORDERS } from "@/data/orders";
+import {
+  type AppNotification,
+  DEFAULT_NOTIFICATIONS,
+} from "@/data/notifications";
 import { useLocalStorageState } from "@/lib/hooks";
 
 export interface Product {
@@ -31,6 +41,14 @@ export interface Product {
   descriptionAr: string;
   category: string;
   isAuthentic?: boolean;
+  /** Apparel/footwear size. Optional — accessories don't have one. */
+  size?: string;
+  /** Localised colour name (EN). */
+  colorEn?: string;
+  /** Localised colour name (AR). */
+  colorAr?: string;
+  /** Listing mode. Defaults to "resell". Rent is reserved for Phase 4. */
+  mode?: "resell" | "rent";
 }
 
 export interface ChatMessage {
@@ -57,11 +75,13 @@ export interface CartItem {
   quantity: number;
 }
 
-interface AppContextType {
+export interface AppContextType {
   language: "en" | "ar";
   setLanguage: (lang: "en" | "ar") => void;
   listings: Product[];
   addListing: (product: Omit<Product, "id" | "saves">) => void;
+  updateListing: (id: string, patch: Partial<Omit<Product, "id">>) => void;
+  removeListing: (id: string) => void;
   likes: string[];
   toggleLike: (productId: string) => void;
   cart: CartItem[];
@@ -72,9 +92,27 @@ interface AppContextType {
   chats: ChatThread[];
   sendChatMessage: (threadId: string, text: string) => void;
   createChatThread: (product: Product) => string;
+  orders: Order[];
+  recordOrder: (order: Order) => void;
+  updateOrderStatus: (id: string, status: Order["status"]) => void;
+  notifications: AppNotification[];
+  markNotificationRead: (id: string) => void;
+  markAllNotificationsRead: () => void;
+  addresses: Address[];
+  addAddress: (address: Omit<Address, "id">) => void;
+  updateAddress: (id: string, patch: Partial<Omit<Address, "id">>) => void;
+  removeAddress: (id: string) => void;
+  setDefaultAddress: (id: string) => void;
+  paymentMethods: PaymentMethod[];
+  addPaymentMethod: (method: Omit<PaymentMethod, "id">) => void;
+  removePaymentMethod: (id: string) => void;
+  setDefaultPaymentMethod: (id: string) => void;
 }
 
-const AppContext = createContext<AppContextType | undefined>(undefined);
+// Exported for tests and advanced consumers that need to pass a custom
+// provider value (e.g. storybook, unit tests). Application code should
+// use the `useApp` hook and the `AppProvider` component.
+export const AppContext = createContext<AppContextType | undefined>(undefined);
 
 const STORAGE_KEYS = {
   lang: "mooday_lang",
@@ -83,6 +121,10 @@ const STORAGE_KEYS = {
   chats: "mooday_chats",
   listings: "mooday_listings",
   seedVersion: "mooday_seed_version",
+  addresses: "mooday_addresses",
+  paymentMethods: "mooday_payment_methods",
+  orders: "mooday_orders",
+  notifications: "mooday_notifications",
 } as const;
 
 const DEFAULT_CHATS: ChatThread[] = [
@@ -125,17 +167,23 @@ function subscribeStorage(callback: () => void): () => void {
   return () => window.removeEventListener("storage", callback);
 }
 
+// Snapshot cache for listings — keyed by the raw localStorage string so
+// `getListingsSnapshot` returns a stable reference until data changes.
+let listingsCache: { raw: string | null; value: Product[] } | null = null;
+
 function getListingsSnapshot(): Product[] {
   try {
-    const savedSeedVersion = localStorage.getItem(STORAGE_KEYS.seedVersion);
-    const savedListings = localStorage.getItem(STORAGE_KEYS.listings);
+    const raw = localStorage.getItem(STORAGE_KEYS.listings);
+    const seedVersion = localStorage.getItem(STORAGE_KEYS.seedVersion);
 
-    if (savedSeedVersion !== SEED_VERSION) {
-      // Migration: preserve user-created listings, refresh seed products.
+    // Migration must run before caching so the cache reflects the
+    // post-migration state. After migration, the raw string is updated
+    // and the cache is invalidated below.
+    if (seedVersion !== SEED_VERSION) {
       let customListings: Product[] = [];
-      if (savedListings) {
+      if (raw) {
         try {
-          const parsed = JSON.parse(savedListings);
+          const parsed = JSON.parse(raw);
           if (Array.isArray(parsed)) {
             customListings = parsed.filter(
               (p: Product) =>
@@ -147,16 +195,30 @@ function getListingsSnapshot(): Product[] {
         }
       }
       const merged = [...customListings, ...defaultProducts];
+      const serialized = JSON.stringify(merged);
       localStorage.setItem(STORAGE_KEYS.seedVersion, SEED_VERSION);
-      localStorage.setItem(STORAGE_KEYS.listings, JSON.stringify(merged));
+      localStorage.setItem(STORAGE_KEYS.listings, serialized);
+      listingsCache = { raw: serialized, value: merged };
       return merged;
     }
 
-    if (savedListings) {
-      const parsed = JSON.parse(savedListings);
-      return Array.isArray(parsed) ? parsed : defaultProducts;
+    if (listingsCache && listingsCache.raw === raw) {
+      return listingsCache.value;
     }
-    return defaultProducts;
+
+    let value: Product[];
+    if (raw) {
+      try {
+        const parsed = JSON.parse(raw);
+        value = Array.isArray(parsed) ? parsed : defaultProducts;
+      } catch {
+        value = defaultProducts;
+      }
+    } else {
+      value = defaultProducts;
+    }
+    listingsCache = { raw, value };
+    return value;
   } catch {
     return defaultProducts;
   }
@@ -164,6 +226,8 @@ function getListingsSnapshot(): Product[] {
 
 function writeListings(next: Product[]) {
   localStorage.setItem(STORAGE_KEYS.listings, JSON.stringify(next));
+  // Invalidate cache so the next getListingsSnapshot re-parses.
+  listingsCache = null;
   window.dispatchEvent(
     new StorageEvent("storage", { key: STORAGE_KEYS.listings }),
   );
@@ -201,6 +265,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     STORAGE_KEYS.chats,
     DEFAULT_CHATS,
   );
+  const [addresses, setAddresses] = useLocalStorageState<Address[]>(
+    STORAGE_KEYS.addresses,
+    DEFAULT_ADDRESSES,
+  );
+  const [paymentMethods, setPaymentMethods] = useLocalStorageState<
+    PaymentMethod[]
+  >(STORAGE_KEYS.paymentMethods, DEFAULT_PAYMENT_METHODS);
+  const [orders, setOrders] = useLocalStorageState<Order[]>(
+    STORAGE_KEYS.orders,
+    DEFAULT_ORDERS,
+  );
+  const [notifications, setNotifications] = useLocalStorageState<
+    AppNotification[]
+  >(STORAGE_KEYS.notifications, DEFAULT_NOTIFICATIONS);
 
   // Sync document direction with language — side effect only, no setState.
   useEffect(() => {
@@ -223,6 +301,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     };
     const current = getListingsSnapshot();
     writeListings([newProduct, ...current]);
+  }, []);
+
+  const updateListing = useCallback(
+    (id: string, patch: Partial<Omit<Product, "id">>) => {
+      const current = getListingsSnapshot();
+      const next = current.map((p) => (p.id === id ? { ...p, ...patch } : p));
+      writeListings(next);
+    },
+    [],
+  );
+
+  const removeListing = useCallback((id: string) => {
+    const current = getListingsSnapshot();
+    writeListings(current.filter((p) => p.id !== id));
   }, []);
 
   const toggleLike = useCallback(
@@ -421,12 +513,170 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     [setChats, language],
   );
 
+  const addAddress = useCallback(
+    (address: Omit<Address, "id">) => {
+      const id = `addr-${Date.now()}`;
+      setAddresses((prev) => {
+        const next: Address[] = [...prev, { ...address, id }];
+        if (address.isDefault) {
+          return next.map((a) => ({ ...a, isDefault: a.id === id }));
+        }
+        if (next.length === 1) {
+          return next.map((a) => ({ ...a, isDefault: true }));
+        }
+        return next;
+      });
+    },
+    [setAddresses],
+  );
+
+  const updateAddress = useCallback(
+    (id: string, patch: Partial<Omit<Address, "id">>) => {
+      setAddresses((prev) => {
+        const next = prev.map((a) => (a.id === id ? { ...a, ...patch } : a));
+        if (patch.isDefault === true) {
+          return next.map((a) => ({ ...a, isDefault: a.id === id }));
+        }
+        return next;
+      });
+    },
+    [setAddresses],
+  );
+
+  const removeAddress = useCallback(
+    (id: string) => {
+      setAddresses((prev) => {
+        const filtered = prev.filter((a) => a.id !== id);
+        if (filtered.length === 0) return filtered;
+        const hasDefault = filtered.some((a) => a.isDefault);
+        if (!hasDefault) filtered[0] = { ...filtered[0], isDefault: true };
+        return filtered;
+      });
+    },
+    [setAddresses],
+  );
+
+  const setDefaultAddress = useCallback(
+    (id: string) => {
+      setAddresses((prev) =>
+        prev.map((a) => ({ ...a, isDefault: a.id === id })),
+      );
+    },
+    [setAddresses],
+  );
+
+  const addPaymentMethod = useCallback(
+    (method: Omit<PaymentMethod, "id">) => {
+      const id = `pm-${Date.now()}`;
+      setPaymentMethods((prev) => {
+        const next: PaymentMethod[] = [...prev, { ...method, id }];
+        if (method.isDefault) {
+          return next.map((m) => ({ ...m, isDefault: m.id === id }));
+        }
+        if (next.length === 1) {
+          return next.map((m) => ({ ...m, isDefault: true }));
+        }
+        return next;
+      });
+    },
+    [setPaymentMethods],
+  );
+
+  const removePaymentMethod = useCallback(
+    (id: string) => {
+      setPaymentMethods((prev) => {
+        const filtered = prev.filter((m) => m.id !== id);
+        if (filtered.length === 0) return filtered;
+        const hasDefault = filtered.some((m) => m.isDefault);
+        if (!hasDefault) filtered[0] = { ...filtered[0], isDefault: true };
+        return filtered;
+      });
+    },
+    [setPaymentMethods],
+  );
+
+  const setDefaultPaymentMethod = useCallback(
+    (id: string) => {
+      setPaymentMethods((prev) =>
+        prev.map((m) => ({ ...m, isDefault: m.id === id })),
+      );
+    },
+    [setPaymentMethods],
+  );
+
+  const recordOrder = useCallback(
+    (order: Order) => {
+      setOrders((prev) => [order, ...prev]);
+    },
+    [setOrders],
+  );
+
+  const updateOrderStatus = useCallback(
+    (id: string, status: Order["status"]) => {
+      setOrders((prev) =>
+        prev.map((o) => {
+          if (o.id !== id) return o;
+          // Append a timeline entry for the new status.
+          const descriptionEn =
+            status === "delivered"
+              ? "Delivered — escrow released to seller."
+              : status === "shipped"
+                ? "Handed to courier, in transit."
+                : status === "returned"
+                  ? "Return received — refund processed."
+                  : status === "cancelled"
+                    ? "Order cancelled by buyer."
+                    : "Payment secured.";
+          const descriptionAr =
+            status === "delivered"
+              ? "تم التسليم — تحويل المبلغ للبائع."
+              : status === "shipped"
+                ? "تم تسليم الشحنة لشركة الشحن."
+                : status === "returned"
+                  ? "تم استلام المرتجع — تم الاسترداد."
+                  : status === "cancelled"
+                    ? "تم إلغاء الطلب."
+                    : "تم تأمين المبلغ.";
+          return {
+            ...o,
+            status,
+            timeline: [
+              ...o.timeline,
+              {
+                status,
+                date: new Date().toISOString(),
+                descriptionEn,
+                descriptionAr,
+              },
+            ],
+          };
+        }),
+      );
+    },
+    [setOrders],
+  );
+
+  const markNotificationRead = useCallback(
+    (notifId: string) => {
+      setNotifications((prev) =>
+        prev.map((n) => (n.id === notifId ? { ...n, isUnread: false } : n)),
+      );
+    },
+    [setNotifications],
+  );
+
+  const markAllNotificationsRead = useCallback(() => {
+    setNotifications((prev) => prev.map((n) => ({ ...n, isUnread: false })));
+  }, [setNotifications]);
+
   const value = useMemo(
     () => ({
       language,
       setLanguage,
       listings,
       addListing,
+      updateListing,
+      removeListing,
       likes,
       toggleLike,
       cart,
@@ -437,12 +687,29 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       chats,
       sendChatMessage,
       createChatThread,
+      addresses,
+      addAddress,
+      updateAddress,
+      removeAddress,
+      setDefaultAddress,
+      paymentMethods,
+      addPaymentMethod,
+      removePaymentMethod,
+      setDefaultPaymentMethod,
+      orders,
+      recordOrder,
+      updateOrderStatus,
+      notifications,
+      markNotificationRead,
+      markAllNotificationsRead,
     }),
     [
       language,
       setLanguage,
       listings,
       addListing,
+      updateListing,
+      removeListing,
       likes,
       toggleLike,
       cart,
@@ -453,6 +720,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       chats,
       sendChatMessage,
       createChatThread,
+      addresses,
+      addAddress,
+      updateAddress,
+      removeAddress,
+      setDefaultAddress,
+      paymentMethods,
+      addPaymentMethod,
+      removePaymentMethod,
+      setDefaultPaymentMethod,
+      orders,
+      recordOrder,
+      updateOrderStatus,
+      notifications,
+      markNotificationRead,
+      markAllNotificationsRead,
     ],
   );
 

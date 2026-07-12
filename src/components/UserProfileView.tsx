@@ -7,13 +7,19 @@ import { ClickableCard } from "./ClickableCard";
 interface UserProfileViewProps {
   onSelectProduct: (product: Product) => void;
   onOpenChat: (threadId: string) => void;
+  /** Navigate to My Purchases (C-16). */
+  onOpenPurchases?: () => void;
+  /** Navigate to Chats List (F-28). */
+  onOpenChats?: () => void;
 }
 
 export const UserProfileView: React.FC<UserProfileViewProps> = ({
   onSelectProduct,
   onOpenChat,
+  onOpenPurchases,
+  onOpenChats,
 }) => {
-  const { language, listings, likes, chats } = useApp();
+  const { language, listings, likes, chats, orders } = useApp();
   const isAr = language === "ar";
 
   const [activeTab, setActiveTab] = useState<"listings" | "likes" | "chats">(
@@ -118,6 +124,60 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({
           </div>
         </div>
       </section>
+
+      {/* Quick action: My Purchases + Messages */}
+      <div className="grid grid-cols-2 gap-sm">
+        {onOpenPurchases && (
+          <button
+            type="button"
+            onClick={onOpenPurchases}
+            className="flex items-center justify-between gap-sm p-md bg-surface-container-lowest border border-surface-container-high rounded-xl hover:shadow-md transition-shadow active:scale-[0.99]"
+            aria-label={isAr ? "مشترياتي" : "My purchases"}
+          >
+            <div className="flex items-center gap-sm">
+              <span
+                className="material-symbols-outlined text-[24px] text-primary no-mirror"
+                aria-hidden="true"
+              >
+                package_2
+              </span>
+              <div className="text-start">
+                <div className="font-serif text-label-sm text-on-surface">
+                  {isAr ? "مشترياتي" : "Purchases"}
+                </div>
+                <div className="text-[10px] text-on-surface-variant">
+                  {orders.length} {isAr ? "طلب" : "orders"}
+                </div>
+              </div>
+            </div>
+          </button>
+        )}
+        {onOpenChats && (
+          <button
+            type="button"
+            onClick={onOpenChats}
+            className="flex items-center justify-between gap-sm p-md bg-surface-container-lowest border border-surface-container-high rounded-xl hover:shadow-md transition-shadow active:scale-[0.99]"
+            aria-label={isAr ? "الرسائل" : "Messages"}
+          >
+            <div className="flex items-center gap-sm">
+              <span
+                className="material-symbols-outlined text-[24px] text-primary no-mirror"
+                aria-hidden="true"
+              >
+                chat_bubble
+              </span>
+              <div className="text-start">
+                <div className="font-serif text-label-sm text-on-surface">
+                  {isAr ? "الرسائل" : "Messages"}
+                </div>
+                <div className="text-[10px] text-on-surface-variant">
+                  {chats.length} {isAr ? "محادثة" : "threads"}
+                </div>
+              </div>
+            </div>
+          </button>
+        )}
+      </div>
 
       {/* Tabs */}
       <nav className="flex border-b border-surface-variant justify-around sm:justify-start sm:gap-lg">

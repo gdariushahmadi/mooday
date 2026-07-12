@@ -4,10 +4,18 @@ const securityHeaders = [
   { key: "X-Content-Type-Options", value: "nosniff" },
   { key: "X-Frame-Options", value: "SAMEORIGIN" },
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
-  { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), interest-cohort=()" },
+  {
+    key: "Permissions-Policy",
+    value: "camera=(), microphone=(), geolocation=(), interest-cohort=()",
+  },
 ];
 
 const nextConfig: NextConfig = {
+  // Pin the workspace root so Turbopack doesn't pick up lockfiles from
+  // parent directories in a monorepo checkout.
+  turbopack: {
+    root: __dirname,
+  },
   async headers() {
     return [
       {
@@ -19,8 +27,14 @@ const nextConfig: NextConfig = {
         // aggressively by intermediaries so updates reach clients quickly.
         source: "/sw.js",
         headers: [
-          { key: "Content-Type", value: "application/javascript; charset=utf-8" },
-          { key: "Cache-Control", value: "no-cache, no-store, must-revalidate" },
+          {
+            key: "Content-Type",
+            value: "application/javascript; charset=utf-8",
+          },
+          {
+            key: "Cache-Control",
+            value: "no-cache, no-store, must-revalidate",
+          },
           { key: "Service-Worker-Allowed", value: "/" },
         ],
       },
@@ -37,7 +51,10 @@ const nextConfig: NextConfig = {
         // but the icon set rarely changes, so we use a short max-age.
         source: "/icons/:path*",
         headers: [
-          { key: "Cache-Control", value: "public, max-age=86400, must-revalidate" },
+          {
+            key: "Cache-Control",
+            value: "public, max-age=86400, must-revalidate",
+          },
         ],
       },
     ];

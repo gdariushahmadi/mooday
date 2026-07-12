@@ -15,7 +15,17 @@ export type ViewState =
   | "bag"
   | "checkout"
   | "settings"
-  | "loves";
+  | "loves"
+  | "seller"
+  | "category"
+  | "purchases"
+  | "order"
+  | "sell-picker"
+  | "closet"
+  | "edit-listing"
+  | "sales"
+  | "notifications"
+  | "chats";
 
 /** Views that can be deep-linked via ?view=. */
 export const VALID_VIEWS: readonly ViewState[] = [
@@ -28,6 +38,16 @@ export const VALID_VIEWS: readonly ViewState[] = [
   "checkout",
   "settings",
   "loves",
+  "seller",
+  "category",
+  "purchases",
+  "order",
+  "sell-picker",
+  "closet",
+  "edit-listing",
+  "sales",
+  "notifications",
+  "chats",
 ] as const;
 
 /**
@@ -42,18 +62,19 @@ export function readUrlParam(key: string): string | null {
 
 /** Map a deep-link view param to the matching bottom-nav tab. */
 export function tabFromView(view: string | null): TabId {
-  if (
-    view === "search" ||
-    view === "sell" ||
-    view === "activity" ||
-    view === "profile"
-  ) {
+  if (view === "search" || view === "activity" || view === "profile") {
     return view;
   }
+  if (view === "sell") return "sell";
   return "home";
 }
 
-/** Map a tab to its corresponding view. */
+/** Map a tab to its corresponding view.
+ *
+ * Note: for the "sell" tab, we route through the mode picker (D-18) first.
+ * The picker then calls `openSellPicker` to advance into D-19.
+ */
 export function viewFromTab(tab: TabId): ViewState {
+  if (tab === "sell") return "sell-picker";
   return tab;
 }

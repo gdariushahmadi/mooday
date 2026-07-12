@@ -16,6 +16,10 @@ const eslintConfig = defineConfig([
     // are not part of the application source.
     "scripts/**",
     "public/sw.js",
+    // Vitest config is not application source.
+    "vitest.config.mjs",
+    "vitest.config.mts",
+    "vitest.setup.ts",
   ]),
 ]);
 

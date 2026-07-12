@@ -6,6 +6,29 @@ export interface SellerProfile {
   typeAr: string;
 }
 
+/**
+ * Per-seller metadata that is only relevant to the public profile
+ * (B-11) and not to the rest of the app. Lives in `seller-meta.ts` to
+ * keep this file focused on the basic shape every existing component
+ * already consumes.
+ */
+export interface SellerMeta {
+  /** ISO date string for when the seller joined Mooday. */
+  joinedAt: string;
+  isVerified: boolean;
+  /** 0–1, fraction of chats the seller replies to within responseTimeHours. */
+  responseRate: number;
+  /** Average reply time in hours. */
+  responseTimeHours: number;
+  bioEn: string;
+  bioAr: string;
+  /** Short style tags shown as chips on the public profile. */
+  styleTagsEn: string[];
+  styleTagsAr: string[];
+  cityEn: string;
+  cityAr: string;
+}
+
 export const SELLERS: Record<string, SellerProfile> = {
   sarah: {
     nameEn: "Sarah's Vintage",
@@ -92,3 +115,5 @@ export const SELLERS: Record<string, SellerProfile> = {
     typeAr: "خزانة معتمدة",
   },
 };
+
+export { SELLER_META } from "./seller-meta";

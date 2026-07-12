@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useSyncExternalStore } from "react";
+import { useCallback, useRef, useSyncExternalStore } from "react";
 
 const noopSubscribe = () => () => {};
 
@@ -19,9 +19,9 @@ export function useHydrated(): boolean {
 }
 
 /**
- * Subscribe to a `storage` event for a specific key. When another tab
- * (or this tab via dispatchStorageEvent) writes to the key, all
- * subscribers re-render.
+ * Stable localStorage subscription. Must keep the same function identity
+ * across renders — `useSyncExternalStore` re-subscribes whenever it
+ * changes, and an unstable subscribe causes render loops.
  */
 function subscribeStorage(callback: () => void): () => void {
   window.addEventListener("storage", callback);
@@ -33,6 +33,11 @@ function subscribeStorage(callback: () => void): () => void {
  * semantics. Uses `useSyncExternalStore` so the server renders with
  * `defaultValue` and the client picks up the stored value after
  * hydration — no `setState` inside `useEffect`.
+ *
+ * The snapshot is cached per key so `getSnapshot` returns a stable
+ * reference until the underlying string actually changes. Without this
+ * cache, deserialized objects would be new references every call and
+ * `useSyncExternalStore` would re-render forever.
  */
 export function useLocalStorageState<T>(
   key: string,
@@ -45,10 +50,25 @@ export function useLocalStorageState<T>(
   const serialize = options?.serialize ?? (JSON.stringify as (v: T) => string);
   const deserialize = options?.deserialize ?? (JSON.parse as (v: string) => T);
 
+  // Snapshot cache: keyed by the raw localStorage string. Ensures
+  // `getSnapshot` returns the same reference until the data changes.
+  const cacheRef = useRef<{ raw: string | null; value: T } | null>(null);
+
   const getSnapshot = useCallback((): T => {
     try {
-      const stored = localStorage.getItem(key);
-      return stored !== null ? deserialize(stored) : defaultValue;
+      const raw = window.localStorage.getItem(key);
+      const cached = cacheRef.current;
+      if (cached && cached.raw === raw) {
+        return cached.value;
+      }
+      let value: T;
+      try {
+        value = raw !== null ? deserialize(raw) : defaultValue;
+      } catch {
+        value = defaultValue;
+      }
+      cacheRef.current = { raw, value };
+      return value;
     } catch {
       return defaultValue;
     }
@@ -66,19 +86,20 @@ export function useLocalStorageState<T>(
   const setValue = useCallback(
     (next: T | ((prev: T) => T)) => {
       try {
-        const current = (() => {
-          try {
-            const stored = localStorage.getItem(key);
-            return stored !== null ? deserialize(stored) : defaultValue;
-          } catch {
-            return defaultValue;
-          }
-        })();
+        const raw = window.localStorage.getItem(key);
+        let current: T;
+        try {
+          current = raw !== null ? deserialize(raw) : defaultValue;
+        } catch {
+          current = defaultValue;
+        }
         const resolved =
           typeof next === "function" ? (next as (p: T) => T)(current) : next;
-        localStorage.setItem(key, serialize(resolved));
-        // useSyncExternalStore only fires on cross-tab `storage` events,
-        // so we dispatch a synthetic one so this tab re-renders too.
+        window.localStorage.setItem(key, serialize(resolved));
+        // Invalidate cache so the next getSnapshot re-deserializes.
+        cacheRef.current = null;
+        // useSyncExternalStore only re-renders on cross-tab `storage`
+        // events, so we dispatch a synthetic one for same-tab updates.
         window.dispatchEvent(new StorageEvent("storage", { key }));
       } catch {
         // Ignore quota errors, private mode, etc.

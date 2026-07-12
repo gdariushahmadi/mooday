@@ -8,6 +8,7 @@ function img(path: string): string {
 export const SEED_VERSION = "4";
 
 import { batch2Products } from "./products-batch2";
+import { backfillAttributes } from "./seed-attributes";
 
 const baseProducts: Product[] = [
   {
@@ -307,4 +308,7 @@ const baseProducts: Product[] = [
   },
 ];
 
-export const defaultProducts: Product[] = [...baseProducts, ...batch2Products];
+export const defaultProducts: Product[] = backfillAttributes([
+  ...baseProducts,
+  ...batch2Products,
+]);

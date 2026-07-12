@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { useApp, Product } from "@/context/AppContext";
 import {
   CATEGORIES,
@@ -8,12 +8,125 @@ import {
   CONDITIONS,
   CONDITIONS_AR,
 } from "@/data/categories";
+import { SIZES, SIZES_AR, COLOURS, type Size } from "@/data/attributes";
 import { ClickableCard } from "./ClickableCard";
+import { formatAED, formatAEDLabel } from "@/lib/format";
 
 interface SearchFiltersViewProps {
   onSelectProduct: (product: Product) => void;
   onBack: () => void;
 }
+
+type SortOption = "relevance" | "newest" | "priceAsc" | "priceDesc";
+
+const COPY = {
+  en: {
+    back: "Back",
+    searchPlaceholder: "Search for bags, dresses, decor...",
+    search: "Search",
+    clearSearch: "Clear search",
+    categories: "Categories",
+    condition: "Item Condition",
+    size: "Size",
+    colour: "Colour",
+    priceRange: "Price Range",
+    minPrice: "Min",
+    maxPrice: "Max",
+    listingMode: "Listing Mode",
+    all: "All",
+    resell: "Resell",
+    rent: "Rent",
+    rentComingSoon: "Coming soon",
+    sortBy: "Sort by",
+    relevance: "Relevance",
+    newest: "Newest",
+    priceLow: "Price: Low to High",
+    priceHigh: "Price: High to Low",
+    found: (n: number) => `Found ${n} item${n === 1 ? "" : "s"}`,
+    noResults: "We couldn't find any items matching your search.",
+    clearAll: "Clear all filters",
+    apply: "Apply",
+  },
+  ar: {
+    back: "رجوع",
+    searchPlaceholder: "ابحث عن حقيبة، فستان، ديكور...",
+    search: "بحث",
+    clearSearch: "مسح البحث",
+    categories: "الفئات",
+    condition: "حالة المنتج",
+    size: "المقاس",
+    colour: "اللون",
+    priceRange: "نطاق السعر",
+    minPrice: "أقل",
+    maxPrice: "أعلى",
+    listingMode: "نوع العرض",
+    all: "الكل",
+    resell: "بيع",
+    rent: "إيجار",
+    rentComingSoon: "قريباً",
+    sortBy: "ترتيب حسب",
+    relevance: "الصلة",
+    newest: "الأحدث",
+    priceLow: "السعر: من الأقل إلى الأعلى",
+    priceHigh: "السعر: من الأعلى إلى الأقل",
+    found: (n: number) => `تم العثور على ${n} منتج`,
+    noResults: "لم نجد أي منتجات تطابق بحثك.",
+    clearAll: "مسح كل الفلاتر",
+    apply: "تطبيق",
+  },
+} as const;
+
+// ---------- URL helpers ----------
+
+function readUrlFilters() {
+  if (typeof window === "undefined") return null;
+  const p = new URLSearchParams(window.location.search);
+  return {
+    q: p.get("q") ?? "",
+    cat: p.get("cat") ?? "All",
+    cond: p.get("cond") ?? "All",
+    sizes: (p.get("size") ?? "").split(",").filter(Boolean) as Size[],
+    color: p.get("color") ?? "",
+    min: p.get("min") ?? "",
+    max: p.get("max") ?? "",
+    mode: (p.get("mode") as "all" | "resell" | "rent") ?? "all",
+    sort: (p.get("sort") as SortOption) ?? "relevance",
+  };
+}
+
+function syncUrl(filters: {
+  q: string;
+  cat: string;
+  cond: string;
+  sizes: Size[];
+  color: string;
+  min: string;
+  max: string;
+  mode: string;
+  sort: string;
+}) {
+  if (typeof window === "undefined") return;
+  const url = new URL(window.location.href);
+  const set = (key: string, val: string) => {
+    if (val && val !== "All" && val !== "all" && val !== "relevance") {
+      url.searchParams.set(key, val);
+    } else {
+      url.searchParams.delete(key);
+    }
+  };
+  set("q", filters.q);
+  set("cat", filters.cat);
+  set("cond", filters.cond);
+  set("size", filters.sizes.join(","));
+  set("color", filters.color);
+  set("min", filters.min);
+  set("max", filters.max);
+  set("mode", filters.mode);
+  set("sort", filters.sort);
+  window.history.replaceState(null, "", url.toString());
+}
+
+// ---------- Component ----------
 
 export const SearchFiltersView: React.FC<SearchFiltersViewProps> = ({
   onSelectProduct,
@@ -21,33 +134,154 @@ export const SearchFiltersView: React.FC<SearchFiltersViewProps> = ({
 }) => {
   const { language, listings, likes, toggleLike } = useApp();
   const isAr = language === "ar";
+  const t = isAr ? COPY.ar : COPY.en;
 
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState<string>("All");
-  const [selectedCondition, setSelectedCondition] = useState<string>("All");
+  // Initialise all filter state from the URL in lazy initialisers.
+  const initial = readUrlFilters();
+  const [searchQuery, setSearchQuery] = useState(initial?.q ?? "");
+  const [debouncedQuery, setDebouncedQuery] = useState(initial?.q ?? "");
+  const [selectedCategory, setSelectedCategory] = useState(
+    initial?.cat ?? "All",
+  );
+  const [selectedCondition, setSelectedCondition] = useState(
+    initial?.cond ?? "All",
+  );
+  const [selectedSizes, setSelectedSizes] = useState<Size[]>(
+    initial?.sizes ?? [],
+  );
+  const [selectedColor, setSelectedColor] = useState(initial?.color ?? "");
+  const [minPrice, setMinPrice] = useState(initial?.min ?? "");
+  const [maxPrice, setMaxPrice] = useState(initial?.max ?? "");
+  const [selectedMode, setSelectedMode] = useState<"all" | "resell" | "rent">(
+    initial?.mode ?? "all",
+  );
+  const [sortBy, setSortBy] = useState<SortOption>(
+    initial?.sort ?? "relevance",
+  );
 
-  const categories = CATEGORIES;
-  const categoriesAr = CATEGORIES_AR;
+  // Debounce the search query 300ms.
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedQuery(searchQuery), 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
-  const conditions = CONDITIONS;
-  const conditionsAr = CONDITIONS_AR;
+  // Sync all filters to the URL whenever they change.
+  useEffect(() => {
+    syncUrl({
+      q: searchQuery,
+      cat: selectedCategory,
+      cond: selectedCondition,
+      sizes: selectedSizes,
+      color: selectedColor,
+      min: minPrice,
+      max: maxPrice,
+      mode: selectedMode,
+      sort: sortBy,
+    });
+  }, [
+    searchQuery,
+    selectedCategory,
+    selectedCondition,
+    selectedSizes,
+    selectedColor,
+    minPrice,
+    maxPrice,
+    selectedMode,
+    sortBy,
+  ]);
 
-  // Filter listings
-  const filteredListings = listings.filter((item) => {
-    const q = searchQuery.toLowerCase();
-    const matchesSearch =
-      item.titleEn.toLowerCase().includes(q) ||
-      item.titleAr.includes(searchQuery) ||
-      item.category.toLowerCase().includes(q);
+  const toggleSize = (size: Size) => {
+    setSelectedSizes((prev) =>
+      prev.includes(size) ? prev.filter((s) => s !== size) : [...prev, size],
+    );
+  };
 
-    const matchesCategory =
-      selectedCategory === "All" || item.category === selectedCategory;
+  const clearAll = () => {
+    setSearchQuery("");
+    setDebouncedQuery("");
+    setSelectedCategory("All");
+    setSelectedCondition("All");
+    setSelectedSizes([]);
+    setSelectedColor("");
+    setMinPrice("");
+    setMaxPrice("");
+    setSelectedMode("all");
+    setSortBy("relevance");
+  };
 
-    const matchesCondition =
-      selectedCondition === "All" || item.conditionEn === selectedCondition;
+  // Filter + sort pipeline.
+  const filteredListings = useMemo(() => {
+    const q = debouncedQuery.toLowerCase();
+    const min = minPrice ? parseInt(minPrice, 10) : 0;
+    const max = maxPrice ? parseInt(maxPrice, 10) : Infinity;
 
-    return matchesSearch && matchesCategory && matchesCondition;
-  });
+    let result = listings.filter((item) => {
+      // Text search across EN title, AR title, and category.
+      const matchesSearch =
+        !q ||
+        item.titleEn.toLowerCase().includes(q) ||
+        item.titleAr.includes(debouncedQuery) ||
+        item.category.toLowerCase().includes(q);
+
+      const matchesCategory =
+        selectedCategory === "All" || item.category === selectedCategory;
+
+      const matchesCondition =
+        selectedCondition === "All" || item.conditionEn === selectedCondition;
+
+      const matchesSize =
+        selectedSizes.length === 0 ||
+        (item.size != null && selectedSizes.includes(item.size as Size));
+
+      const matchesColor =
+        !selectedColor ||
+        item.colorEn?.toLowerCase() === selectedColor.toLowerCase();
+
+      const matchesPrice = item.price >= min && item.price <= max;
+
+      const matchesMode =
+        selectedMode === "all" || (item.mode ?? "resell") === selectedMode;
+
+      return (
+        matchesSearch &&
+        matchesCategory &&
+        matchesCondition &&
+        matchesSize &&
+        matchesColor &&
+        matchesPrice &&
+        matchesMode
+      );
+    });
+
+    // Sort.
+    if (sortBy === "newest") {
+      result = [...result].sort((a, b) => {
+        const aNew =
+          a.id.startsWith("batch2-") || a.id.startsWith("custom-") ? 1 : 0;
+        const bNew =
+          b.id.startsWith("batch2-") || b.id.startsWith("custom-") ? 1 : 0;
+        if (aNew !== bNew) return bNew - aNew;
+        return b.saves - a.saves;
+      });
+    } else if (sortBy === "priceAsc") {
+      result = [...result].sort((a, b) => a.price - b.price);
+    } else if (sortBy === "priceDesc") {
+      result = [...result].sort((a, b) => b.price - a.price);
+    }
+
+    return result;
+  }, [
+    listings,
+    debouncedQuery,
+    selectedCategory,
+    selectedCondition,
+    selectedSizes,
+    selectedColor,
+    minPrice,
+    maxPrice,
+    selectedMode,
+    sortBy,
+  ]);
 
   return (
     <div className="w-full max-w-[1200px] mx-auto flex flex-col gap-lg pb-10">
@@ -55,7 +289,7 @@ export const SearchFiltersView: React.FC<SearchFiltersViewProps> = ({
       <div className="flex items-center gap-md border-b border-outline-variant pb-4">
         <button
           onClick={onBack}
-          aria-label={isAr ? "رجوع" : "Back"}
+          aria-label={t.back}
           className="text-on-surface hover:bg-surface-container-low transition-colors rounded-full p-2 flex items-center justify-center active:scale-95"
         >
           <span className="material-symbols-outlined" aria-hidden="true">
@@ -63,7 +297,7 @@ export const SearchFiltersView: React.FC<SearchFiltersViewProps> = ({
           </span>
         </button>
 
-        {/* Search Input Box */}
+        {/* Search Input */}
         <div className="flex-grow flex items-center gap-sm bg-surface-container-low border border-outline-variant rounded-full px-md py-sm font-sans">
           <span
             className="material-symbols-outlined text-outline"
@@ -71,22 +305,21 @@ export const SearchFiltersView: React.FC<SearchFiltersViewProps> = ({
           >
             search
           </span>
+          <label htmlFor="search-input" className="sr-only">
+            {t.search}
+          </label>
           <input
+            id="search-input"
             type="text"
-            placeholder={
-              isAr
-                ? "ابحث عن حقيبة، فستان، ديكور..."
-                : "Search for bags, dresses, decor..."
-            }
+            placeholder={t.searchPlaceholder}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            aria-label={isAr ? "بحث" : "Search"}
             className="w-full bg-transparent outline-none border-none text-body-md text-on-surface placeholder-outline-variant"
           />
           {searchQuery && (
             <button
               onClick={() => setSearchQuery("")}
-              aria-label={isAr ? "مسح البحث" : "Clear search"}
+              aria-label={t.clearSearch}
               className="text-outline"
             >
               <span
@@ -103,61 +336,218 @@ export const SearchFiltersView: React.FC<SearchFiltersViewProps> = ({
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-lg mt-md font-sans">
         {/* Left Column: Filters Sidebar */}
         <aside className="lg:col-span-3 flex flex-col gap-md">
-          {/* Categories Filter */}
-          <div className="bg-surface-container-low rounded-xl border border-surface-container-high p-md">
-            <h3 className="font-serif text-label-md uppercase tracking-wider text-primary font-bold mb-md">
-              {isAr ? "الفئات" : "Categories"}
-            </h3>
+          {/* Clear all */}
+          <button
+            onClick={clearAll}
+            className="text-label-sm text-primary font-bold uppercase tracking-wider self-end hover:underline"
+          >
+            {t.clearAll}
+          </button>
+
+          {/* Category Filter */}
+          <FilterSection title={t.categories}>
             <div className="flex flex-wrap lg:flex-col gap-xs">
-              {categories.map((cat) => (
-                <button
+              {CATEGORIES.map((cat) => (
+                <FilterPill
                   key={cat}
+                  active={selectedCategory === cat}
                   onClick={() => setSelectedCategory(cat)}
-                  aria-pressed={selectedCategory === cat}
-                  className={`text-label-sm text-left px-3 py-2 rounded-lg transition-all border ${
-                    selectedCategory === cat
-                      ? "bg-primary text-on-primary border-primary font-bold"
-                      : "bg-surface-container-lowest text-on-surface border-surface-container-high hover:bg-surface-container-high"
-                  }`}
                 >
-                  {isAr ? categoriesAr[cat] : cat}
-                </button>
+                  {isAr ? CATEGORIES_AR[cat] : cat}
+                </FilterPill>
               ))}
             </div>
-          </div>
+          </FilterSection>
 
           {/* Condition Filter */}
-          <div className="bg-surface-container-low rounded-xl border border-surface-container-high p-md">
-            <h3 className="font-serif text-label-md uppercase tracking-wider text-primary font-bold mb-md">
-              {isAr ? "حالة المنتج" : "Item Condition"}
-            </h3>
+          <FilterSection title={t.condition}>
             <div className="flex flex-wrap lg:flex-col gap-xs">
-              {conditions.map((cond) => (
-                <button
+              {CONDITIONS.map((cond) => (
+                <FilterPill
                   key={cond}
+                  active={selectedCondition === cond}
                   onClick={() => setSelectedCondition(cond)}
-                  aria-pressed={selectedCondition === cond}
-                  className={`text-label-sm text-left px-3 py-2 rounded-lg transition-all border ${
-                    selectedCondition === cond
+                >
+                  {isAr ? CONDITIONS_AR[cond] : cond}
+                </FilterPill>
+              ))}
+            </div>
+          </FilterSection>
+
+          {/* Size Filter — multi-select */}
+          <FilterSection title={t.size}>
+            <div className="flex flex-wrap gap-xs">
+              {SIZES.map((size) => (
+                <FilterPill
+                  key={size}
+                  active={selectedSizes.includes(size)}
+                  onClick={() => toggleSize(size)}
+                >
+                  {isAr ? SIZES_AR[size] : size}
+                </FilterPill>
+              ))}
+            </div>
+          </FilterSection>
+
+          {/* Colour Filter */}
+          <FilterSection title={t.colour}>
+            <div className="flex flex-wrap gap-xs">
+              <FilterPill
+                active={!selectedColor}
+                onClick={() => setSelectedColor("")}
+              >
+                {t.all}
+              </FilterPill>
+              {COLOURS.map((colour) => (
+                <button
+                  key={colour.key}
+                  onClick={() => setSelectedColor(colour.key)}
+                  aria-pressed={
+                    selectedColor.toLowerCase() === colour.key.toLowerCase()
+                  }
+                  aria-label={isAr ? colour.ar : colour.en}
+                  className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-label-sm border transition-all ${
+                    selectedColor.toLowerCase() === colour.key.toLowerCase()
                       ? "bg-primary text-on-primary border-primary font-bold"
                       : "bg-surface-container-lowest text-on-surface border-surface-container-high hover:bg-surface-container-high"
                   }`}
                 >
-                  {isAr ? conditionsAr[cond] : cond}
+                  <span
+                    className="w-3 h-3 rounded-full border border-outline-variant inline-block"
+                    style={{ backgroundColor: colour.hex }}
+                    aria-hidden="true"
+                  />
+                  {isAr ? colour.ar : colour.en}
                 </button>
               ))}
             </div>
-          </div>
+          </FilterSection>
+
+          {/* Price Range Filter */}
+          <FilterSection title={t.priceRange}>
+            <div className="flex items-center gap-sm">
+              <div className="flex flex-col gap-xs flex-1">
+                <label
+                  htmlFor="min-price"
+                  className="text-[11px] text-on-surface-variant"
+                >
+                  {t.minPrice}
+                </label>
+                <input
+                  id="min-price"
+                  type="number"
+                  inputMode="numeric"
+                  placeholder="0"
+                  value={minPrice}
+                  onChange={(e) => setMinPrice(e.target.value)}
+                  className="p-sm bg-surface border border-outline-variant rounded-lg text-label-sm text-on-surface focus:border-primary outline-none w-full"
+                />
+              </div>
+              <span className="text-outline mt-md">—</span>
+              <div className="flex flex-col gap-xs flex-1">
+                <label
+                  htmlFor="max-price"
+                  className="text-[11px] text-on-surface-variant"
+                >
+                  {t.maxPrice}
+                </label>
+                <input
+                  id="max-price"
+                  type="number"
+                  inputMode="numeric"
+                  placeholder="∞"
+                  value={maxPrice}
+                  onChange={(e) => setMaxPrice(e.target.value)}
+                  className="p-sm bg-surface border border-outline-variant rounded-lg text-label-sm text-on-surface focus:border-primary outline-none w-full"
+                />
+              </div>
+            </div>
+            {/* Quick presets */}
+            <div className="flex flex-wrap gap-xs mt-sm">
+              <FilterPill
+                active={minPrice === "" && maxPrice === "500"}
+                onClick={() => {
+                  setMinPrice("");
+                  setMaxPrice("500");
+                }}
+              >
+                &lt; 500
+              </FilterPill>
+              <FilterPill
+                active={minPrice === "500" && maxPrice === "1000"}
+                onClick={() => {
+                  setMinPrice("500");
+                  setMaxPrice("1000");
+                }}
+              >
+                500–1K
+              </FilterPill>
+              <FilterPill
+                active={minPrice === "1000" && maxPrice === ""}
+                onClick={() => {
+                  setMinPrice("1000");
+                  setMaxPrice("");
+                }}
+              >
+                1K+
+              </FilterPill>
+            </div>
+          </FilterSection>
+
+          {/* Listing Mode Filter */}
+          <FilterSection title={t.listingMode}>
+            <div
+              className="flex bg-surface-container-low border border-surface-container-high rounded-full p-1"
+              role="radiogroup"
+              aria-label={t.listingMode}
+            >
+              {(["all", "resell", "rent"] as const).map((m) => (
+                <button
+                  key={m}
+                  onClick={() => m !== "rent" && setSelectedMode(m)}
+                  role="radio"
+                  aria-checked={selectedMode === m}
+                  disabled={m === "rent"}
+                  title={m === "rent" ? t.rentComingSoon : undefined}
+                  className={`flex-1 px-3 py-1.5 rounded-full text-label-sm font-bold transition-all ${
+                    selectedMode === m
+                      ? "bg-primary text-on-primary"
+                      : m === "rent"
+                        ? "text-outline opacity-50 cursor-not-allowed"
+                        : "text-on-surface-variant hover:text-on-surface"
+                  }`}
+                >
+                  {m === "all" ? t.all : m === "resell" ? t.resell : t.rent}
+                </button>
+              ))}
+            </div>
+          </FilterSection>
         </aside>
 
-        {/* Right Column: Search Results Grid */}
+        {/* Right Column: Search Results */}
         <main className="lg:col-span-9 flex flex-col gap-md">
-          <div className="flex justify-between items-center text-body-md text-on-surface-variant font-sans">
-            <span>
-              {isAr
-                ? `تم العثور على ${filteredListings.length} منتج`
-                : `Found ${filteredListings.length} items`}
-            </span>
+          <div className="flex justify-between items-center gap-md text-body-md text-on-surface-variant">
+            <span>{t.found(filteredListings.length)}</span>
+            {/* Sort dropdown */}
+            <div className="flex items-center gap-sm">
+              <label
+                htmlFor="sort-select"
+                className="text-label-sm text-on-surface-variant whitespace-nowrap"
+              >
+                {t.sortBy}:
+              </label>
+              <select
+                id="sort-select"
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as SortOption)}
+                className="bg-surface border border-outline-variant rounded-lg px-sm py-1 text-label-sm text-on-surface focus:border-primary outline-none cursor-pointer"
+              >
+                <option value="relevance">{t.relevance}</option>
+                <option value="newest">{t.newest}</option>
+                <option value="priceAsc">{t.priceLow}</option>
+                <option value="priceDesc">{t.priceHigh}</option>
+              </select>
+            </div>
           </div>
 
           {filteredListings.length === 0 ? (
@@ -169,10 +559,14 @@ export const SearchFiltersView: React.FC<SearchFiltersViewProps> = ({
                 search_off
               </span>
               <p className="text-body-lg text-on-surface-variant">
-                {isAr
-                  ? "لم نجد أي منتجات تطابق بحثك."
-                  : "We couldn't find any items matching your search."}
+                {t.noResults}
               </p>
+              <button
+                onClick={clearAll}
+                className="btn-primary px-6 py-2 rounded-full text-label-sm font-bold uppercase tracking-wider"
+              >
+                {t.clearAll}
+              </button>
             </div>
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-md">
@@ -186,7 +580,6 @@ export const SearchFiltersView: React.FC<SearchFiltersViewProps> = ({
                     ariaLabel={productTitle}
                     className="bg-surface-container-lowest rounded-xl border border-surface-container-high overflow-hidden group cursor-pointer hover:shadow-md transition-all relative"
                   >
-                    {/* Heart/Like Button */}
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
@@ -230,9 +623,16 @@ export const SearchFiltersView: React.FC<SearchFiltersViewProps> = ({
                       <h4 className="font-serif text-label-md text-on-surface line-clamp-1 group-hover:text-primary transition-colors">
                         {productTitle}
                       </h4>
-                      <span className="font-bold text-primary text-label-sm">
-                        AED {product.price}
-                      </span>
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-primary text-label-sm">
+                          {formatAEDLabel(product.price)}
+                        </span>
+                        {product.size && product.size !== "OS" && (
+                          <span className="text-[10px] text-on-surface-variant border border-outline-variant rounded px-1">
+                            {product.size}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </ClickableCard>
                 );
@@ -244,3 +644,35 @@ export const SearchFiltersView: React.FC<SearchFiltersViewProps> = ({
     </div>
   );
 };
+
+// ---------- Sub-components ----------
+
+const FilterSection: React.FC<{
+  title: string;
+  children: React.ReactNode;
+}> = ({ title, children }) => (
+  <div className="bg-surface-container-low rounded-xl border border-surface-container-high p-md">
+    <h3 className="font-serif text-label-md uppercase tracking-wider text-primary font-bold mb-md">
+      {title}
+    </h3>
+    {children}
+  </div>
+);
+
+const FilterPill: React.FC<{
+  active: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}> = ({ active, onClick, children }) => (
+  <button
+    onClick={onClick}
+    aria-pressed={active}
+    className={`text-label-sm text-left px-3 py-2 rounded-lg transition-all border ${
+      active
+        ? "bg-primary text-on-primary border-primary font-bold"
+        : "bg-surface-container-lowest text-on-surface border-surface-container-high hover:bg-surface-container-high"
+    }`}
+  >
+    {children}
+  </button>
+);

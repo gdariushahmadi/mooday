@@ -4,11 +4,13 @@ import React from "react";
 import { useApp } from "@/context/AppContext";
 import { useForcedMobile } from "@/hooks/useForcedMobile";
 import { useAppNavigation } from "@/hooks/useAppNavigation";
+import { useWelcomeGuard } from "@/hooks/useWelcomeGuard";
 import { AppContent } from "@/components/AppContent";
+import { WelcomeView } from "@/components/WelcomeView";
 import { InstallPrompt } from "@/components/InstallPrompt";
 
 export default function Home() {
-  const { language, cart } = useApp();
+  const { language, cart, notifications } = useApp();
   const isAr = language === "ar";
   // When `?mobile=1` is in the URL, the app re-renders at a fixed mobile
   // width (no extra wrapper, no visual frame) so it can be embedded cleanly
@@ -16,6 +18,7 @@ export default function Home() {
   useForcedMobile();
 
   const nav = useAppNavigation();
+  const welcome = useWelcomeGuard();
   const {
     activeTab,
     currentView,
@@ -26,6 +29,13 @@ export default function Home() {
   } = nav;
 
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
+  const unreadCount = notifications.filter((n) => n.isUnread).length;
+
+  // Cold-launch welcome screen takes over the whole app until the user
+  // confirms. After that, the normal shell renders.
+  if (welcome.shouldShow) {
+    return <WelcomeView onEnter={welcome.markSeen} />;
+  }
 
   // Hide chrome (header + bottom nav) when a full-page overlay is active.
   const showHeader =
@@ -71,8 +81,28 @@ export default function Home() {
             Mooday
           </h1>
 
-          {/* Shopping Bag Button & Count Badge */}
+          {/* Shopping Bag + Notifications */}
           <div className="flex items-center gap-1">
+            {/* Notifications Bell */}
+            <button
+              onClick={() => setView("notifications")}
+              className="text-primary active:scale-95 transition-transform p-2 rounded-full flex items-center justify-center hover:bg-surface-container-low relative"
+              aria-label={isAr ? "التنبيهات" : "Notifications"}
+            >
+              <span
+                className="material-symbols-outlined text-[24px]"
+                aria-hidden="true"
+              >
+                notifications
+              </span>
+              {unreadCount > 0 && (
+                <span className="absolute top-0 right-0 w-4.5 h-4.5 bg-tertiary text-on-tertiary text-[10px] font-bold rounded-full flex items-center justify-center font-sans">
+                  {unreadCount > 9 ? "9+" : unreadCount}
+                </span>
+              )}
+            </button>
+
+            {/* Shopping Bag */}
             <button
               onClick={() => setView("bag")}
               className="text-primary active:scale-95 transition-transform p-2 rounded-full flex items-center justify-center hover:bg-surface-container-low relative"
