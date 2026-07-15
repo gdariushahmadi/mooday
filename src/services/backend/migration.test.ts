@@ -13,6 +13,7 @@ describe("Phase 2 identity migration", () => {
     expect(sql).toContain("alter table public.addresses enable row level security");
     expect(sql).toContain("with check ((select auth.uid()) = user_id)");
     expect(sql).toContain("using ((select auth.uid()) = user_id)");
+    expect(sql).toContain("grant select, insert, update, delete on table public.addresses to authenticated");
   });
 
   it("enforces one default address and an authenticated atomic setter", () => {

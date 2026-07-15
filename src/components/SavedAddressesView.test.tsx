@@ -146,6 +146,26 @@ describe("SavedAddressesView (G-35)", () => {
     expect(ctx.setDefaultAddress).toHaveBeenCalledWith("addr-2");
   });
 
+  it("shows an error when changing the default address fails", async () => {
+    const user = userEvent.setup();
+    const ctx = makeContext({
+      setDefaultAddress: vi.fn(() => Promise.reject(new Error("offline"))),
+    });
+    render(
+      <AppContext.Provider value={ctx}>
+        <SavedAddressesView onBack={vi.fn()} />
+      </AppContext.Provider>,
+    );
+
+    await user.click(screen.getByRole("button", { name: /Make default/i }));
+
+    await waitFor(() =>
+      expect(screen.getByRole("alert")).toHaveTextContent(
+        "We couldn't save that change",
+      ),
+    );
+  });
+
   it("'Delete' opens a confirmation modal", async () => {
     const user = userEvent.setup();
     renderView();

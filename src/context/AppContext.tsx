@@ -742,41 +742,55 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const updateAddress = useCallback(
     (id: string, patch: Partial<Omit<Address, "id">>) => {
-      const persist = phase2Backend?.addresses.update(id, patch);
-      setAddresses((prev) => {
-        const next = prev.map((a) => (a.id === id ? { ...a, ...patch } : a));
-        if (patch.isDefault === true) {
-          return next.map((a) => ({ ...a, isDefault: a.id === id }));
-        }
-        return next;
-      });
-      return persist;
+      const commit = () => {
+        setAddresses((prev) => {
+          const next = prev.map((a) =>
+            a.id === id ? { ...a, ...patch } : a,
+          );
+          if (patch.isDefault === true) {
+            return next.map((a) => ({ ...a, isDefault: a.id === id }));
+          }
+          return next;
+        });
+      };
+      if (phase2Backend) {
+        return phase2Backend.addresses.update(id, patch).then(commit);
+      }
+      commit();
     },
     [phase2Backend, setAddresses],
   );
 
   const removeAddress = useCallback(
     (id: string) => {
-      const persist = phase2Backend?.addresses.remove(id);
-      setAddresses((prev) => {
-        const filtered = prev.filter((a) => a.id !== id);
-        if (filtered.length === 0) return filtered;
-        const hasDefault = filtered.some((a) => a.isDefault);
-        if (!hasDefault) filtered[0] = { ...filtered[0], isDefault: true };
-        return filtered;
-      });
-      return persist;
+      const commit = () => {
+        setAddresses((prev) => {
+          const filtered = prev.filter((a) => a.id !== id);
+          if (filtered.length === 0) return filtered;
+          const hasDefault = filtered.some((a) => a.isDefault);
+          if (!hasDefault) filtered[0] = { ...filtered[0], isDefault: true };
+          return filtered;
+        });
+      };
+      if (phase2Backend) {
+        return phase2Backend.addresses.remove(id).then(commit);
+      }
+      commit();
     },
     [phase2Backend, setAddresses],
   );
 
   const setDefaultAddress = useCallback(
     (id: string) => {
-      const persist = phase2Backend?.addresses.setDefault(id);
-      setAddresses((prev) =>
-        prev.map((a) => ({ ...a, isDefault: a.id === id })),
-      );
-      return persist;
+      const commit = () => {
+        setAddresses((prev) =>
+          prev.map((a) => ({ ...a, isDefault: a.id === id })),
+        );
+      };
+      if (phase2Backend) {
+        return phase2Backend.addresses.setDefault(id).then(commit);
+      }
+      commit();
     },
     [phase2Backend, setAddresses],
   );
@@ -887,10 +901,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const updateUserProfile = useCallback(
     (patch: Partial<UserProfile>) => {
-      setUserProfile((prev) => ({ ...prev, ...patch }));
       if (phase2Backend) {
-        return phase2Backend.profiles.updateMine(patch);
+        return phase2Backend.profiles.updateMine(patch).then(() => {
+          setUserProfile((prev) => ({ ...prev, ...patch }));
+        });
       }
+      setUserProfile((prev) => ({ ...prev, ...patch }));
     },
     [phase2Backend, setUserProfile],
   );

@@ -10,6 +10,12 @@
     "test": "vitest",
     "test:ci": "vitest run",
     "test:watch": "vitest watch",
+    "supabase:start": "npx supabase@2.109.1 start -x studio,imgproxy,logflare,vector,supavisor,edge-runtime",
+    "supabase:stop": "npx supabase@2.109.1 stop",
+    "test:phase2:db": "npx supabase@2.109.1 test db",
+    "test:phase2:smoke": "node scripts/phase2-auth-smoke.mjs",
+    "test:phase2:e2e": "playwright test",
+    "test:phase2": "npm run test:phase2:db && npm run test:phase2:smoke && npm run test:phase2:e2e",
     "typecheck": "tsc --noEmit",
     "verify": "npm run typecheck && npm run lint && npm run test:ci && npm run build"
   },
@@ -20,6 +26,7 @@
     "react-dom": "19.2.4"
   },
   "devDependencies": {
+    "@playwright/test": "^1.61.1",
     "@tailwindcss/postcss": "^4",
     "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^6.9.1",

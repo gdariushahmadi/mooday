@@ -111,6 +111,10 @@ for each row execute function public.handle_new_auth_user();
 alter table public.profiles enable row level security;
 alter table public.addresses enable row level security;
 
+revoke all on table public.profiles, public.addresses from anon;
+grant select, update on table public.profiles to authenticated;
+grant select, insert, update, delete on table public.addresses to authenticated;
+
 drop policy if exists "profiles_select_own" on public.profiles;
 create policy "profiles_select_own" on public.profiles
 for select to authenticated using ((select auth.uid()) = id);

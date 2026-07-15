@@ -15,3 +15,11 @@ enable_signup = true
 enable_signup = true
 double_confirm_changes = true
 enable_confirmations = true
+
+[auth.email.template.confirmation]
+subject = "{{ .Token }} — Confirm your Mooday account"
+content_path = "./supabase/templates/confirmation.html"
+
+[auth.email.template.recovery]
+subject = "{{ .Token }} — Reset your Mooday password"
+content_path = "./supabase/templates/recovery.html"

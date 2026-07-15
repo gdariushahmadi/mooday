@@ -39,6 +39,7 @@ interface AddressesCopy {
   defaultLabel: string;
   required: string;
   cancelAdd: string;
+  saveError: string;
 }
 
 const COPY: Record<"en" | "ar", AddressesCopy> = {
@@ -73,6 +74,7 @@ const COPY: Record<"en" | "ar", AddressesCopy> = {
     defaultLabel: "Make this my default",
     required: "Please complete the required fields.",
     cancelAdd: "Cancel",
+    saveError: "We couldn't save that change. Please try again.",
   },
   ar: {
     title: "العناوين المحفوظة",
@@ -106,6 +108,7 @@ const COPY: Record<"en" | "ar", AddressesCopy> = {
     defaultLabel: "اجعله العنوان الافتراضي",
     required: "يرجى إكمال الحقول المطلوبة.",
     cancelAdd: "إلغاء",
+    saveError: "تعذر حفظ التغيير. حاولي مجدداً.",
   },
 };
 
@@ -144,6 +147,7 @@ export const SavedAddressesView: React.FC<SavedAddressesViewProps> = ({
   const [showForm, setShowForm] = useState(addresses.length === 0);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [formError, setFormError] = useState("");
+  const [mutationError, setMutationError] = useState("");
   const [form, setForm] = useState({
     labelEn: "Home" as "Home" | "Work" | "Other",
     labelAr: "المنزل" as "المنزل" | "العمل" | "أخرى",
@@ -183,11 +187,7 @@ export const SavedAddressesView: React.FC<SavedAddressesViewProps> = ({
         }),
       );
     } catch {
-      setFormError(
-        isAr
-          ? "تعذر حفظ العنوان. حاولي مجدداً."
-          : "We couldn't save this address. Please try again.",
-      );
+      setFormError(t.saveError);
       return;
     }
     setForm({
@@ -202,6 +202,26 @@ export const SavedAddressesView: React.FC<SavedAddressesViewProps> = ({
       isDefault: true,
     });
     setShowForm(false);
+  };
+
+  const handleMakeDefault = async (id: string) => {
+    setMutationError("");
+    try {
+      await Promise.resolve(setDefaultAddress(id));
+    } catch {
+      setMutationError(t.saveError);
+    }
+  };
+
+  const handleRemove = async (id: string) => {
+    setMutationError("");
+    try {
+      await Promise.resolve(removeAddress(id));
+      setConfirmDeleteId(null);
+    } catch {
+      setMutationError(t.saveError);
+      setConfirmDeleteId(null);
+    }
   };
 
   const confirmDeleteTarget = addresses.find((a) => a.id === confirmDeleteId);
@@ -360,6 +380,14 @@ export const SavedAddressesView: React.FC<SavedAddressesViewProps> = ({
       )}
 
       {/* List */}
+      {mutationError && (
+        <p
+          role="alert"
+          className="rounded-lg bg-error-container p-sm font-bold text-error"
+        >
+          {mutationError}
+        </p>
+      )}
       {addresses.length === 0 && !showForm ? (
         <div className="flex flex-col items-center justify-center py-12 gap-md text-center">
           <span
@@ -383,7 +411,7 @@ export const SavedAddressesView: React.FC<SavedAddressesViewProps> = ({
               address={a}
               isAr={isAr}
               t={t}
-              onMakeDefault={() => void setDefaultAddress(a.id)}
+              onMakeDefault={() => void handleMakeDefault(a.id)}
               onDelete={() => setConfirmDeleteId(a.id)}
             />
           ))}
@@ -418,10 +446,7 @@ export const SavedAddressesView: React.FC<SavedAddressesViewProps> = ({
               </button>
               <button
                 type="button"
-                onClick={() => {
-                  void removeAddress(confirmDeleteTarget.id);
-                  setConfirmDeleteId(null);
-                }}
+                onClick={() => void handleRemove(confirmDeleteTarget.id)}
                 className="flex-1 py-3 rounded-xl bg-error text-on-error text-label-sm uppercase tracking-widest font-bold active:scale-95 transition-transform"
               >
                 {t.remove}

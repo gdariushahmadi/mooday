@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { AppContext, type AppContextType } from "@/context/AppContext";
 import { EditProfileView } from "@/components/EditProfileView";
@@ -104,6 +104,28 @@ describe("EditProfileView (G-33)", () => {
     const { ctx } = renderView();
     await user.click(screen.getByRole("button", { name: /Save profile/i }));
     expect(ctx.updateUserProfile).toHaveBeenCalled();
+  });
+
+  it("stays open and shows an error when saving fails", async () => {
+    const user = userEvent.setup();
+    const onBack = vi.fn();
+    const ctx = makeContext({
+      updateUserProfile: vi.fn(() => Promise.reject(new Error("offline"))),
+    });
+    render(
+      <AppContext.Provider value={ctx}>
+        <EditProfileView onBack={onBack} />
+      </AppContext.Provider>,
+    );
+
+    await user.click(screen.getByRole("button", { name: /Save profile/i }));
+
+    await waitFor(() =>
+      expect(screen.getByRole("alert")).toHaveTextContent(
+        "We couldn't save your profile",
+      ),
+    );
+    expect(onBack).not.toHaveBeenCalled();
   });
 
   it("Back calls onBack", async () => {

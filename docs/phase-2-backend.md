@@ -15,6 +15,9 @@ local until Phase 3.
 - One-way removal of the legacy plaintext `mooday_users` and cosmetic
   `mooday_session` keys when Supabase mode starts.
 - Service Worker bypass for API, Auth, and authenticated requests.
+- Browser-level Playwright coverage for registration and the emailed OTP.
+- Server-first profile/address mutations so a failed request cannot leave the
+  UI showing data that was never saved.
 
 Supabase owns `auth.users` and `auth.sessions`. Mooday intentionally does not
 duplicate passwords, tokens, or sessions in the public schema.
@@ -22,15 +25,21 @@ duplicate passwords, tokens, or sessions in the public schema.
 ## Local setup
 
 1. Install the Supabase CLI or use `npx supabase`.
-2. Start the local stack and apply the migration:
+2. Install the Chromium runtime used by the browser journey:
 
    ```bash
-   npx supabase start
-   npx supabase db reset
-   npx supabase test db
+   npx playwright install chromium
    ```
 
-3. Copy `.env.example` to `.env.local` and set:
+3. Start the local stack and apply the migration:
+
+   ```bash
+   npm run supabase:start
+   npx supabase db reset
+   npm run test:phase2
+   ```
+
+4. Copy `.env.example` to `.env.local` and set:
 
    ```dotenv
    NEXT_PUBLIC_DATA_SOURCE=supabase
@@ -39,8 +48,14 @@ duplicate passwords, tokens, or sessions in the public schema.
    NEXT_PUBLIC_SITE_URL=http://localhost:3000
    ```
 
-4. Add `/auth/callback` to the redirect allow-list. Google and Apple also
+5. Add `/auth/callback` to the redirect allow-list. Google and Apple also
    require provider credentials in the Supabase dashboard.
+
+6. For a hosted Supabase project, copy the contents of
+   `supabase/templates/confirmation.html` and `recovery.html` into the Auth
+   Email Templates dashboard. Mooday's UI verifies `{{ .Token }}` as a
+   six-digit OTP; the default confirmation-link template is not compatible
+   with this screen.
 
 Only the public/publishable key belongs in browser configuration. Never expose
 the service-role key, database URL, SMTP password, or OAuth client secret via a
@@ -67,6 +82,25 @@ frontend rollback.
 - Anonymous users cannot access private tables.
 - A user has at most one default address.
 - Auth/API responses never enter Service Worker Cache Storage.
+
+### Local verification record — 2026-07-15
+
+- Supabase CLI `2.109.1` started successfully.
+- The database was recreated from empty with `supabase db reset` and the
+  identity migration applied successfully.
+- `supabase test db` passed all 10 RLS isolation tests for authenticated User
+  A, authenticated User B, ownership spoofing, default-address RPC, and anon.
+- The frontend regression suite passed all 437 tests after the database fix.
+- The live local Auth smoke test passed registration, six-digit email OTP,
+  profile trigger, owner-scoped address creation, sign-out/sign-in, recovery
+  OTP, password update, and sign-in with the recovered password.
+- The Playwright browser test passed the real sign-up form, Mailpit OTP
+  delivery, six-cell code entry, verification, and authenticated navigation.
+- Next runtime returned `200` for `/` and `/auth/callback` with the configured
+  CSP report-only and other security headers.
+- CI now starts an isolated local Supabase stack, applies migrations, runs RLS,
+  live Auth smoke tests, and the browser-level OTP journey, builds in Supabase
+  mode, and always tears the stack down without requiring repository secrets.
 
 Phase 3 will move listings, carts, orders, offers, chat, notifications, reviews,
 and disputes behind the backend boundary and add queues/realtime processing.

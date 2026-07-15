@@ -34,9 +34,10 @@ select is(
 );
 
 insert into public.addresses (
-  user_id, label_en, label_ar, full_name_en, full_name_ar,
+  id, user_id, label_en, label_ar, full_name_en, full_name_ar,
   phone, city_en, city_ar, street_en, street_ar, is_default
 ) values (
+  'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
   '22222222-2222-4222-8222-222222222222',
   'Home', 'المنزل', 'User B', 'المستخدم ب', '+971500000002',
   'Dubai', 'دبي', 'B street', 'شارع ب', true
@@ -87,19 +88,16 @@ select is(
   'user A can only select the profile owned by user A'
 );
 
-select is(
-  (with changed as (
-    update public.addresses set city_en = 'Abu Dhabi'
+select is_empty(
+  $$update public.addresses set city_en = 'Abu Dhabi'
     where user_id = '22222222-2222-4222-8222-222222222222'
-    returning 1
-  ) select count(*)::bigint from changed),
-  0::bigint,
+    returning 1$$,
   'user A cannot update user B address'
 );
 
 select throws_ok(
   $$select public.set_default_address(
-    '22222222-2222-4222-8222-222222222222'::uuid
+    'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb'::uuid
   )$$,
   'P0002',
   'address not found',
@@ -117,15 +115,17 @@ reset role;
 set local role anon;
 select set_config('request.jwt.claims', '{"role":"anon"}', true);
 
-select is(
-  (select count(*)::bigint from public.addresses),
-  0::bigint,
+select throws_ok(
+  'select count(*) from public.addresses',
+  '42501',
+  'permission denied for table addresses',
   'anonymous users cannot select private addresses'
 );
 
-select is(
-  (select count(*)::bigint from public.profiles),
-  0::bigint,
+select throws_ok(
+  'select count(*) from public.profiles',
+  '42501',
+  'permission denied for table profiles',
   'anonymous users cannot select private profiles'
 );
 

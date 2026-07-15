@@ -166,24 +166,13 @@ flows, and a mock-mode feature flag. See `docs/phase-2-backend.md` for setup,
 rollout, and verification. Provider delivery and OAuth still require project
 credentials in the Supabase dashboard; no secrets are committed.
 
-Phase 1 is complete. Phase 2 (backend integration) and Phase 3
-(hardening + multi-user sync) are the next gates per `ROADMAP.md`.
-
-The single largest Phase-2 ticket is **password hashing** — the
-mock auth in `src/data/users.ts` stores plaintext, which is fine
-for Phase 1 demo but unacceptable for production. Before the
-backend swap, hash the entries and migrate existing localStorage
-records on first load.
-
-After the auth migration:
-1. **Wire a real auth server** — replace `signIn`/`signUp`/`signOut`
-   calls with calls to the new backend; keep the same mutator
-   signatures so the views don't need to change.
-2. **Replace mock OTP** with a real SMS / email challenge.
-3. **Replace social login mocks** with real Google / Apple OIDC.
-4. **Toast / snackbar system** (see § 4 below).
-5. **Service layer extraction** (`src/services/`) — seams to swap
-   localStorage reads/writes with API calls.
+Phase 1 is complete and the local Phase 2 identity foundation is verified with
+RLS, live Auth smoke tests, and a browser-level sign-up/OTP test. The next gate
+is environment delivery: create the hosted Supabase staging project, apply the
+migration and email templates, configure SMTP plus Google/Apple credentials,
+set the deployment variables/redirect allow-list, and run the same smoke flow
+against staging. Phase 3 then moves marketplace data behind the backend
+boundary and adds multi-user sync.
 
 ---
 
