@@ -8,9 +8,20 @@ export function getPhase2Backend(): Phase2Backend | null {
   return config.mode === "supabase" ? createSupabaseBackend(config) : null;
 }
 
+/** Phase 3 listings stay behind a separate rollout flag. */
+export function getPhase3ListingService() {
+  const config = getBackendConfig();
+  if (config.marketplaceMode !== "supabase") return null;
+  return createSupabaseBackend(config).listings;
+}
+
 export type {
   AuthenticatedUser,
   AuthResult,
   OtpPurpose,
   Phase2Backend,
+  CreateListingInput,
+  ListingRecord,
+  ListingService,
+  ListingStatus,
 } from "./contracts";

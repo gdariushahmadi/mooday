@@ -174,6 +174,12 @@ set the deployment variables/redirect allow-list, and run the same smoke flow
 against staging. Phase 3 then moves marketplace data behind the backend
 boundary and adds multi-user sync.
 
+Phase 3 has started with the feature-flagged listings foundation: constrained
+listing/image tables, public-active/owner-private RLS, a typed Supabase adapter,
+and live cross-seller isolation tests. The Phase 1 listing UI intentionally
+stays on mock data until media storage and a safe public seller projection are
+ready. See `docs/phase-3-marketplace.md`.
+
 ---
 
 ## 7. Conventions already established (do not break)

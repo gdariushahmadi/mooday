@@ -11,10 +11,12 @@ a `NEXT_PUBLIC_*` variable or commit it to Git.
   available region and record the project reference in the team password
   manager.
 - [ ] Link the repository to staging with the Supabase CLI.
-- [ ] Review the pending migration, take a staging backup, then apply
-  `supabase/migrations/202607150001_phase_2_identity.sql`.
+- [ ] Review all pending migrations, take a staging backup, then apply the
+  identity migration and `202607150002_phase_3_listings.sql` in order.
 - [ ] Confirm that `profiles`, `addresses`, `set_default_address`, triggers,
   grants, and all RLS policies exist.
+- [ ] Confirm that `listings` and `listing_images` exist and that anonymous
+  access returns active listings only.
 - [ ] Run the database/RLS tests against an isolated staging test database.
 - [ ] Copy `supabase/templates/confirmation.html` and `recovery.html` into the
   matching Supabase Auth email templates. Keep `{{ .Token }}` intact so the UI

@@ -67,8 +67,53 @@ export interface AddressService {
   setDefault(id: string): Promise<void>;
 }
 
+export type ListingStatus =
+  | "draft"
+  | "active"
+  | "reserved"
+  | "sold"
+  | "archived";
+export type ListingMode = "resell" | "rent";
+
+export interface ListingRecord {
+  id: string;
+  sellerId: string;
+  titleEn: string;
+  titleAr: string;
+  descriptionEn: string;
+  descriptionAr: string;
+  priceMinor: number;
+  originalPriceMinor: number | null;
+  currency: "AED";
+  conditionEn: string;
+  conditionAr: string;
+  category: string;
+  size: string | null;
+  colorEn: string | null;
+  colorAr: string | null;
+  mode: ListingMode;
+  status: ListingStatus;
+  isAuthentic: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type CreateListingInput = Omit<
+  ListingRecord,
+  "id" | "sellerId" | "createdAt" | "updatedAt"
+>;
+
+export interface ListingService {
+  listVisible(): Promise<ListingRecord[]>;
+  listMine(): Promise<ListingRecord[]>;
+  create(input: CreateListingInput): Promise<ListingRecord>;
+  update(id: string, patch: Partial<CreateListingInput>): Promise<void>;
+  remove(id: string): Promise<void>;
+}
+
 export interface Phase2Backend {
   auth: AuthService;
   profiles: ProfileService;
   addresses: AddressService;
+  listings: ListingService;
 }
