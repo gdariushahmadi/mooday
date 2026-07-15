@@ -41,9 +41,10 @@ listing can be rendered with feature parity.
 
 ## Next slices
 
-1. Create the listing-media Storage bucket, path ownership policies, upload
-   validation, cleanup, and signed/public delivery decision.
-2. Define the public seller-card projection without exposing private profiles.
+1. Define the public seller-card projection without exposing private profiles.
+2. Add the media adapter for validated upload, signed URL creation, metadata
+   persistence, and orphan cleanup. The private `listing-media` bucket and its
+   owner/visibility RLS policies are now delivered locally.
 3. Map remote listing/image/seller records into the current `Product` view
    model and enable create/edit/delete behind the marketplace flag.
 4. Move likes and cart to user-scoped tables with idempotent mutations.

@@ -12,11 +12,14 @@ a `NEXT_PUBLIC_*` variable or commit it to Git.
   manager.
 - [ ] Link the repository to staging with the Supabase CLI.
 - [ ] Review all pending migrations, take a staging backup, then apply the
-  identity migration and `202607150002_phase_3_listings.sql` in order.
+  identity migration, `202607150002_phase_3_listings.sql`, and
+  `202607150003_phase_3_listing_media.sql` in order.
 - [ ] Confirm that `profiles`, `addresses`, `set_default_address`, triggers,
   grants, and all RLS policies exist.
 - [ ] Confirm that `listings` and `listing_images` exist and that anonymous
   access returns active listings only.
+- [ ] Confirm that the private `listing-media` bucket has a 10 MB limit,
+  JPEG/PNG/WebP allow-list, and the expected Storage RLS policies.
 - [ ] Run the database/RLS tests against an isolated staging test database.
 - [ ] Copy `supabase/templates/confirmation.html` and `recovery.html` into the
   matching Supabase Auth email templates. Keep `{{ .Token }}` intact so the UI
