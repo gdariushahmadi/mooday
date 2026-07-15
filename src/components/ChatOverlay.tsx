@@ -20,6 +20,7 @@ interface ChatCopy {
   notFoundBack: string;
   attachImage: string;
   voiceNote: string;
+  attachmentUnavailable: string;
   makeOffer: string;
   offerAmount: string;
   offerPlaceholder: string;
@@ -49,6 +50,7 @@ const COPY: Record<"en" | "ar", ChatCopy> = {
     notFoundBack: "Back",
     attachImage: "Attach image",
     voiceNote: "Voice note",
+    attachmentUnavailable: "Available after media upload is connected",
     makeOffer: "Make Offer",
     offerAmount: "Your offer (AED)",
     offerPlaceholder: "Enter amount",
@@ -76,6 +78,7 @@ const COPY: Record<"en" | "ar", ChatCopy> = {
     notFoundBack: "رجوع",
     attachImage: "إرفاق صورة",
     voiceNote: "رسالة صوتية",
+    attachmentUnavailable: "يتوفر بعد ربط رفع الوسائط",
     makeOffer: "إرسال عرض",
     offerAmount: "عرضك (AED)",
     offerPlaceholder: "أدخلي المبلغ",
@@ -127,7 +130,15 @@ export const ChatOverlay: React.FC<ChatOverlayProps> = ({
   const [inputText, setInputText] = useState("");
   const [showOfferForm, setShowOfferForm] = useState(false);
   const [offerAmount, setOfferAmount] = useState("");
-  const [offers, setOffers] = useState<Record<string, OfferMessage>>({});
+  const [offers, setOffers] = useState<Record<string, OfferMessage>>(() => {
+    try {
+      return JSON.parse(
+        localStorage.getItem(`mooday_chat_offers_${threadId}`) ?? "{}",
+      );
+    } catch {
+      return {};
+    }
+  });
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const thread = chats.find((c) => c.id === threadId);
@@ -135,6 +146,13 @@ export const ChatOverlay: React.FC<ChatOverlayProps> = ({
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [thread?.messages, offers]);
+
+  useEffect(() => {
+    localStorage.setItem(
+      `mooday_chat_offers_${threadId}`,
+      JSON.stringify(offers),
+    );
+  }, [offers, threadId]);
 
   if (!thread) {
     return (
@@ -159,15 +177,6 @@ export const ChatOverlay: React.FC<ChatOverlayProps> = ({
 
   const handleQuickReply = (text: string) => {
     sendChatMessage(threadId, text);
-  };
-
-  const handleAttachImage = () => {
-    // Phase 1: insert a stub message. Phase 3 will use a real file picker.
-    sendChatMessage(threadId, isAr ? "📷 صورة" : "📷 Photo");
-  };
-
-  const handleVoiceNote = () => {
-    sendChatMessage(threadId, isAr ? "🎙 رسالة صوتية" : "🎙 Voice note");
   };
 
   const handleSendOffer = () => {
@@ -374,9 +383,10 @@ export const ChatOverlay: React.FC<ChatOverlayProps> = ({
           {/* Image attach */}
           <button
             type="button"
-            onClick={handleAttachImage}
             aria-label={t.attachImage}
-            className="w-10 h-10 rounded-full bg-surface-container-low flex items-center justify-center text-on-surface-variant hover:text-primary transition-colors flex-shrink-0"
+            title={t.attachmentUnavailable}
+            disabled
+            className="w-10 h-10 rounded-full bg-surface-container-low flex items-center justify-center text-outline opacity-50 cursor-not-allowed flex-shrink-0"
           >
             <span
               className="material-symbols-outlined text-[20px] no-mirror"
@@ -406,9 +416,10 @@ export const ChatOverlay: React.FC<ChatOverlayProps> = ({
           {/* Voice note */}
           <button
             type="button"
-            onClick={handleVoiceNote}
             aria-label={t.voiceNote}
-            className="w-10 h-10 rounded-full bg-surface-container-low flex items-center justify-center text-on-surface-variant hover:text-primary transition-colors flex-shrink-0"
+            title={t.attachmentUnavailable}
+            disabled
+            className="w-10 h-10 rounded-full bg-surface-container-low flex items-center justify-center text-outline opacity-50 cursor-not-allowed flex-shrink-0"
           >
             <span
               className="material-symbols-outlined text-[20px] no-mirror"

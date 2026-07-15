@@ -74,6 +74,40 @@ export interface AppNavigation {
   closeNotifications: () => void;
   openChats: () => void;
   closeChats: () => void;
+  openEditProfile: () => void;
+  closeEditProfile: () => void;
+  openAddresses: () => void;
+  closeAddresses: () => void;
+  openPaymentMethods: () => void;
+  closePaymentMethods: () => void;
+  openHelp: () => void;
+  closeHelp: () => void;
+  openLeaveReview: () => void;
+  closeLeaveReview: () => void;
+  openMyReviews: () => void;
+  closeMyReviews: () => void;
+  openReport: () => void;
+  closeReport: () => void;
+  openReturnRequest: () => void;
+  closeReturnRequest: () => void;
+  openPayouts: () => void;
+  closePayouts: () => void;
+  openBlockedUsers: () => void;
+  closeBlockedUsers: () => void;
+  openDispute: () => void;
+  closeDispute: () => void;
+  openDisputesList: () => void;
+  closeDisputesList: () => void;
+  openSignUp: () => void;
+  closeSignUp: () => void;
+  openOtp: () => void;
+  closeOtp: () => void;
+  openSignIn: () => void;
+  closeSignIn: () => void;
+  openForgotPassword: () => void;
+  closeForgotPassword: () => void;
+  openSocialLogin: () => void;
+  closeSocialLogin: () => void;
   checkoutProductDirect: (product: Product) => void;
   checkoutFromActiveChat: () => void;
   checkoutBack: () => void;
@@ -316,6 +350,149 @@ export function useAppNavigation(): AppNavigation {
     setActiveTab("profile");
   }, []);
 
+  const openEditProfile = useCallback(() => {
+    setCurrentView("edit-profile");
+  }, []);
+
+  const closeEditProfile = useCallback(() => {
+    setCurrentView("profile");
+    setActiveTab("profile");
+  }, []);
+
+  const openAddresses = useCallback(() => {
+    setCurrentView("addresses");
+  }, []);
+
+  const closeAddresses = useCallback(() => {
+    setCurrentView("profile");
+    setActiveTab("profile");
+  }, []);
+
+  const openPaymentMethods = useCallback(() => {
+    setCurrentView("payment-methods");
+  }, []);
+
+  const closePaymentMethods = useCallback(() => {
+    setCurrentView("profile");
+    setActiveTab("profile");
+  }, []);
+
+  const openHelp = useCallback(() => {
+    setCurrentView("help");
+  }, []);
+
+  const closeHelp = useCallback(() => {
+    setCurrentView("settings");
+  }, []);
+
+  const openLeaveReview = useCallback(() => {
+    setCurrentView("leave-review");
+  }, []);
+
+  const closeLeaveReview = useCallback(() => {
+    setCurrentView("order");
+  }, []);
+
+  const openMyReviews = useCallback(() => {
+    setCurrentView("my-reviews");
+  }, []);
+
+  const closeMyReviews = useCallback(() => {
+    setCurrentView("purchases");
+  }, []);
+
+  const openReport = useCallback(() => {
+    setCurrentView("report");
+  }, []);
+
+  const closeReport = useCallback(() => {
+    setCurrentView("order");
+  }, []);
+
+  const openReturnRequest = useCallback(() => {
+    setCurrentView("return-request");
+  }, []);
+
+  const closeReturnRequest = useCallback(() => {
+    setCurrentView("order");
+  }, []);
+
+  const openPayouts = useCallback(() => {
+    setSelectedProduct(null);
+    setActiveChatThreadId(null);
+    setCurrentView("payouts");
+  }, []);
+
+  const closePayouts = useCallback(() => {
+    setCurrentView("home");
+    setActiveTab("profile");
+  }, []);
+
+  const openBlockedUsers = useCallback(() => {
+    setCurrentView("blocked-users");
+  }, []);
+
+  const closeBlockedUsers = useCallback(() => {
+    setCurrentView("settings");
+  }, []);
+
+  const openDispute = useCallback(() => {
+    setCurrentView("dispute");
+  }, []);
+
+  const closeDispute = useCallback(() => {
+    setCurrentView("order");
+  }, []);
+
+  const openDisputesList = useCallback(() => {
+    setCurrentView("disputes-list");
+  }, []);
+
+  const closeDisputesList = useCallback(() => {
+    setCurrentView("profile");
+    setActiveTab("profile");
+  }, []);
+
+  const openSignUp = useCallback(() => {
+    setCurrentView("signup");
+  }, []);
+
+  const closeSignUp = useCallback(() => {
+    setCurrentView("home");
+  }, []);
+
+  const openOtp = useCallback(() => {
+    setCurrentView("otp");
+  }, []);
+
+  const closeOtp = useCallback(() => {
+    setCurrentView("signin");
+  }, []);
+
+  const openSignIn = useCallback(() => {
+    setCurrentView("signin");
+  }, []);
+
+  const closeSignIn = useCallback(() => {
+    setCurrentView("home");
+  }, []);
+
+  const openForgotPassword = useCallback(() => {
+    setCurrentView("forgot-password");
+  }, []);
+
+  const closeForgotPassword = useCallback(() => {
+    setCurrentView("signin");
+  }, []);
+
+  const openSocialLogin = useCallback(() => {
+    setCurrentView("social-login");
+  }, []);
+
+  const closeSocialLogin = useCallback(() => {
+    setCurrentView("home");
+  }, []);
+
   const checkoutProductDirect = useCallback((product: Product) => {
     setCheckoutProduct(product);
     setCurrentView("checkout");
@@ -403,6 +580,40 @@ export function useAppNavigation(): AppNavigation {
     closeNotifications,
     openChats,
     closeChats,
+    openEditProfile,
+    closeEditProfile,
+    openAddresses,
+    closeAddresses,
+    openPaymentMethods,
+    closePaymentMethods,
+    openHelp,
+    closeHelp,
+    openLeaveReview,
+    closeLeaveReview,
+    openMyReviews,
+    closeMyReviews,
+    openReport,
+    closeReport,
+    openReturnRequest,
+    closeReturnRequest,
+    openPayouts,
+    closePayouts,
+    openBlockedUsers,
+    closeBlockedUsers,
+    openDispute,
+    closeDispute,
+    openDisputesList,
+    closeDisputesList,
+    openSignUp,
+    closeSignUp,
+    openOtp,
+    closeOtp,
+    openSignIn,
+    closeSignIn,
+    openForgotPassword,
+    closeForgotPassword,
+    openSocialLogin,
+    closeSocialLogin,
     checkoutProductDirect,
     checkoutFromActiveChat,
     checkoutBack,

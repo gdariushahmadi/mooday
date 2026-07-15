@@ -15,6 +15,8 @@ import { ClickableCard } from "./ClickableCard";
 interface NotificationsCentreViewProps {
   onBack: () => void;
   onOpenChat?: (threadId: string) => void;
+  onOpenProduct?: (productId: string) => void;
+  onOpenSeller?: (sellerId: string) => void;
 }
 
 interface CentreCopy {
@@ -59,8 +61,13 @@ type FilterId = "all" | NotificationType;
  */
 export const NotificationsCentreView: React.FC<
   NotificationsCentreViewProps
-> = ({ onBack, onOpenChat }) => {
-  const { language, notifications, markAllNotificationsRead } = useApp();
+> = ({ onBack, onOpenChat, onOpenProduct, onOpenSeller }) => {
+  const {
+    language,
+    notifications,
+    markNotificationRead,
+    markAllNotificationsRead,
+  } = useApp();
   const isAr = language === "ar";
   const t = isAr ? COPY.ar : COPY.en;
   const [filter, setFilter] = useState<FilterId>("all");
@@ -79,6 +86,15 @@ export const NotificationsCentreView: React.FC<
     filter === "all" ? sorted : sorted.filter((n) => n.type === filter);
 
   const unread = sorted.filter((n) => n.isUnread).length;
+
+  const openTarget = (notification: (typeof notifications)[number]) => {
+    if (!notification.target) return;
+    markNotificationRead(notification.id);
+    const { kind, id } = notification.target;
+    if (kind === "chat") onOpenChat?.(id);
+    if (kind === "product" || kind === "listing") onOpenProduct?.(id);
+    if (kind === "seller") onOpenSeller?.(id);
+  };
 
   return (
     <div
@@ -191,11 +207,7 @@ export const NotificationsCentreView: React.FC<
             return (
               <ClickableCard
                 key={n.id}
-                onClick={
-                  clickable && n.target?.kind === "chat" && onOpenChat
-                    ? () => onOpenChat(n.target!.id)
-                    : () => {}
-                }
+                onClick={() => openTarget(n)}
                 ariaLabel={clickable ? `${title} — ${time}` : undefined}
                 className={`border rounded-xl p-md flex items-start gap-md transition-colors ${
                   n.isUnread

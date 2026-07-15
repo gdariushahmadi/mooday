@@ -21,6 +21,16 @@ interface OrderDetailsViewProps {
   onMarkReceived?: (orderId: string) => void;
   /** "Contact seller" for this order's primary product. */
   onContactSeller?: (product: Product) => void;
+  /** H-39 Leave a review (delivered orders only). */
+  onLeaveReview?: () => void;
+  /** H-40 Report this order. */
+  onReportOrder?: () => void;
+  /** H-41 Return / Refund. */
+  onReturnRequest?: () => void;
+  /** H-44 View dispute. */
+  onOpenDispute?: () => void;
+  /** H-44b Open disputes list. */
+  onOpenDisputesList?: () => void;
 }
 
 interface OrderCopy {
@@ -42,6 +52,12 @@ interface OrderCopy {
   notFound: string;
   backToPurchases: string;
   trackingLabel: string;
+  // Group H CTAs
+  leaveReview: string;
+  reportOrder: string;
+  startReturn: string;
+  openDispute: string;
+  viewAllDisputes: string;
 }
 
 const COPY: Record<"en" | "ar", OrderCopy> = {
@@ -64,6 +80,11 @@ const COPY: Record<"en" | "ar", OrderCopy> = {
     notFound: "Order not found",
     backToPurchases: "Back to my purchases",
     trackingLabel: "Tracking number",
+    leaveReview: "Leave a review",
+    reportOrder: "Report",
+    startReturn: "Return / Refund",
+    openDispute: "View dispute",
+    viewAllDisputes: "All disputes",
   },
   ar: {
     title: (id) => `الطلب ${id}`,
@@ -84,6 +105,11 @@ const COPY: Record<"en" | "ar", OrderCopy> = {
     notFound: "الطلب غير موجود",
     backToPurchases: "العودة إلى مشترياتي",
     trackingLabel: "رقم التتبع",
+    leaveReview: "اترك تقييماً",
+    reportOrder: "الإبلاغ",
+    startReturn: "إرجاع / استرداد",
+    openDispute: "عرض النزاع",
+    viewAllDisputes: "كل النزاعات",
   },
 };
 
@@ -107,6 +133,11 @@ export const OrderDetailsView: React.FC<OrderDetailsViewProps> = ({
   onSelectProduct,
   onMarkReceived,
   onContactSeller,
+  onLeaveReview,
+  onReportOrder,
+  onReturnRequest,
+  onOpenDispute,
+  onOpenDisputesList,
 }) => {
   const { language } = useApp();
   const isAr = language === "ar";
@@ -273,25 +304,76 @@ export const OrderDetailsView: React.FC<OrderDetailsViewProps> = ({
       </section>
 
       {/* CTAs */}
-      <div className="flex gap-sm justify-end mt-sm pb-8">
-        {order.status === "shipped" && onMarkReceived && (
-          <button
-            type="button"
-            onClick={() => onMarkReceived(order.id)}
-            className="flex-1 btn-primary py-3 rounded-xl text-label-sm uppercase tracking-widest font-bold shadow-md active:scale-95 transition-transform"
-          >
-            {t.markReceived}
-          </button>
-        )}
-        {firstItemProduct && onContactSeller && (
-          <button
-            type="button"
-            onClick={() => onContactSeller(firstItemProduct)}
-            className="flex-1 py-3 rounded-xl border-2 border-primary text-primary text-label-sm uppercase tracking-widest font-bold active:scale-95 transition-transform"
-          >
-            {t.contactSeller}
-          </button>
-        )}
+      <div className="flex flex-col gap-sm mt-sm pb-8">
+        <div className="flex gap-sm justify-end">
+          {order.status === "shipped" && onMarkReceived && (
+            <button
+              type="button"
+              onClick={() => onMarkReceived(order.id)}
+              className="flex-1 btn-primary py-3 rounded-xl text-label-sm uppercase tracking-widest font-bold shadow-md active:scale-95 transition-transform"
+            >
+              {t.markReceived}
+            </button>
+          )}
+          {firstItemProduct && onContactSeller && (
+            <button
+              type="button"
+              onClick={() => onContactSeller(firstItemProduct)}
+              className="flex-1 py-3 rounded-xl border-2 border-primary text-primary text-label-sm uppercase tracking-widest font-bold active:scale-95 transition-transform"
+            >
+              {t.contactSeller}
+            </button>
+          )}
+        </div>
+        {/* Group H actions */}
+        <div className="flex gap-sm justify-end flex-wrap">
+          {order.status === "delivered" && onLeaveReview && (
+            <button
+              type="button"
+              onClick={onLeaveReview}
+              className="flex-1 min-w-[140px] py-3 rounded-xl bg-amber-100 text-amber-900 text-label-sm uppercase tracking-widest font-bold active:scale-95 transition-transform"
+            >
+              {t.leaveReview}
+            </button>
+          )}
+          {(order.status === "delivered" || order.status === "returned") &&
+            onReturnRequest && (
+              <button
+                type="button"
+                onClick={onReturnRequest}
+                className="flex-1 min-w-[140px] py-3 rounded-xl border-2 border-orange-500 text-orange-700 text-label-sm uppercase tracking-widest font-bold active:scale-95 transition-transform"
+              >
+                {t.startReturn}
+              </button>
+            )}
+          {order.status === "returned" && onOpenDispute && (
+            <button
+              type="button"
+              onClick={onOpenDispute}
+              className="flex-1 min-w-[140px] py-3 rounded-xl border-2 border-error text-error text-label-sm uppercase tracking-widest font-bold active:scale-95 transition-transform"
+            >
+              {t.openDispute}
+            </button>
+          )}
+          {onReportOrder && (
+            <button
+              type="button"
+              onClick={onReportOrder}
+              className="flex-1 min-w-[140px] py-3 rounded-xl border border-outline-variant text-on-surface-variant text-label-sm uppercase tracking-widest font-bold active:scale-95 transition-transform"
+            >
+              {t.reportOrder}
+            </button>
+          )}
+          {onOpenDisputesList && (
+            <button
+              type="button"
+              onClick={onOpenDisputesList}
+              className="text-[10px] text-primary font-bold uppercase tracking-wider underline self-end"
+            >
+              {t.viewAllDisputes}
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );

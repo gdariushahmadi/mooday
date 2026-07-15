@@ -41,7 +41,10 @@ interface ProductDetailsCopy {
   freeShip: string;
   returnsAccepted: string;
   buyNow: string;
+  buyNowShort: string;
   addToBag: string;
+  addToBagShort: string;
+  chat: string;
   addedAlert: string;
   viewBag: string;
   zoomClose: string;
@@ -69,7 +72,10 @@ const COPY: Record<"en" | "ar", ProductDetailsCopy> = {
     freeShip: "Free shipping on orders over AED 1,000",
     returnsAccepted: "Returns accepted within 7 days of delivery",
     buyNow: "Buy Now (Escrow Pay)",
+    buyNowShort: "Buy Now",
     addToBag: "Add to Shopping Bag",
+    addToBagShort: "Bag",
+    chat: "Chat",
     addedAlert: "Product successfully added to your shopping bag!",
     viewBag: "View Bag",
     zoomClose: "Close zoom",
@@ -95,7 +101,10 @@ const COPY: Record<"en" | "ar", ProductDetailsCopy> = {
     freeShip: "شحن مجاني للطلبات فوق ١٠٠٠ درهم",
     returnsAccepted: "يمكن الإرجاع خلال ٧ أيام من الاستلام",
     buyNow: "اشترِ الآن (دفع آمن)",
+    buyNowShort: "اشترِ الآن",
     addToBag: "إضافة إلى حقيبة التسوق",
+    addToBagShort: "الحقيبة",
+    chat: "محادثة",
     addedAlert: "تمت إضافة المنتج إلى حقيبة التسوق بنجاح!",
     viewBag: "عرض الحقيبة",
     zoomClose: "إغلاق التكبير",
@@ -165,7 +174,7 @@ export const ProductDetailsView: React.FC<ProductDetailsViewProps> = ({
   }, [showOverflow]);
 
   return (
-    <div className="w-full max-w-[1200px] mx-auto flex flex-col gap-lg pb-10">
+    <div className="w-full max-w-[1200px] mx-auto flex flex-col gap-lg pb-32 md:pb-10">
       {/* Header: back · title · overflow menu */}
       <div className="flex items-center justify-between border-b border-outline-variant pb-4 gap-md">
         <button
@@ -473,18 +482,34 @@ export const ProductDetailsView: React.FC<ProductDetailsViewProps> = ({
           />
 
           {/* CTA */}
-          <div className="flex flex-col gap-sm mt-4">
+          <div className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-[1fr_auto_auto] gap-sm border-t border-surface-container-high bg-surface/95 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-[0_-8px_24px_rgba(62,29,49,0.12)] backdrop-blur-md md:static md:z-auto md:flex md:flex-col md:border-0 md:bg-transparent md:p-0 md:shadow-none md:backdrop-blur-none mt-4">
             <button
               onClick={() => onCheckoutProduct(product)}
-              className="btn-primary w-full py-4 rounded-xl text-label-md uppercase tracking-widest font-bold shadow-lg btn-tactile text-center active:scale-[0.98] transition-transform"
+              className="btn-primary min-h-12 w-full px-4 py-3 rounded-xl text-label-md uppercase tracking-wider md:tracking-widest font-bold shadow-lg btn-tactile text-center active:scale-[0.98] transition-transform"
             >
-              {t.buyNow}
+              <span className="md:hidden">{t.buyNowShort}</span>
+              <span className="hidden md:inline">{t.buyNow}</span>
             </button>
             <button
               onClick={handleAddToCart}
-              className="w-full py-4 border-2 border-primary text-primary hover:bg-primary/5 active:scale-[0.98] transition-all rounded-xl text-label-md uppercase tracking-widest font-bold text-center"
+              aria-label={t.addToBag}
+              className="min-h-12 min-w-14 md:w-full px-3 py-3 border-2 border-primary text-primary hover:bg-primary/5 active:scale-[0.98] transition-all rounded-xl text-label-sm md:text-label-md uppercase tracking-wider md:tracking-widest font-bold text-center flex items-center justify-center gap-1"
             >
-              {t.addToBag}
+              <span className="material-symbols-outlined text-[20px] md:hidden" aria-hidden="true">
+                shopping_bag
+              </span>
+              <span className="hidden md:inline">{t.addToBag}</span>
+              <span className="md:hidden">{t.addToBagShort}</span>
+            </button>
+            <button
+              onClick={() => onStartChat(product)}
+              aria-label={isAr ? "محادثة مع البائع" : "Chat with Seller"}
+              className="min-h-12 min-w-14 md:w-full px-3 py-3 border border-outline-variant text-on-surface hover:bg-surface-container-low active:scale-[0.98] transition-all rounded-xl text-label-sm md:text-label-md uppercase tracking-wider md:tracking-widest font-bold text-center flex items-center justify-center gap-1"
+            >
+              <span className="material-symbols-outlined text-[20px]" aria-hidden="true">
+                chat
+              </span>
+              <span>{t.chat}</span>
             </button>
           </div>
         </section>

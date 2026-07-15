@@ -105,9 +105,29 @@ function makeContext(overrides: Partial<AppContextType> = {}): AppContextType {
     notifications: [],
     markNotificationRead: vi.fn(),
     markAllNotificationsRead: vi.fn(),
+    userProfile: { fullNameEn: "Test User", fullNameAr: "مستخدم اختبار", handle: "@test", avatar: "/sellers/test.jpg", bioEn: "Test bio", bioAr: "نبذة", locationEn: "Dubai", locationAr: "دبي", styleTagsEn: [], styleTagsAr: [], rating: 5, reviewsCount: 0, followers: 0, following: 0 },
+    updateUserProfile: vi.fn(),
+    myReviews: [],
+    addMyReview: vi.fn(),
+    blockedUsers: [],
+    blockUser: vi.fn(),
+    unblockUser: vi.fn(),
+    reports: [],
+    submitReport: vi.fn(),
+    disputes: [],
+    openDispute: vi.fn(),
     updateListing: vi.fn(),
     removeListing: vi.fn(),
     updateOrderStatus: vi.fn(),
+    currentUser: null,
+    authError: null,
+    signUp: vi.fn(() => "user-test"),
+    signIn: vi.fn(() => true),
+    signOut: vi.fn(),
+    verifyOtp: vi.fn(() => true),
+    sendOtp: vi.fn(() => "000000"),
+    updateCurrentUserName: vi.fn(),
+    resetPassword: vi.fn(() => true),
     ...overrides,
   };
 }
@@ -259,6 +279,35 @@ describe("CheckoutFlowView — payment step (C-14)", () => {
     expect(
       screen.getByText(/Pay in cash when your order arrives/i),
     ).toBeInTheDocument();
+  });
+
+  it("disables Cash on Delivery above AED 5,000 with a visible reason", async () => {
+    const expensive = { ...PRODUCT, id: "expensive", price: 6000 };
+    const user = userEvent.setup();
+    renderCheckout({ checkoutProduct: expensive });
+    await user.click(
+      screen.getByRole("button", { name: /Continue to payment/i }),
+    );
+
+    expect(screen.getByRole("radio", { name: /Cash/i })).toBeDisabled();
+    expect(
+      screen.getByText(/unavailable for orders over AED 5,000/i),
+    ).toBeInTheDocument();
+  });
+
+  it("reports missing payment details inline", async () => {
+    const user = userEvent.setup();
+    renderCheckout({ context: { paymentMethods: [] } });
+    await user.click(
+      screen.getByRole("button", { name: /Continue to payment/i }),
+    );
+    await user.click(
+      screen.getByRole("button", { name: /Secure checkout/i }),
+    );
+
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      /complete the required fields/i,
+    );
   });
 
   it("selecting Apple Pay shows the Apple Pay panel", async () => {

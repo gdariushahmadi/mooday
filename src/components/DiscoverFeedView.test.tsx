@@ -90,9 +90,29 @@ function makeContext(language: "en" | "ar" = "en"): AppContextType {
     notifications: [],
     markNotificationRead: vi.fn(),
     markAllNotificationsRead: vi.fn(),
+    userProfile: { fullNameEn: "Test User", fullNameAr: "مستخدم اختبار", handle: "@test", avatar: "/sellers/test.jpg", bioEn: "Test bio", bioAr: "نبذة", locationEn: "Dubai", locationAr: "دبي", styleTagsEn: [], styleTagsAr: [], rating: 5, reviewsCount: 0, followers: 0, following: 0 },
+    updateUserProfile: vi.fn(),
+    myReviews: [],
+    addMyReview: vi.fn(),
+    blockedUsers: [],
+    blockUser: vi.fn(),
+    unblockUser: vi.fn(),
+    reports: [],
+    submitReport: vi.fn(),
+    disputes: [],
+    openDispute: vi.fn(),
     updateListing: vi.fn(),
     removeListing: vi.fn(),
     updateOrderStatus: vi.fn(),
+    currentUser: null,
+    authError: null,
+    signUp: vi.fn(() => "user-test"),
+    signIn: vi.fn(() => true),
+    signOut: vi.fn(),
+    verifyOtp: vi.fn(() => true),
+    sendOtp: vi.fn(() => "000000"),
+    updateCurrentUserName: vi.fn(),
+    resetPassword: vi.fn(() => true),
   };
 }
 
@@ -104,15 +124,17 @@ function renderDiscover(
   }
   const context = makeContext(overrides.language);
   const onSelectProduct = vi.fn();
+  const onSelectCategory = vi.fn();
   const utils = render(
     <AppContext.Provider value={context}>
       <DiscoverFeedView
         onSelectProduct={onSelectProduct}
         onNavigate={() => {}}
+        onSelectCategory={onSelectCategory}
       />
     </AppContext.Provider>,
   );
-  return { ...utils, onSelectProduct, context };
+  return { ...utils, onSelectProduct, onSelectCategory, context };
 }
 
 function visibleProductTitles(): string[] {
@@ -141,6 +163,7 @@ describe("DiscoverFeedView — tabs", () => {
     expect(tabs[1]).toHaveTextContent("Trending");
     expect(tabs[2]).toHaveTextContent("Designers");
     expect(tabs[3]).toHaveTextContent("New In");
+    expect(tablist).toHaveAttribute("aria-describedby", "discover-tabs-hint");
   });
 
   it("renders all four tab labels in AR", () => {
@@ -255,5 +278,88 @@ describe("DiscoverFeedView — tabs", () => {
     renderDiscover({ initialUrl: "/?tab=invalid" });
     const tabs = screen.getAllByRole("tab");
     expect(tabs[0]).toHaveAttribute("aria-selected", "true");
+  });
+});
+
+describe("DiscoverFeedView — categories and cards", () => {
+  it("prioritises showcase categories without dropping the product taxonomy", () => {
+    renderDiscover();
+
+    const categoryGroup = screen.getByRole("group", {
+      name: "Product categories",
+    });
+    const labels = within(categoryGroup)
+      .getAllByRole("button")
+      .map((button) => button.textContent);
+
+    expect(labels).toEqual([
+      "All",
+      "Bags",
+      "Clothing",
+      "Dresses",
+      "Shoes",
+      "Accessories",
+    ]);
+  });
+
+  it("filters the feed and exposes the selected category state", async () => {
+    const user = userEvent.setup();
+    renderDiscover();
+
+    const bags = screen.getByRole("button", { name: "Bags" });
+    await user.click(bags);
+
+    expect(bags).toHaveAttribute("aria-pressed", "true");
+    expect(visibleProductTitles()).toEqual(["Vintage Handbag"]);
+  });
+
+  it("opens the matching category landing from the filtered feed", async () => {
+    const user = userEvent.setup();
+    const { onSelectCategory } = renderDiscover();
+
+    await user.click(screen.getByRole("button", { name: "Bags" }));
+    await user.click(screen.getByRole("button", { name: "View all Bags" }));
+
+    expect(onSelectCategory).toHaveBeenCalledWith("Bags");
+  });
+
+  it("switches Featured and Compact into distinct card compositions", async () => {
+    const user = userEvent.setup();
+    renderDiscover();
+
+    const featured = screen.getByRole("button", { name: "Featured view" });
+    const compact = screen.getByRole("button", { name: "Compact view" });
+    expect(featured).toHaveAttribute("aria-pressed", "true");
+
+    await user.click(compact);
+
+    expect(compact).toHaveAttribute("aria-pressed", "true");
+    expect(featured).toHaveAttribute("aria-pressed", "false");
+    expect(
+      document.querySelectorAll("#discover-feed-panel article h4"),
+    ).toHaveLength(3);
+    expect(
+      document.querySelectorAll("#discover-feed-panel article h2"),
+    ).toHaveLength(0);
+  });
+
+  it("saves a product without opening its details", async () => {
+    const user = userEvent.setup();
+    const { context, onSelectProduct } = renderDiscover();
+
+    await user.click(
+      screen.getByRole("button", { name: "Save Vintage Handbag" }),
+    );
+
+    expect(context.toggleLike).toHaveBeenCalledWith("handbag-tan");
+    expect(onSelectProduct).not.toHaveBeenCalled();
+  });
+
+  it("localises save actions for Arabic product cards", () => {
+    renderDiscover({ language: "ar" });
+
+    expect(
+      screen.getByRole("button", { name: "حفظ حقيبة عتيقة" }),
+    ).toBeInTheDocument();
   });
 });

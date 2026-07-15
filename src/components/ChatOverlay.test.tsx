@@ -1,7 +1,11 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { AppContext, type AppContextType, type ChatThread } from "@/context/AppContext";
+import {
+  AppContext,
+  type AppContextType,
+  type ChatThread,
+} from "@/context/AppContext";
 import { ChatOverlay } from "@/components/ChatOverlay";
 
 const THREAD: ChatThread = {
@@ -13,23 +17,78 @@ const THREAD: ChatThread = {
   productPrice: 1200,
   lastMessage: "Hi!",
   lastMessageTime: "10m",
-  messages: [
-    { id: "m1", sender: "seller", text: "Welcome!", time: "10m" },
-  ],
+  messages: [{ id: "m1", sender: "seller", text: "Welcome!", time: "10m" }],
 };
 
 function makeContext(overrides: Partial<AppContextType> = {}): AppContextType {
   return {
-    language: "en", setLanguage: vi.fn(), listings: [], addListing: vi.fn(),
-    updateListing: vi.fn(), removeListing: vi.fn(), likes: [], toggleLike: vi.fn(),
-    cart: [], addToCart: vi.fn(), removeFromCart: vi.fn(), updateQuantity: vi.fn(),
-    clearCart: vi.fn(), chats: [THREAD], sendChatMessage: vi.fn(),
-    createChatThread: vi.fn(() => "t1"), addresses: [], addAddress: vi.fn(),
-    updateAddress: vi.fn(), removeAddress: vi.fn(), setDefaultAddress: vi.fn(),
-    paymentMethods: [], addPaymentMethod: vi.fn(), removePaymentMethod: vi.fn(),
-    setDefaultPaymentMethod: vi.fn(), orders: [], recordOrder: vi.fn(),
-    updateOrderStatus: vi.fn(), notifications: [], markNotificationRead: vi.fn(),
-    markAllNotificationsRead: vi.fn(), ...overrides,
+    language: "en",
+    setLanguage: vi.fn(),
+    listings: [],
+    addListing: vi.fn(),
+    updateListing: vi.fn(),
+    removeListing: vi.fn(),
+    likes: [],
+    toggleLike: vi.fn(),
+    cart: [],
+    addToCart: vi.fn(),
+    removeFromCart: vi.fn(),
+    updateQuantity: vi.fn(),
+    clearCart: vi.fn(),
+    chats: [THREAD],
+    sendChatMessage: vi.fn(),
+    createChatThread: vi.fn(() => "t1"),
+    addresses: [],
+    addAddress: vi.fn(),
+    updateAddress: vi.fn(),
+    removeAddress: vi.fn(),
+    setDefaultAddress: vi.fn(),
+    paymentMethods: [],
+    addPaymentMethod: vi.fn(),
+    removePaymentMethod: vi.fn(),
+    setDefaultPaymentMethod: vi.fn(),
+    orders: [],
+    recordOrder: vi.fn(),
+    updateOrderStatus: vi.fn(),
+    notifications: [],
+    markNotificationRead: vi.fn(),
+    markAllNotificationsRead: vi.fn(),
+    userProfile: {
+      fullNameEn: "Test User",
+      fullNameAr: "مستخدم اختبار",
+      handle: "@test",
+      avatar: "/sellers/test.jpg",
+      bioEn: "Test bio",
+      bioAr: "نبذة",
+      locationEn: "Dubai",
+      locationAr: "دبي",
+      styleTagsEn: [],
+      styleTagsAr: [],
+      rating: 5,
+      reviewsCount: 0,
+      followers: 0,
+      following: 0,
+    },
+    updateUserProfile: vi.fn(),
+    myReviews: [],
+    addMyReview: vi.fn(),
+    blockedUsers: [],
+    blockUser: vi.fn(),
+    unblockUser: vi.fn(),
+    reports: [],
+    submitReport: vi.fn(),
+    disputes: [],
+    openDispute: vi.fn(),
+    currentUser: null,
+    authError: null,
+    signUp: vi.fn(() => "user-test"),
+    signIn: vi.fn(() => true),
+    signOut: vi.fn(),
+    verifyOtp: vi.fn(() => true),
+    sendOtp: vi.fn(() => "000000"),
+    updateCurrentUserName: vi.fn(),
+    resetPassword: vi.fn(() => true),
+    ...overrides,
   };
 }
 
@@ -45,7 +104,9 @@ function renderChat() {
   return { onBack, onCheckout, ctx };
 }
 
-beforeEach(() => { localStorage.clear(); });
+beforeEach(() => {
+  localStorage.clear();
+});
 
 describe("ChatOverlay (F-29/F-30)", () => {
   it("renders the seller name in the header", () => {
@@ -61,22 +122,30 @@ describe("ChatOverlay (F-29/F-30)", () => {
 
   it("renders the Buy Item button", () => {
     renderChat();
-    expect(screen.getByRole("button", { name: /Buy Item/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /Buy Item/i }),
+    ).toBeInTheDocument();
   });
 
   it("renders the image attach button", () => {
     renderChat();
-    expect(screen.getByRole("button", { name: /Attach image/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /Attach image/i }),
+    ).toBeInTheDocument();
   });
 
   it("renders the voice note button", () => {
     renderChat();
-    expect(screen.getByRole("button", { name: /Voice note/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /Voice note/i }),
+    ).toBeInTheDocument();
   });
 
   it("renders the Make Offer button", () => {
     renderChat();
-    expect(screen.getByRole("button", { name: /Make Offer/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /Make Offer/i }),
+    ).toBeInTheDocument();
   });
 
   it("renders quick reply chips when the thread is short", () => {
@@ -98,7 +167,9 @@ describe("ChatOverlay (F-29/F-30)", () => {
     renderChat();
     await user.click(screen.getByRole("button", { name: /Make Offer/i }));
     expect(screen.getByPlaceholderText(/Enter amount/i)).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Send offer/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /Send offer/i }),
+    ).toBeInTheDocument();
   });
 
   it("submitting an offer calls sendChatMessage with the OFFER: format", async () => {
@@ -113,18 +184,20 @@ describe("ChatOverlay (F-29/F-30)", () => {
     );
   });
 
-  it("attaching an image inserts a stub message", async () => {
-    const user = userEvent.setup();
+  it("communicates that image upload is unavailable without inserting fake content", () => {
     const { ctx } = renderChat();
-    await user.click(screen.getByRole("button", { name: /Attach image/i }));
-    expect(ctx.sendChatMessage).toHaveBeenCalledWith("t1", expect.stringContaining("📷"));
+    const button = screen.getByRole("button", { name: /Attach image/i });
+    expect(button).toBeDisabled();
+    expect(button).toHaveAttribute("title", expect.stringMatching(/media upload/i));
+    expect(ctx.sendChatMessage).not.toHaveBeenCalled();
   });
 
-  it("voice note inserts a stub message", async () => {
-    const user = userEvent.setup();
+  it("communicates that voice upload is unavailable without inserting fake content", () => {
     const { ctx } = renderChat();
-    await user.click(screen.getByRole("button", { name: /Voice note/i }));
-    expect(ctx.sendChatMessage).toHaveBeenCalledWith("t1", expect.stringContaining("🎙"));
+    const button = screen.getByRole("button", { name: /Voice note/i });
+    expect(button).toBeDisabled();
+    expect(button).toHaveAttribute("title", expect.stringMatching(/media upload/i));
+    expect(ctx.sendChatMessage).not.toHaveBeenCalled();
   });
 
   it("shows 'Chat not found' for an unknown thread id", () => {

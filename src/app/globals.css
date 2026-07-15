@@ -1,5 +1,11 @@
 @import "tailwindcss";
 
+:root {
+  --app-safe-area-top: env(safe-area-inset-top, 0px);
+  --app-safe-area-bottom: env(safe-area-inset-bottom, 0px);
+  --app-bottom-nav-height: 80px;
+}
+
 @theme {
   /* Fonts — tokens reference next/font variables set on <html> */
   --font-sans: var(--font-family-sans-en), sans-serif;
@@ -75,16 +81,74 @@
   scrollbar-width: none;
 }
 
+/* Preserve horizontal discovery while signalling that more lanes continue. */
+.inline-scroll-cue {
+  -webkit-mask-image: linear-gradient(to right, #000 0, #000 calc(100% - 24px), transparent 100%);
+  mask-image: linear-gradient(to right, #000 0, #000 calc(100% - 24px), transparent 100%);
+}
+
+[dir="rtl"] .inline-scroll-cue {
+  -webkit-mask-image: linear-gradient(to left, #000 0, #000 calc(100% - 24px), transparent 100%);
+  mask-image: linear-gradient(to left, #000 0, #000 calc(100% - 24px), transparent 100%);
+}
+
 .btn-tactile {
   background-image: linear-gradient(to bottom, rgba(255,255,255,0.1) 0%, rgba(0,0,0,0.05) 100%);
 }
 
+/* Keep ligature icon names from widening controls while the external font loads. */
+.material-symbols-outlined {
+  display: inline-block;
+  width: 1em;
+  overflow: hidden;
+  font-family: "Material Symbols Outlined";
+  font-style: normal;
+  font-weight: normal;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  font-feature-settings: "liga";
+  -webkit-font-feature-settings: "liga";
+}
+
 body {
   min-height: 100dvh;
+  overflow-x: clip;
   background-color: var(--color-background);
   color: var(--color-on-background);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
+}
+
+.app-shell-header {
+  padding-top: max(16px, var(--app-safe-area-top));
+}
+
+.app-shell-with-nav {
+  padding-bottom: calc(
+    var(--app-bottom-nav-height) + var(--app-safe-area-bottom) + 16px
+  );
+}
+
+.app-bottom-nav {
+  height: calc(
+    var(--app-bottom-nav-height) + var(--app-safe-area-bottom)
+  );
+  padding-bottom: var(--app-safe-area-bottom);
+}
+
+@media (min-width: 768px) {
+  .app-shell-with-nav {
+    padding-bottom: 0;
+  }
+
+  .app-bottom-nav {
+    height: var(--app-bottom-nav-height);
+    padding-bottom: 0;
+  }
 }
 
 h1, h2, h3, h4, h5, h6, .font-serif {

@@ -1,36 +1,107 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { AppContext, type AppContextType, type ChatThread } from "@/context/AppContext";
+import {
+  AppContext,
+  type AppContextType,
+  type ChatThread,
+} from "@/context/AppContext";
 import { ChatsListView } from "@/components/ChatsListView";
 
 const THREADS: ChatThread[] = [
   {
-    id: "t1", sellerName: "Sarah", sellerAvatar: "/s.jpg",
-    productTitle: "Vintage Bag", productImage: "/p.jpg", productPrice: 1200,
-    lastMessage: "Hi there!", lastMessageTime: "10m",
+    id: "t1",
+    sellerName: "Sarah",
+    sellerAvatar: "/s.jpg",
+    productTitle: "Vintage Bag",
+    productImage: "/p.jpg",
+    productPrice: 1200,
+    lastMessage: "Hi there!",
+    lastMessageTime: "10m",
     messages: [{ id: "m1", sender: "seller", text: "Hi!", time: "10m" }],
   },
   {
-    id: "t2", sellerName: "Hana", sellerAvatar: "/h.jpg",
-    productTitle: "Silk Dress", productImage: "/d.jpg", productPrice: 800,
-    lastMessage: "Can you ship today?", lastMessageTime: "1h",
+    id: "t2",
+    sellerName: "Hana",
+    sellerAvatar: "/h.jpg",
+    productTitle: "Silk Dress",
+    productImage: "/d.jpg",
+    productPrice: 800,
+    lastMessage: "Can you ship today?",
+    lastMessageTime: "1h",
     messages: [{ id: "m2", sender: "user", text: "Hi", time: "1h" }],
   },
 ];
 
 function makeContext(overrides: Partial<AppContextType> = {}): AppContextType {
   return {
-    language: "en", setLanguage: vi.fn(), listings: [], addListing: vi.fn(),
-    updateListing: vi.fn(), removeListing: vi.fn(), likes: [], toggleLike: vi.fn(),
-    cart: [], addToCart: vi.fn(), removeFromCart: vi.fn(), updateQuantity: vi.fn(),
-    clearCart: vi.fn(), chats: THREADS, sendChatMessage: vi.fn(),
-    createChatThread: vi.fn(() => "t1"), addresses: [], addAddress: vi.fn(),
-    updateAddress: vi.fn(), removeAddress: vi.fn(), setDefaultAddress: vi.fn(),
-    paymentMethods: [], addPaymentMethod: vi.fn(), removePaymentMethod: vi.fn(),
-    setDefaultPaymentMethod: vi.fn(), orders: [], recordOrder: vi.fn(),
-    updateOrderStatus: vi.fn(), notifications: [], markNotificationRead: vi.fn(),
-    markAllNotificationsRead: vi.fn(), ...overrides,
+    language: "en",
+    setLanguage: vi.fn(),
+    listings: [],
+    addListing: vi.fn(),
+    updateListing: vi.fn(),
+    removeListing: vi.fn(),
+    likes: [],
+    toggleLike: vi.fn(),
+    cart: [],
+    addToCart: vi.fn(),
+    removeFromCart: vi.fn(),
+    updateQuantity: vi.fn(),
+    clearCart: vi.fn(),
+    chats: THREADS,
+    sendChatMessage: vi.fn(),
+    createChatThread: vi.fn(() => "t1"),
+    addresses: [],
+    addAddress: vi.fn(),
+    updateAddress: vi.fn(),
+    removeAddress: vi.fn(),
+    setDefaultAddress: vi.fn(),
+    paymentMethods: [],
+    addPaymentMethod: vi.fn(),
+    removePaymentMethod: vi.fn(),
+    setDefaultPaymentMethod: vi.fn(),
+    orders: [],
+    recordOrder: vi.fn(),
+    updateOrderStatus: vi.fn(),
+    notifications: [],
+    markNotificationRead: vi.fn(),
+    markAllNotificationsRead: vi.fn(),
+    userProfile: {
+      fullNameEn: "Test User",
+      fullNameAr: "مستخدم اختبار",
+      handle: "@test",
+      avatar: "/sellers/test.jpg",
+      bioEn: "Test bio",
+      bioAr: "نبذة",
+      locationEn: "Dubai",
+      locationAr: "دبي",
+      styleTagsEn: [],
+      styleTagsAr: [],
+      rating: 5,
+      reviewsCount: 0,
+      followers: 0,
+      following: 0,
+    },
+    updateUserProfile: vi.fn(),
+    myReviews: [],
+    addMyReview: vi.fn(),
+    blockedUsers: [],
+    blockUser: vi.fn(),
+    unblockUser: vi.fn(),
+    reports: [],
+    submitReport: vi.fn(),
+    disputes: [],
+    openDispute: vi.fn(),
+    currentUser: null,
+    authError: null,
+    signUp: vi.fn(() => "user-test"),
+    signIn: vi.fn(() => true),
+    signOut: vi.fn(),
+    verifyOtp: vi.fn(() => true),
+    sendOtp: vi.fn(() => "000000"),
+    updateCurrentUserName: vi.fn(),
+    resetPassword: vi.fn(() => true),
+    ...overrides,
   };
 }
 
@@ -46,7 +117,9 @@ function renderChats() {
   return { onBack, onOpenThread };
 }
 
-beforeEach(() => { localStorage.clear(); });
+beforeEach(() => {
+  localStorage.clear();
+});
 
 describe("ChatsListView (F-28)", () => {
   it("renders the page title", () => {

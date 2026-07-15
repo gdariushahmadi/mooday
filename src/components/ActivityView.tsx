@@ -13,6 +13,8 @@ interface ActivityViewProps {
   onBack: () => void;
   /** Open the chat thread this event references. */
   onOpenChat?: (threadId: string) => void;
+  onOpenProduct?: (productId: string) => void;
+  onOpenSeller?: (sellerId: string) => void;
   /** Open the notifications centre. */
   onOpenNotifications?: () => void;
 }
@@ -65,9 +67,16 @@ const COPY: Record<"en" | "ar", ActivityCopy> = {
 export const ActivityView: React.FC<ActivityViewProps> = ({
   onBack,
   onOpenChat,
+  onOpenProduct,
+  onOpenSeller,
   onOpenNotifications,
 }) => {
-  const { language, notifications, markAllNotificationsRead } = useApp();
+  const {
+    language,
+    notifications,
+    markNotificationRead,
+    markAllNotificationsRead,
+  } = useApp();
   const isAr = language === "ar";
   const t = isAr ? COPY.ar : COPY.en;
 
@@ -91,12 +100,17 @@ export const ActivityView: React.FC<ActivityViewProps> = ({
 
   const handleOpen = (notif: AppNotification) => {
     if (!notif.target) return;
+    markNotificationRead(notif.id);
     if (notif.target.kind === "chat" && onOpenChat) {
       onOpenChat(notif.target.id);
+    } else if (
+      (notif.target.kind === "product" || notif.target.kind === "listing") &&
+      onOpenProduct
+    ) {
+      onOpenProduct(notif.target.id);
+    } else if (notif.target.kind === "seller" && onOpenSeller) {
+      onOpenSeller(notif.target.id);
     }
-    // Product/listing/seller deep-links will be wired when those pages
-    // get deep-link entry points. For now the card is non-clickable for
-    // non-chat events.
   };
 
   return (

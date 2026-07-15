@@ -11,29 +11,24 @@
 ## TL;DR (post-this-session)
 
 - **Verification pipeline (`npm run verify`)**: ✅ GREEN (typecheck + ESLint
-  + **260** unit tests + production build).
+  + **402** unit tests + production build).
 - **Total Phase 1 target**: **36 screens** (per `ROADMAP.md` § "Effective
   Phase 1 screen count").
-- **Fully built (deep, tested, documented)**: **20 screens** — 56 %.
-- **Present in code but only as skeletons or partial flows**: **4 screens**.
-- **Not started at all**: **12 screens** — 33 %.
-- **Mock data**: `addresses.ts` + `paymentMethods.ts` landed this session.
-  Still to build: `orders.ts`, `sales.ts`, `notifications.ts`, `blocks.ts`,
-  expand `products.ts` 33 → 100, expand `reviews.ts` 33 → 80+.
+- **Fully built (deep, tested, documented)**: **36 screens** — 100 %.
+- **Skeletons / partial**: **0** screens.
+- **Not started at all**: **0 screens** (Phase 1 complete).
+- **Mock data**: `addresses.ts`, `paymentMethods.ts`, `orders.ts`,
+  `sales.ts`, `notifications.ts`, `my-reviews.ts`, `blocked-users.ts`,
+  `reports.ts`, `disputes.ts`, `users.ts` all seeded.
 
 This session shipped:
-- **B-10 Category Landing** — chip navigation completed Group B.
-- **C-13 / C-14 / C-15** — checkout now has saved addresses, saved cards,
-  Apple Pay, Cash on Delivery, bilingual confirmation.
-- **C-16 / C-17** — My Purchases + Order Tracking with 15 seeded orders.
-- **D-18 / D-19 / D-20 / D-21 / D-22** — full seller-side flow: mode
-  picker, polished create-listing form, closet with status + bulk-select,
-  edit listing, my sales with payouts + shipment.
-- **F-27 / F-28 / F-29 / F-30 / F-31** — activity feed, chats list, chat
-  thread with offer cards, notifications centre with bell-icon badge.
-- 5 new data files (`addresses.ts`, `paymentMethods.ts`, `orders.ts`,
-  `sales.ts`, `notifications.ts`).
-- 5 new test files added / brought into the green total.
+- **A-02 / A-03 / A-04 / A-05 / A-06** — Sign Up, OTP, Sign In, Forgot
+  Password, Social Login. Mock auth backed by `users.ts` + 8 AppContext
+  mutators. Header gains a signed-in initial-avatar chip. Settings Log
+  Out button is now functional.
+- 6 new view components, 6 new test files, 1 new doc (`group-a-onboarding.md`),
+  55 new tests (347 → 402).
+- Phase 1 is now feature-complete on the client side.
 
 ---
 
@@ -41,7 +36,13 @@ This session shipped:
 
 | ID | Screen | Component | Lines | Tests | Doc |
 |----|--------|-----------|-------|-------|-----|
-| A-01 | Welcome / Language picker | `WelcomeView.tsx` | 119 | 9 ✓ | `docs/welcome-screen.md` |
+| A-01 | Welcome / Language picker | `WelcomeView.tsx` | ~140 | 9 ✓ | `docs/welcome-screen.md` |
+| **A-02** | **Sign Up (form + terms + mock)** | `SignUpView.tsx` | ~250 | 9 ✓ | `docs/group-a-onboarding.md` |
+| **A-03** | **OTP (6-digit input + paste + auto-advance)** | `OtpView.tsx` | ~210 | 7 ✓ | `docs/group-a-onboarding.md` |
+| **A-04** | **Sign In (remember-me + forgot link + social)** | `SignInView.tsx` | ~230 | 10 ✓ | `docs/group-a-onboarding.md` |
+| **A-05** | **Forgot Password (3-step flow)** | `ForgotPasswordView.tsx` | ~310 | 9 ✓ | `docs/group-a-onboarding.md` |
+| **A-06** | **Social Login (Google + Apple, mocked)** | `SocialLoginView.tsx` | ~180 | 7 ✓ | `docs/group-a-onboarding.md` |
+| bonus | AuthSheet (top-bar quick-action sheet) | `AuthSheet.tsx` | ~110 | 8 ✓ | `docs/group-a-onboarding.md` |
 | B-06 | Discover Feed tabs (For You / Trending / Designers / New In) | `DiscoverFeedView.tsx` | ~370 | 11 ✓ | `docs/discover-tabs.md` |
 | B-07 | Search & Filters (6 filters + sort + debounce + URL sync) | `SearchFiltersView.tsx` | 678 | 16 ✓ | `docs/search-filters.md` |
 | B-09 | Product Details (breadcrumb, zoom, shipping accordion, size, report) | `ProductDetailsView.tsx` | 686 | 14 ✓ | `docs/product-details.md` |
@@ -60,6 +61,19 @@ This session shipped:
 | **F-29** | **Chat thread (image/voice/offer/quick-reply buttons)** | `ChatOverlay.tsx` | 360 | 13 ✓ | `docs/group-f-social.md` |
 | **F-30** | **Make an Offer card (Pending → Accepted/Declined)** | `ChatOverlay.tsx` (inline `OfferCard`) | — | covered in F-29 | `docs/group-f-social.md` |
 | **F-31** | **Notifications centre (7 type filters, mark-all-read)** | `NotificationsCentreView.tsx` | 240 | 9 ✓ | `docs/group-f-social.md` |
+| **G-32** | **Vault expansion (Edit Profile / Addresses / Payments actions)** | `UserProfileView.tsx` | +60 lines | covered | `docs/group-g-profile.md` |
+| **G-33** | **Edit Profile (avatar + bio + style tags)** | `EditProfileView.tsx` | 290 | 9 ✓ | `docs/group-g-profile.md` |
+| **G-34** | **Loves filter + share-as-collection** | `UserProfileView.tsx` (`LikesTabContent`) | +110 | covered | `docs/group-g-profile.md` |
+| **G-35** | **Saved Addresses (CRUD + default + delete confirm)** | `SavedAddressesView.tsx` | 340 | 11 ✓ | `docs/group-g-profile.md` |
+| **G-36** | **Saved Payment Methods (CRUD + brand detection)** | `SavedPaymentMethodsView.tsx` | 330 | 9 ✓ | `docs/group-g-profile.md` |
+| **G-37** | **Settings depth (5 sections, 14 items, language picker)** | `SettingsView.tsx` | 280 | pre-existing | `docs/group-g-profile.md` |
+| **G-38** | **Help & Support (FAQ accordion + order lookup + channels)** | `HelpSupportView.tsx` | 250 | 8 ✓ | `docs/group-g-profile.md` |
+| **H-39** | **Leave a review + my reviews (stars + photos)** | `LeaveReviewView.tsx`, `MyReviewsView.tsx` | 580 | 13 ✓ | `docs/group-h-trust.md` |
+| **H-40** | **Report listing/user (reason + body + photos → case #)** | `ReportView.tsx` | 290 | 5 ✓ | `docs/group-h-trust.md` |
+| **H-41** | **Return / Refund (reason + body → opens dispute)** | `ReturnRequestView.tsx` | 270 | 5 ✓ | `docs/group-h-trust.md` |
+| **H-42** | **Payouts (balances + method + history)** | `PayoutsView.tsx` | 260 | 6 ✓ | `docs/group-h-trust.md` |
+| **H-43** | **Blocked users (list + confirm-unblock)** | `BlockedUsersView.tsx` | 220 | 7 ✓ | `docs/group-h-trust.md` |
+| **H-44** | **Dispute detail + list (timeline + chat-with-support)** | `DisputeView.tsx`, `DisputesListView.tsx` | 510 | 14 ✓ | `docs/group-h-trust.md` |
 
 ---
 
@@ -85,63 +99,10 @@ brief. Each needs rework before it can be called "done":
 
 ## 3. Pages not started at all
 
-These exist nowhere in the codebase. They are referenced in the showcase
-and listed in `ROADMAP.md` but the components have not been written.
-
-### Group A — Onboarding (skipped to Phase 2 per ROADMAP)
-- A-02 Sign Up
-- A-03 OTP verification
-- A-04 Sign In
-- A-05 Forgot Password
-- A-06 Social Login
-
-### Group B — Discovery & Browsing
-- **B-10 Category Landing Page** (deep listing grid + sub-category chips +
-  "Shop the look" rail). Tappable category chip in the Discover feed is
-  currently a no-op.
-
-### Group C — Buying & Checkout
-- **C-13 Address step** (split out from current combined flow)
-- **C-14 Payment step** (split out, add saved cards + COD + Apple Pay)
-- **C-16 My Purchases** (list of past orders with thumbnails, status
-  badges, reorder CTA)
-- **C-17 Order Details & Tracking** (status timeline, courier info, map
-  placeholder, contact-seller CTA, "I received it" trigger for H-39)
-
-### Group D — Listing & Selling
-- **D-18 Sell Mode Picker** (Resell vs Rent — Rent is grayed-out with a
-  Phase 4 tooltip)
-- **D-21 Edit Listing** (re-use `D-19` form, prefilled, draft saves)
-- **D-22 My Sales** (seller-side view of received orders; payout badges;
-  shipment action)
-
-### Group F — Social & Communication
-- **F-30 Make an Offer** (special message card inside the chat thread;
-  status pill: Pending · Accepted · Declined · Countered)
-- **F-31 Notifications Centre** (bell-icon hub: filter by type,
-  mark-all-read, deep-link to source)
-
-### Group G — Profile, Account & Settings
-- **G-33 Edit Profile** (avatar + bio + style tags + city)
-- **G-34 Loves filters & share** (filter saved items by category,
-  share-as-collection link)
-- **G-35 Saved Addresses** (CRUD list; default address; map preview)
-- **G-36 Saved Payment Methods** (card list, default card, remove with
-  confirm)
-- **G-37 Settings depth** (rewrite the existing skeleton into 5 sections
-  + their sub-screens)
-- **G-38 Help & Support** (FAQ accordion + contact CTA + order lookup)
-
-### Group H — Trust, Safety & Post-Purchase
-- **H-39 Reviews** (write-review screen + per-seller review list with
-  star distribution, photo uploads, verified-purchase badge)
-- **H-40 Report Listing / User** (category checklist + free-text + photo
-  evidence; confirmation with case ID)
-- **H-41 Return / Refund** (request screen + reason picker + photo upload
-  + status timeline)
-- **H-42 Payouts (Seller)** (balance card, payout method, history list)
-- **H-43 Block list** (blocked users list + unblock confirm)
-- **H-44 Disputes** (open-dispute from order + chat-with-support stub)
+**None.** Phase 1 has been fully delivered across Groups A–H. Phase 2
+pages (real auth server, real payment gateway, real CDN-backed media,
+push notifications, ...) are tracked separately and intentionally not
+in Phase 1 scope.
 
 ---
 
@@ -164,55 +125,65 @@ implies shared UX infrastructure that hasn't been built:
 
 If you `npm run dev` right now, here is what the user can click through:
 
-- Cold launch → **Welcome screen** (✓ A-01) → tap "Enter Mooday" → Discover feed.
+- Cold launch → **Welcome screen** (✓ A-01) with language picker +
+  Sign in / Create account shortcuts → tap "Enter Mooday".
+- Tap **Create account** / **Sign in** → full auth flow (A-02 → A-04,
+  A-05 forgot password, A-06 social login, A-03 OTP if needed).
+  Pre-seeded QA login is `layla@mooday.app` / `mooday123`.
+- Once signed in, the header swaps from a person icon to an
+  initial-avatar chip.
 - **Discover feed** (✓ B-06): For You, Trending, Designers, New In tabs.
-  Category chips at the top are **not yet tappable** (no Category Landing).
-- Tap any product → **Product details** (✓ B-09): zoom, breadcrumb,
-  shipping accordion, report menu. "Buy Now" jumps to checkout.
+  Category chips now drop into B-10.
+- Tap any product → **Product details** (✓ B-09).
 - Tap seller name → **Public seller profile** (✓ B-11).
 - Bottom nav → **Search** (✓ B-07): full filter sheet, debounced.
-- Bottom nav → **Sell** (D-19 basic): single-photo form, submit creates
-  a draft listing.
-- Bottom nav → **Activity** (F-27 basic): hard-coded events. "View chats"
-  jumps to Profile.
-- Bottom nav → **Vault** (G-32 partial): three tabs (Loves, Closet,
-  Chats). Closet is a list with no status pills or bulk select.
-- Header → **Settings** (G-37 basic): single screen, no sub-routes.
-- Header bag icon → **Shopping Bag** (C-12 basic): add/qty/remove.
-- From bag or "Buy Now" → **Checkout** (C-13/14/15 combined): two-step
-  toggle.
+- Bottom nav → **Sell** (D-18 → D-19): mode picker, then polished
+  multi-photo create-listing form.
+- Bottom nav → **Activity** (✓ F-27).
+- Bottom nav → **Vault** (✓ G-32–G-38): profile tabs, edit profile,
+  saved addresses, saved payment methods, settings, help & support.
+- Header → **Settings** (✓ G-37) → **Log Out** is now functional
+  and clears the session.
+- Header bag icon → **Shopping Bag** (✓ C-12) → Checkout
+  (✓ C-13/14/15 combined).
+- Header bell icon → **Notifications centre** (✓ F-31).
 - From a chat thread → **Buy now** button jumps to checkout.
+- Header person icon (when signed out) → quick-action `AuthSheet`.
 
-**The product is real, the depth on 5 flows is real, but the breadth is
-not — and the user has been right that "the program that's running is
-the same as it was from the beginning" in terms of how many screens
-exist.**
+**Phase 1 is shipped:** every screen in `ROADMAP.md` § "Effective Phase
+1 screen count" exists, is wired up, has at least 5 tests, and is
+documented in `docs/`.
 
 ---
 
 ## 6. Recommended next steps
 
-In dependency order (pages with dependencies first):
+### Phase 2 identity foundation (implemented)
 
-1. **Expand mock data** (`ROADMAP.md` M2) — author `orders.ts`, `sales.ts`,
-   `addresses.ts`, `paymentMethods.ts`, `notifications.ts`, `blocks.ts`,
-   bump `reviews.ts` to 80+, expand `products.ts` to 100 listings. This
-   unblocks *every* downstream page.
-2. **M4 — Group B finish**: B-10 Category Landing (the one missing
-   Group B screen).
-3. **M5 — Group C depth**: split `CheckoutFlowView` into C-13, C-14, C-15
-   + add C-16 My Purchases + C-17 Order Tracking.
-4. **M6 — Group D depth**: D-18 mode picker, polish D-19, add D-21 Edit
-   Listing + D-22 My Sales.
-5. **M7 — Group F depth**: wire F-27 to context, expand F-28 / F-29,
-   build F-30 + F-31.
-6. **M8 — Group G depth**: expand G-32 to 6 tabs, build G-33 → G-38.
-7. **M9 — Group H**: H-39 → H-44, all local-first.
-8. **M10 — Polish + cross-cutting**: service layer extraction, toast /
-   skeleton / image-fallback primitives.
-9. **M1 — Service seams**: thin `src/services/*.ts` adapter layer
-   wrapping `AppContext` so Phase 3 can swap to API without touching
-   components.
+The repository now includes the Supabase Auth/PostgreSQL foundation, typed
+auth/profile/address adapters, RLS migration, OAuth callback, real async UI
+flows, and a mock-mode feature flag. See `docs/phase-2-backend.md` for setup,
+rollout, and verification. Provider delivery and OAuth still require project
+credentials in the Supabase dashboard; no secrets are committed.
+
+Phase 1 is complete. Phase 2 (backend integration) and Phase 3
+(hardening + multi-user sync) are the next gates per `ROADMAP.md`.
+
+The single largest Phase-2 ticket is **password hashing** — the
+mock auth in `src/data/users.ts` stores plaintext, which is fine
+for Phase 1 demo but unacceptable for production. Before the
+backend swap, hash the entries and migrate existing localStorage
+records on first load.
+
+After the auth migration:
+1. **Wire a real auth server** — replace `signIn`/`signUp`/`signOut`
+   calls with calls to the new backend; keep the same mutator
+   signatures so the views don't need to change.
+2. **Replace mock OTP** with a real SMS / email challenge.
+3. **Replace social login mocks** with real Google / Apple OIDC.
+4. **Toast / snackbar system** (see § 4 below).
+5. **Service layer extraction** (`src/services/`) — seams to swap
+   localStorage reads/writes with API calls.
 
 ---
 

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { AppContext, type AppContextType } from "@/context/AppContext";
 import { SearchFiltersView } from "@/components/SearchFiltersView";
@@ -110,9 +110,29 @@ function makeContext(overrides: Partial<AppContextType> = {}): AppContextType {
     notifications: [],
     markNotificationRead: vi.fn(),
     markAllNotificationsRead: vi.fn(),
+    userProfile: { fullNameEn: "Test User", fullNameAr: "مستخدم اختبار", handle: "@test", avatar: "/sellers/test.jpg", bioEn: "Test bio", bioAr: "نبذة", locationEn: "Dubai", locationAr: "دبي", styleTagsEn: [], styleTagsAr: [], rating: 5, reviewsCount: 0, followers: 0, following: 0 },
+    updateUserProfile: vi.fn(),
+    myReviews: [],
+    addMyReview: vi.fn(),
+    blockedUsers: [],
+    blockUser: vi.fn(),
+    unblockUser: vi.fn(),
+    reports: [],
+    submitReport: vi.fn(),
+    disputes: [],
+    openDispute: vi.fn(),
     updateListing: vi.fn(),
     removeListing: vi.fn(),
     updateOrderStatus: vi.fn(),
+    currentUser: null,
+    authError: null,
+    signUp: vi.fn(() => "user-test"),
+    signIn: vi.fn(() => true),
+    signOut: vi.fn(),
+    verifyOtp: vi.fn(() => true),
+    sendOtp: vi.fn(() => "000000"),
+    updateCurrentUserName: vi.fn(),
+    resetPassword: vi.fn(() => true),
     ...overrides,
   };
 }
@@ -134,6 +154,24 @@ beforeEach(() => {
 });
 
 describe("SearchFiltersView", () => {
+  it("keeps results visible by default and opens the complete mobile filter surface on demand", async () => {
+    const user = userEvent.setup();
+    renderSearch();
+
+    const panel = document.getElementById("search-filters-panel");
+    expect(panel).toHaveClass("hidden");
+    expect(screen.getByText("Red Evening Dress")).toBeInTheDocument();
+
+    const toggle = screen.getByRole("button", { name: /show filters/i });
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+    await user.click(toggle);
+
+    expect(panel).toHaveClass("flex");
+    expect(
+      screen.getByRole("button", { name: /hide filters/i }),
+    ).toHaveAttribute("aria-expanded", "true");
+  });
+
   it("renders all six filter section headings", () => {
     renderSearch();
 
@@ -159,6 +197,48 @@ describe("SearchFiltersView", () => {
 
     expect(screen.getByText(/Found 1 item/)).toBeInTheDocument();
     expect(screen.getByText("Black Leather Handbag")).toBeInTheDocument();
+  });
+
+  it("shows active filters and removes one without resetting the rest", async () => {
+    const user = userEvent.setup();
+    renderSearch();
+
+    await user.click(screen.getByRole("button", { name: /^Bags$/ }));
+    await user.click(screen.getByRole("button", { name: /^OS$/ }));
+
+    const toggle = screen.getByRole("button", { name: /show filters/i });
+    expect(toggle).toHaveTextContent("2");
+
+    const activeFilters = screen.getByLabelText("Filters");
+    await user.click(within(activeFilters).getByRole("button", { name: "Bags" }));
+
+    expect(screen.getByText(/Found 2 items/)).toBeInTheDocument();
+    expect(toggle).toHaveTextContent("1");
+    expect(within(activeFilters).getByRole("button", { name: "OS" })).toBeInTheDocument();
+  });
+
+  it("restores valid shared filters and discards invalid or deferred URL state", async () => {
+    window.history.pushState(
+      {},
+      "",
+      "/?view=search&cat=Bags&size=OS&mode=rent&sort=unknown",
+    );
+
+    renderSearch();
+
+    expect(screen.getByText(/Found 1 item/)).toBeInTheDocument();
+    expect(screen.getByText("Black Leather Handbag")).toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: /All/i })).toBeChecked();
+    expect(screen.getByRole("combobox", { name: /sort by/i })).toHaveValue(
+      "relevance",
+    );
+
+    await waitFor(() => {
+      expect(window.location.search).toContain("cat=Bags");
+      expect(window.location.search).toContain("size=OS");
+      expect(window.location.search).not.toContain("mode=rent");
+      expect(window.location.search).not.toContain("sort=unknown");
+    });
   });
 
   it("filters by condition", async () => {

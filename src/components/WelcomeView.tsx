@@ -5,6 +5,8 @@ import { useApp } from "@/context/AppContext";
 
 interface WelcomeViewProps {
   onEnter: () => void;
+  onSignIn?: () => void;
+  onSignUp?: () => void;
 }
 
 const COPY = {
@@ -13,16 +15,28 @@ const COPY = {
     sub: "A peer-to-peer marketplace for women in the UAE to give their wardrobe a second life.",
     enter: "Enter Mooday",
     skip: "Skip",
+    signIn: "Sign in",
+    createAccount: "Create account",
+    alreadyMember: "Already a member?",
+    newHere: "New here?",
   },
   ar: {
     tagline: "بيعي و أجيلي ملابسك المستعملة",
     sub: "سوق نظير لنظير للنساء في الإمارات، لمنح خزانة ملابسك حياة ثانية.",
     enter: "ادخلي مودي",
     skip: "تخطي",
+    signIn: "تسجيل الدخول",
+    createAccount: "إنشاء حساب",
+    alreadyMember: "لديكِ حساب؟",
+    newHere: "جديدة هنا؟",
   },
 } as const;
 
-export const WelcomeView: React.FC<WelcomeViewProps> = ({ onEnter }) => {
+export const WelcomeView: React.FC<WelcomeViewProps> = ({
+  onEnter,
+  onSignIn,
+  onSignUp,
+}) => {
   const { language, setLanguage } = useApp();
   const isAr = language === "ar";
   const t = isAr ? COPY.ar : COPY.en;
@@ -114,6 +128,30 @@ export const WelcomeView: React.FC<WelcomeViewProps> = ({ onEnter }) => {
       >
         {t.skip}
       </button>
+
+      {/* Auth entry points (Phase 1 Group A) */}
+      {(onSignIn || onSignUp) && (
+        <div className="w-full max-w-[360px] flex flex-col gap-sm mt-lg">
+          {onSignUp && (
+            <button
+              type="button"
+              onClick={onSignUp}
+              className="btn-primary py-4 rounded-xl text-label-md uppercase tracking-widest font-bold btn-tactile text-center active:scale-[0.98] transition-transform"
+            >
+              {t.createAccount}
+            </button>
+          )}
+          {onSignIn && (
+            <button
+              type="button"
+              onClick={onSignIn}
+              className="bg-surface-container-low hover:bg-surface-container-high border border-outline-variant text-primary py-4 rounded-xl text-label-md uppercase tracking-widest font-bold text-center active:scale-[0.98] transition-transform"
+            >
+              {t.signIn}
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 };

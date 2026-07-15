@@ -19,7 +19,27 @@ import {
   type AppNotification,
   DEFAULT_NOTIFICATIONS,
 } from "@/data/notifications";
+import { type MyReview, DEFAULT_MY_REVIEWS } from "@/data/my-reviews";
+import { type BlockedUser, DEFAULT_BLOCKED_USERS } from "@/data/blocked-users";
+import { type ReportRecord, DEFAULT_REPORTS } from "@/data/reports";
+import { type Dispute, DEFAULT_DISPUTES } from "@/data/disputes";
+import {
+  type User,
+  type Session,
+  type AuthErrorCode,
+  DEFAULT_USERS,
+  generateSessionToken,
+  isValidEmail,
+  MOCK_OTP_CODE,
+} from "@/data/users";
 import { useLocalStorageState } from "@/lib/hooks";
+import {
+  getPhase2Backend,
+  type AuthenticatedUser,
+  type OtpPurpose,
+} from "@/services/backend";
+
+type Awaitable<T> = T | Promise<T>;
 
 export interface Product {
   id: string;
@@ -75,6 +95,41 @@ export interface CartItem {
   quantity: number;
 }
 
+export interface UserProfile {
+  fullNameEn: string;
+  fullNameAr: string;
+  handle: string;
+  avatar: string;
+  bioEn: string;
+  bioAr: string;
+  locationEn: string;
+  locationAr: string;
+  styleTagsEn: string[];
+  styleTagsAr: string[];
+  rating: number;
+  reviewsCount: number;
+  followers: number;
+  following: number;
+}
+
+const DEFAULT_USER_PROFILE: UserProfile = {
+  fullNameEn: "Fatima AlMansoori",
+  fullNameAr: "فاطمة المنصوري",
+  handle: "@fatima_dxb",
+  avatar: "/sellers/fatima-almansoori.jpg",
+  bioEn:
+    "Curating Gulf-inspired pre-loved fashion — kaftans, abayas, and elevated basics.",
+  bioAr: "أختار أزياء منطقة الخليج المستعملة بحالة ممتازة — قفاطين وعبايات.",
+  locationEn: "Dubai, UAE",
+  locationAr: "دبي، الإمارات",
+  styleTagsEn: ["Kaftan", "Abaya", "Vintage"],
+  styleTagsAr: ["قفطان", "عباية", "كلاسيكي"],
+  rating: 4.9,
+  reviewsCount: 28,
+  followers: 1420,
+  following: 382,
+};
+
 export interface AppContextType {
   language: "en" | "ar";
   setLanguage: (lang: "en" | "ar") => void;
@@ -98,11 +153,53 @@ export interface AppContextType {
   notifications: AppNotification[];
   markNotificationRead: (id: string) => void;
   markAllNotificationsRead: () => void;
+  userProfile: UserProfile;
+  updateUserProfile: (patch: Partial<UserProfile>) => Awaitable<void>;
+  myReviews: MyReview[];
+  addMyReview: (review: Omit<MyReview, "id">) => void;
+  blockedUsers: BlockedUser[];
+  blockUser: (user: Omit<BlockedUser, "id" | "date">) => void;
+  unblockUser: (id: string) => void;
+  reports: ReportRecord[];
+  submitReport: (
+    report: Omit<ReportRecord, "id" | "caseNumber" | "status" | "date">,
+  ) => ReportRecord;
+  disputes: Dispute[];
+  openDispute: (
+    dispute: Omit<Dispute, "id" | "status" | "date" | "timeline">,
+  ) => Dispute;
+  // Group A auth (Phase 1 mock — Phase 2 swaps for real backend)
+  currentUser: { email: string; name: string } | null;
+  /** Absent in legacy test fixtures; "supabase" means real Phase 2 auth. */
+  authMode?: "mock" | "supabase";
+  authReady?: boolean;
+  pendingAuthEmail?: string;
+  authError: AuthErrorCode | null;
+  signUp: (input: {
+    name: string;
+    email: string;
+    phone: string;
+    password: string;
+  }) => Awaitable<string | null>;
+  signIn: (input: { email: string; password: string }) => Awaitable<boolean>;
+  signOut: () => Awaitable<void>;
+  verifyOtp: (
+    email: string,
+    code: string,
+    purpose?: OtpPurpose,
+  ) => Awaitable<boolean>;
+  sendOtp: (email: string, purpose?: OtpPurpose) => Awaitable<string | null>;
+  signInWithOAuth?: (provider: "google" | "apple") => Promise<boolean>;
+  updateCurrentUserName: (name: string) => Awaitable<void>;
+  resetPassword: (email: string, newPassword: string) => Awaitable<boolean>;
   addresses: Address[];
-  addAddress: (address: Omit<Address, "id">) => void;
-  updateAddress: (id: string, patch: Partial<Omit<Address, "id">>) => void;
-  removeAddress: (id: string) => void;
-  setDefaultAddress: (id: string) => void;
+  addAddress: (address: Omit<Address, "id">) => Awaitable<void>;
+  updateAddress: (
+    id: string,
+    patch: Partial<Omit<Address, "id">>,
+  ) => Awaitable<void>;
+  removeAddress: (id: string) => Awaitable<void>;
+  setDefaultAddress: (id: string) => Awaitable<void>;
   paymentMethods: PaymentMethod[];
   addPaymentMethod: (method: Omit<PaymentMethod, "id">) => void;
   removePaymentMethod: (id: string) => void;
@@ -125,6 +222,13 @@ const STORAGE_KEYS = {
   paymentMethods: "mooday_payment_methods",
   orders: "mooday_orders",
   notifications: "mooday_notifications",
+  myReviews: "mooday_my_reviews",
+  blockedUsers: "mooday_blocked_users",
+  reports: "mooday_reports",
+  disputes: "mooday_disputes",
+  users: "mooday_users",
+  session: "mooday_session",
+  pendingOtp: "mooday_pending_otp",
 } as const;
 
 const DEFAULT_CHATS: ChatThread[] = [
@@ -238,6 +342,10 @@ function writeListings(next: Product[]) {
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
+  const phase2Backend = useMemo(() => getPhase2Backend(), []);
+  const authMode: "mock" | "supabase" = phase2Backend
+    ? "supabase"
+    : "mock";
   const [language, setLang] = useLocalStorageState<"en" | "ar">(
     STORAGE_KEYS.lang,
     "en",
@@ -265,10 +373,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     STORAGE_KEYS.chats,
     DEFAULT_CHATS,
   );
-  const [addresses, setAddresses] = useLocalStorageState<Address[]>(
+  const [storedAddresses, setStoredAddresses] = useLocalStorageState<Address[]>(
     STORAGE_KEYS.addresses,
     DEFAULT_ADDRESSES,
   );
+  const [remoteAddresses, setRemoteAddresses] = React.useState<Address[]>([]);
+  const addresses = phase2Backend ? remoteAddresses : storedAddresses;
+  const setAddresses = phase2Backend ? setRemoteAddresses : setStoredAddresses;
   const [paymentMethods, setPaymentMethods] = useLocalStorageState<
     PaymentMethod[]
   >(STORAGE_KEYS.paymentMethods, DEFAULT_PAYMENT_METHODS);
@@ -279,6 +390,95 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   const [notifications, setNotifications] = useLocalStorageState<
     AppNotification[]
   >(STORAGE_KEYS.notifications, DEFAULT_NOTIFICATIONS);
+  const [storedUserProfile, setStoredUserProfile] = useLocalStorageState<UserProfile>(
+    "mooday_user_profile",
+    DEFAULT_USER_PROFILE,
+  );
+  const [remoteUserProfile, setRemoteUserProfile] =
+    React.useState<UserProfile>(DEFAULT_USER_PROFILE);
+  const userProfile = phase2Backend ? remoteUserProfile : storedUserProfile;
+  const setUserProfile = phase2Backend
+    ? setRemoteUserProfile
+    : setStoredUserProfile;
+  const [myReviews, setMyReviews] = useLocalStorageState<MyReview[]>(
+    STORAGE_KEYS.myReviews,
+    DEFAULT_MY_REVIEWS,
+  );
+  const [blockedUsers, setBlockedUsers] = useLocalStorageState<BlockedUser[]>(
+    STORAGE_KEYS.blockedUsers,
+    DEFAULT_BLOCKED_USERS,
+  );
+  const [reports, setReports] = useLocalStorageState<ReportRecord[]>(
+    STORAGE_KEYS.reports,
+    DEFAULT_REPORTS,
+  );
+  const [disputes, setDisputes] = useLocalStorageState<Dispute[]>(
+    STORAGE_KEYS.disputes,
+    DEFAULT_DISPUTES,
+  );
+  // Auth state (Phase 1 mock — Phase 2 swaps the storage layer for a real backend)
+  const [users, setUsers] = useLocalStorageState<User[]>(
+    STORAGE_KEYS.users,
+    DEFAULT_USERS,
+  );
+  const [session, setSession] = useLocalStorageState<Session | null>(
+    STORAGE_KEYS.session,
+    null,
+  );
+  const [authError, setAuthError] = React.useState<AuthErrorCode | null>(null);
+  const [remoteUser, setRemoteUser] =
+    React.useState<AuthenticatedUser | null>(null);
+  const [authReady, setAuthReady] = React.useState(!phase2Backend);
+  const [pendingAuthEmail, setPendingAuthEmail] = React.useState("");
+
+  useEffect(() => {
+    if (!phase2Backend) return;
+
+    // One-way security migration: never keep Phase 1 plaintext credentials or
+    // cosmetic session tokens when the real backend is enabled.
+    localStorage.removeItem(STORAGE_KEYS.users);
+    localStorage.removeItem(STORAGE_KEYS.session);
+    localStorage.removeItem(STORAGE_KEYS.pendingOtp);
+
+    let active = true;
+    void phase2Backend.auth.getCurrentUser().then((user) => {
+      if (!active) return;
+      setRemoteUser(user);
+      setAuthReady(true);
+    });
+    const unsubscribe = phase2Backend.auth.subscribe((user) => {
+      if (!active) return;
+      setRemoteUser(user);
+      setAuthReady(true);
+    });
+    return () => {
+      active = false;
+      unsubscribe();
+    };
+  }, [phase2Backend]);
+
+  useEffect(() => {
+    if (!phase2Backend || !remoteUser) return;
+    let active = true;
+    void Promise.all([
+      phase2Backend.profiles.getMine(),
+      phase2Backend.addresses.listMine(),
+    ])
+      .then(([profile, nextAddresses]) => {
+        if (!active) return;
+        if (profile) {
+          setRemoteUserProfile((current) => ({ ...current, ...profile }));
+        }
+        setRemoteAddresses(nextAddresses);
+      })
+      .catch(() => {
+        // The existing screens remain usable; mutation errors are surfaced by
+        // their actions while this initial fetch can be retried on next auth event.
+      });
+    return () => {
+      active = false;
+    };
+  }, [phase2Backend, remoteUser]);
 
   // Sync document direction with language — side effect only, no setState.
   useEffect(() => {
@@ -515,6 +715,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const addAddress = useCallback(
     (address: Omit<Address, "id">) => {
+      if (phase2Backend) {
+        return phase2Backend.addresses.create(address).then((created) => {
+          setAddresses((prev) => {
+            const next = address.isDefault
+              ? prev.map((item) => ({ ...item, isDefault: false }))
+              : prev;
+            return [...next, created];
+          });
+        });
+      }
       const id = `addr-${Date.now()}`;
       setAddresses((prev) => {
         const next: Address[] = [...prev, { ...address, id }];
@@ -527,11 +737,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
         return next;
       });
     },
-    [setAddresses],
+    [phase2Backend, setAddresses],
   );
 
   const updateAddress = useCallback(
     (id: string, patch: Partial<Omit<Address, "id">>) => {
+      const persist = phase2Backend?.addresses.update(id, patch);
       setAddresses((prev) => {
         const next = prev.map((a) => (a.id === id ? { ...a, ...patch } : a));
         if (patch.isDefault === true) {
@@ -539,12 +750,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
         }
         return next;
       });
+      return persist;
     },
-    [setAddresses],
+    [phase2Backend, setAddresses],
   );
 
   const removeAddress = useCallback(
     (id: string) => {
+      const persist = phase2Backend?.addresses.remove(id);
       setAddresses((prev) => {
         const filtered = prev.filter((a) => a.id !== id);
         if (filtered.length === 0) return filtered;
@@ -552,17 +765,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
         if (!hasDefault) filtered[0] = { ...filtered[0], isDefault: true };
         return filtered;
       });
+      return persist;
     },
-    [setAddresses],
+    [phase2Backend, setAddresses],
   );
 
   const setDefaultAddress = useCallback(
     (id: string) => {
+      const persist = phase2Backend?.addresses.setDefault(id);
       setAddresses((prev) =>
         prev.map((a) => ({ ...a, isDefault: a.id === id })),
       );
+      return persist;
     },
-    [setAddresses],
+    [phase2Backend, setAddresses],
   );
 
   const addPaymentMethod = useCallback(
@@ -669,6 +885,306 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     setNotifications((prev) => prev.map((n) => ({ ...n, isUnread: false })));
   }, [setNotifications]);
 
+  const updateUserProfile = useCallback(
+    (patch: Partial<UserProfile>) => {
+      setUserProfile((prev) => ({ ...prev, ...patch }));
+      if (phase2Backend) {
+        return phase2Backend.profiles.updateMine(patch);
+      }
+    },
+    [phase2Backend, setUserProfile],
+  );
+
+  // ---------- Group A auth mutators (Phase 1 mock) ----------
+  const signUp = useCallback(
+    (input: {
+      name: string;
+      email: string;
+      phone: string;
+      password: string;
+    }) => {
+      setAuthError(null);
+      if (phase2Backend) {
+        setPendingAuthEmail(input.email.trim().toLowerCase());
+        return phase2Backend.auth.signUp(input).then((result) => {
+          if (!result.ok) {
+            setAuthError(result.error);
+            return null;
+          }
+          if (!result.needsVerification) setRemoteUser(result.value);
+          return result.value.id;
+        });
+      }
+      if (!isValidEmail(input.email)) {
+        setAuthError("invalid_email");
+        return null;
+      }
+      if (input.password.length < 8) {
+        setAuthError("weak_password");
+        return null;
+      }
+      if (
+        users.some((u) => u.email.toLowerCase() === input.email.toLowerCase())
+      ) {
+        setAuthError("user_exists");
+        return null;
+      }
+      const id = `user-${Date.now()}`;
+      const user: User = {
+        id,
+        nameEn: input.name,
+        nameAr: input.name,
+        email: input.email.trim().toLowerCase(),
+        phone: input.phone,
+        password: input.password,
+        createdAt: new Date().toISOString(),
+      };
+      setUsers((prev) => [...prev, user]);
+      // Auto-sign-in on successful sign-up.
+      const token = generateSessionToken(id);
+      setSession({
+        userId: id,
+        email: user.email,
+        token,
+        createdAt: new Date().toISOString(),
+      });
+      return id;
+    },
+    [phase2Backend, setUsers, setSession, users],
+  );
+
+  const signIn = useCallback(
+    (input: { email: string; password: string }) => {
+      setAuthError(null);
+      if (phase2Backend) {
+        return phase2Backend.auth.signIn(input).then((result) => {
+          if (!result.ok) {
+            setAuthError(result.error);
+            return false;
+          }
+          setRemoteUser(result.value);
+          return true;
+        });
+      }
+      const match = users.find(
+        (u) => u.email.toLowerCase() === input.email.trim().toLowerCase(),
+      );
+      if (!match) {
+        setAuthError("user_not_found");
+        return false;
+      }
+      if (match.password !== input.password) {
+        setAuthError("wrong_password");
+        return false;
+      }
+      const token = generateSessionToken(match.id);
+      setSession({
+        userId: match.id,
+        email: match.email,
+        token,
+        createdAt: new Date().toISOString(),
+      });
+      return true;
+    },
+    [phase2Backend, setSession, users],
+  );
+
+  const signOut = useCallback(() => {
+    if (phase2Backend) {
+      return phase2Backend.auth.signOut().then((result) => {
+        if (!result.ok) {
+          setAuthError(result.error);
+          return;
+        }
+        setRemoteUser(null);
+        setRemoteAddresses([]);
+      });
+    }
+    setSession(null);
+  }, [phase2Backend, setSession]);
+
+  const verifyOtp = useCallback(
+    (email: string, code: string, purpose: OtpPurpose = "signup") => {
+      if (phase2Backend) {
+        setAuthError(null);
+        return phase2Backend.auth
+          .verifyOtp(email, code, purpose)
+          .then((result) => {
+            if (!result.ok) {
+              setAuthError(result.error);
+              return false;
+            }
+            setRemoteUser(result.value);
+            return true;
+          });
+      }
+      // Demo mode: any email + the universal code "000000" succeeds.
+      void email;
+      return code === MOCK_OTP_CODE;
+    },
+    [phase2Backend],
+  );
+
+  const sendOtp = useCallback(
+    (email: string, purpose: OtpPurpose = "signup") => {
+      setPendingAuthEmail(email.trim().toLowerCase());
+      if (phase2Backend) {
+        setAuthError(null);
+        return phase2Backend.auth.sendOtp(email, purpose).then((result) => {
+          if (!result.ok) {
+            setAuthError(result.error);
+            return null;
+          }
+          return null;
+        });
+      }
+      return MOCK_OTP_CODE;
+    },
+    [phase2Backend],
+  );
+
+  const signInWithOAuth = useCallback(
+    async (provider: "google" | "apple") => {
+      if (!phase2Backend) return false;
+      setAuthError(null);
+      const result = await phase2Backend.auth.signInWithOAuth(provider);
+      if (!result.ok) {
+        setAuthError(result.error);
+        return false;
+      }
+      return true;
+    },
+    [phase2Backend],
+  );
+
+  const updateCurrentUserName = useCallback(
+    (name: string) => {
+      if (phase2Backend) {
+        setRemoteUser((current) =>
+          current ? { ...current, name } : current,
+        );
+        return phase2Backend.auth.updateName(name).then((result) => {
+          if (!result.ok) setAuthError(result.error);
+        });
+      }
+      setUsers((prev) =>
+        prev.map((u) =>
+          session?.userId === u.id ? { ...u, nameEn: name, nameAr: name } : u,
+        ),
+      );
+    },
+    [phase2Backend, setUsers, session],
+  );
+
+  const resetPassword = useCallback(
+    (email: string, newPassword: string) => {
+      if (phase2Backend) {
+        void email;
+        return phase2Backend.auth.resetPassword(newPassword).then((result) => {
+          if (!result.ok) {
+            setAuthError(result.error);
+            return false;
+          }
+          return true;
+        });
+      }
+      let success = false;
+      setUsers((prev) =>
+        prev.map((u) => {
+          if (u.email.toLowerCase() === email.trim().toLowerCase()) {
+            success = true;
+            return { ...u, password: newPassword };
+          }
+          return u;
+        }),
+      );
+      return success;
+    },
+    [phase2Backend, setUsers],
+  );
+
+  const addMyReview = useCallback(
+    (review: Omit<MyReview, "id">) => {
+      const id = `myrev-${Date.now()}`;
+      setMyReviews((prev) => [{ id, ...review }, ...prev]);
+    },
+    [setMyReviews],
+  );
+
+  const blockUser = useCallback(
+    (user: Omit<BlockedUser, "id" | "date">) => {
+      const id = `blk-${Date.now()}`;
+      setBlockedUsers((prev) => [
+        ...prev,
+        { ...user, id, date: new Date().toISOString() },
+      ]);
+    },
+    [setBlockedUsers],
+  );
+
+  const unblockUser = useCallback(
+    (id: string) => {
+      setBlockedUsers((prev) => prev.filter((u) => u.id !== id));
+    },
+    [setBlockedUsers],
+  );
+
+  const submitReport = useCallback(
+    (input: Omit<ReportRecord, "id" | "caseNumber" | "status" | "date">) => {
+      const caseNumber = `MOODAY-${String(
+        (reports.length + 1 + 10000).toString(),
+      ).padStart(5, "0")}`;
+      const record: ReportRecord = {
+        ...input,
+        id: `rep-${Date.now()}`,
+        caseNumber,
+        status: "open",
+        date: new Date().toISOString(),
+      };
+      setReports((prev) => [record, ...prev]);
+      return record;
+    },
+    [setReports, reports.length],
+  );
+
+  const openDispute = useCallback(
+    (input: Omit<Dispute, "id" | "status" | "date" | "timeline">) => {
+      const id = `disp-${Date.now()}`;
+      const date = new Date().toISOString();
+      const dispute: Dispute = {
+        ...input,
+        id,
+        status: "open",
+        date,
+        timeline: [
+          {
+            status: "open",
+            date,
+            descriptionEn:
+              "Dispute opened. Mooday support will reply within 24h.",
+            descriptionAr: "تم فتح النزاع. سيرد الدعم خلال ٢٤ ساعة.",
+          },
+        ],
+      };
+      setDisputes((prev) => [dispute, ...prev]);
+      return dispute;
+    },
+    [setDisputes],
+  );
+
+  // Resolve the active user record from the session + users list.
+  const currentUser = useMemo(() => {
+    if (phase2Backend) {
+      return remoteUser
+        ? { email: remoteUser.email, name: remoteUser.name }
+        : null;
+    }
+    if (!session) return null;
+    const match = users.find((u) => u.id === session.userId);
+    if (!match) return null;
+    return { email: match.email, name: match.nameEn };
+  }, [phase2Backend, remoteUser, session, users]);
+
   const value = useMemo(
     () => ({
       language,
@@ -702,6 +1218,30 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       notifications,
       markNotificationRead,
       markAllNotificationsRead,
+      userProfile,
+      updateUserProfile,
+      myReviews,
+      addMyReview,
+      blockedUsers,
+      blockUser,
+      unblockUser,
+      reports,
+      submitReport,
+      disputes,
+      openDispute,
+      currentUser,
+      authMode,
+      authReady,
+      pendingAuthEmail,
+      authError,
+      signUp,
+      signIn,
+      signOut,
+      verifyOtp,
+      sendOtp,
+      signInWithOAuth,
+      updateCurrentUserName,
+      resetPassword,
     }),
     [
       language,
@@ -735,6 +1275,30 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       notifications,
       markNotificationRead,
       markAllNotificationsRead,
+      userProfile,
+      updateUserProfile,
+      myReviews,
+      addMyReview,
+      blockedUsers,
+      blockUser,
+      unblockUser,
+      reports,
+      submitReport,
+      disputes,
+      openDispute,
+      currentUser,
+      authMode,
+      authReady,
+      pendingAuthEmail,
+      authError,
+      signUp,
+      signIn,
+      signOut,
+      verifyOtp,
+      sendOtp,
+      signInWithOAuth,
+      updateCurrentUserName,
+      resetPassword,
     ],
   );
 

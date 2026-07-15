@@ -74,9 +74,29 @@ function makeContext(language: "en" | "ar" = "en"): AppContextType {
     notifications: [],
     markNotificationRead: vi.fn(),
     markAllNotificationsRead: vi.fn(),
+    userProfile: { fullNameEn: "Test User", fullNameAr: "مستخدم اختبار", handle: "@test", avatar: "/sellers/test.jpg", bioEn: "Test bio", bioAr: "نبذة", locationEn: "Dubai", locationAr: "دبي", styleTagsEn: [], styleTagsAr: [], rating: 5, reviewsCount: 0, followers: 0, following: 0 },
+    updateUserProfile: vi.fn(),
+    myReviews: [],
+    addMyReview: vi.fn(),
+    blockedUsers: [],
+    blockUser: vi.fn(),
+    unblockUser: vi.fn(),
+    reports: [],
+    submitReport: vi.fn(),
+    disputes: [],
+    openDispute: vi.fn(),
     updateListing: vi.fn(),
     removeListing: vi.fn(),
     updateOrderStatus: vi.fn(),
+    currentUser: null,
+    authError: null,
+    signUp: vi.fn(() => "user-test"),
+    signIn: vi.fn(() => true),
+    signOut: vi.fn(),
+    verifyOtp: vi.fn(() => true),
+    sendOtp: vi.fn(() => "000000"),
+    updateCurrentUserName: vi.fn(),
+    resetPassword: vi.fn(() => true),
   };
 }
 
@@ -248,6 +268,22 @@ describe("ProductDetailsView — depth", () => {
 
     await user.click(screen.getByRole("button", { name: /buy now/i }));
     expect(onCheckoutProduct).toHaveBeenCalledWith(HAND);
+  });
+
+  it("keeps all three purchase actions in one mobile action bar", async () => {
+    const user = userEvent.setup();
+    const { onStartChat } = renderView(HAND);
+
+    expect(screen.getByRole("button", { name: /buy now/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /add to shopping bag/i }),
+    ).toBeInTheDocument();
+
+    const chatButtons = screen.getAllByRole("button", {
+      name: /chat with seller/i,
+    });
+    await user.click(chatButtons.at(-1)!);
+    expect(onStartChat).toHaveBeenCalledWith(HAND);
   });
 
   it("add to bag shows the success alert and calls addToCart", async () => {

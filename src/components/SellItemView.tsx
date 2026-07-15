@@ -73,6 +73,7 @@ export const SellItemView: React.FC<SellItemViewProps> = ({
         <ListingForm
           isAr={isAr}
           user={CURRENT_USER}
+          draftKey="mooday_listing_form_draft"
           onSubmit={(data) => {
             addListing(data);
             onSuccess();

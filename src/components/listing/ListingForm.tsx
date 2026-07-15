@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import type { Product } from "@/context/AppContext";
 import {
   SELL_CATEGORIES,
@@ -92,6 +92,8 @@ interface ListingFormProps {
   onSaveDraft?: (data: Omit<Product, "id" | "saves">) => void;
   /** Back/cancel. */
   onCancel: () => void;
+  /** Optional localStorage key used to autosave and restore create-form state. */
+  draftKey?: string;
   /** Inject the current user's profile snapshot to skip the fields that
    * come from the logged-in user in real Phase 3. */
   user: {
@@ -119,36 +121,107 @@ export const ListingForm: React.FC<ListingFormProps> = ({
   onSubmit,
   onSaveDraft,
   onCancel,
+  draftKey,
   user,
 }) => {
   const t = isAr ? LISTING_FORM_COPY_AR : LISTING_FORM_COPY_EN;
+  const restored = useMemo(() => {
+    if (initial || !draftKey || typeof window === "undefined") return null;
+    try {
+      return JSON.parse(window.localStorage.getItem(draftKey) ?? "null") as
+        | Record<string, unknown>
+        | null;
+    } catch {
+      return null;
+    }
+  }, [draftKey, initial]);
 
   // ---------- form state (initialised from `initial` if editing) ----------
-  const [titleEn, setTitleEn] = useState(initial?.titleEn ?? "");
-  const [titleAr, setTitleAr] = useState(initial?.titleAr ?? "");
+  const [titleEn, setTitleEn] = useState(
+    (restored?.titleEn as string) ?? initial?.titleEn ?? "",
+  );
+  const [titleAr, setTitleAr] = useState(
+    (restored?.titleAr as string) ?? initial?.titleAr ?? "",
+  );
   const [descriptionEn, setDescriptionEn] = useState(
-    initial?.descriptionEn ?? "",
+    (restored?.descriptionEn as string) ?? initial?.descriptionEn ?? "",
   );
   const [descriptionAr, setDescriptionAr] = useState(
-    initial?.descriptionAr ?? "",
+    (restored?.descriptionAr as string) ?? initial?.descriptionAr ?? "",
   );
-  const [category, setCategory] = useState(initial?.category ?? "Dresses");
+  const [category, setCategory] = useState(
+    (restored?.category as string) ?? initial?.category ?? "Dresses",
+  );
   const [condition, setCondition] = useState(
-    initial?.conditionEn ?? "New with Tags",
+    (restored?.condition as string) ??
+      initial?.conditionEn ??
+      "New with Tags",
   );
   const [price, setPrice] = useState(
-    initial?.price ? String(initial.price) : "",
+    (restored?.price as string) ??
+      (initial?.price ? String(initial.price) : ""),
   );
   const [originalPrice, setOriginalPrice] = useState(
-    initial?.originalPrice ? String(initial.originalPrice) : "",
+    (restored?.originalPrice as string) ??
+      (initial?.originalPrice ? String(initial.originalPrice) : ""),
   );
-  const [size, setSize] = useState(initial?.size ?? "OS");
-  const [colorEn, setColorEn] = useState(initial?.colorEn ?? "");
-  const [colorAr, setColorAr] = useState(initial?.colorAr ?? "");
-  const [authentic, setAuthentic] = useState(initial?.isAuthentic ?? true);
+  const [size, setSize] = useState(
+    (restored?.size as string) ?? initial?.size ?? "OS",
+  );
+  const [colorEn, setColorEn] = useState(
+    (restored?.colorEn as string) ?? initial?.colorEn ?? "",
+  );
+  const [colorAr, setColorAr] = useState(
+    (restored?.colorAr as string) ?? initial?.colorAr ?? "",
+  );
+  const [authentic, setAuthentic] = useState(
+    (restored?.authentic as boolean | undefined) ??
+      initial?.isAuthentic ??
+      true,
+  );
   const [photos, setPhotos] = useState<string[]>(
-    initial?.images ?? [mockImageOptions[0].url],
+    (restored?.photos as string[] | undefined) ??
+      initial?.images ?? [mockImageOptions[0].url],
   );
+  const [validationError, setValidationError] = useState("");
+
+  useEffect(() => {
+    if (!draftKey || initial || typeof window === "undefined") return;
+    window.localStorage.setItem(
+      draftKey,
+      JSON.stringify({
+        titleEn,
+        titleAr,
+        descriptionEn,
+        descriptionAr,
+        category,
+        condition,
+        price,
+        originalPrice,
+        size,
+        colorEn,
+        colorAr,
+        authentic,
+        photos,
+      }),
+    );
+  }, [
+    draftKey,
+    initial,
+    titleEn,
+    titleAr,
+    descriptionEn,
+    descriptionAr,
+    category,
+    condition,
+    price,
+    originalPrice,
+    size,
+    colorEn,
+    colorAr,
+    authentic,
+    photos,
+  ]);
 
   // ---------- derived: discount % ----------
   const discountPct = useMemo(() => {
@@ -161,9 +234,10 @@ export const ListingForm: React.FC<ListingFormProps> = ({
   const handleSubmit = (e: React.FormEvent, saveAsDraft: boolean) => {
     e.preventDefault();
     if (!saveAsDraft && (!titleEn || !price)) {
-      alert(t.requiredField);
+      setValidationError(t.requiredField);
       return;
     }
+    setValidationError("");
     const condIdx = CONDITIONS.indexOf(
       condition as (typeof CONDITIONS)[number],
     );
@@ -197,15 +271,17 @@ export const ListingForm: React.FC<ListingFormProps> = ({
       mode: "resell",
     };
     if (saveAsDraft && onSaveDraft) {
+      if (draftKey) window.localStorage.removeItem(draftKey);
       onSaveDraft(data);
     } else {
+      if (draftKey) window.localStorage.removeItem(draftKey);
       onSubmit(data);
     }
   };
 
   // ---------- handlers ----------
   const addPhoto = () => {
-    if (photos.length >= 5) return;
+    if (photos.length >= 8) return;
     // Round-robin pick from mock options so the demo has variety.
     const next =
       mockImageOptions[(photos.length * 3 + 1) % mockImageOptions.length].url;
@@ -220,6 +296,13 @@ export const ListingForm: React.FC<ListingFormProps> = ({
     next[idx] = url;
     setPhotos(next);
   };
+  const movePhoto = (idx: number, direction: -1 | 1) => {
+    const destination = idx + direction;
+    if (destination < 0 || destination >= photos.length) return;
+    const next = [...photos];
+    [next[idx], next[destination]] = [next[destination], next[idx]];
+    setPhotos(next);
+  };
 
   return (
     <form
@@ -230,7 +313,7 @@ export const ListingForm: React.FC<ListingFormProps> = ({
       <fieldset className="flex flex-col gap-sm">
         <legend className="text-label-sm uppercase tracking-wider text-on-surface-variant font-bold">
           {t.photos}{" "}
-          <span className="text-outline font-sans">({photos.length}/5)</span>
+          <span className="text-outline font-sans">({photos.length}/8)</span>
         </legend>
         <div className="flex gap-sm flex-wrap">
           {photos.map((url, idx) => (
@@ -249,20 +332,42 @@ export const ListingForm: React.FC<ListingFormProps> = ({
                 </span>
               )}
               {photos.length > 1 && (
-                <button
-                  type="button"
-                  onClick={() => removePhoto(idx)}
-                  aria-label={
-                    isAr ? `حذف الصورة ${idx + 1}` : `Remove photo ${idx + 1}`
-                  }
-                  className="absolute top-1 end-1 w-5 h-5 rounded-full bg-black/60 text-white text-[10px] flex items-center justify-center"
-                >
-                  ×
-                </button>
+                <>
+                  <button
+                    type="button"
+                    onClick={() => removePhoto(idx)}
+                    aria-label={
+                      isAr ? `حذف الصورة ${idx + 1}` : `Remove photo ${idx + 1}`
+                    }
+                    className="absolute top-1 end-1 w-5 h-5 rounded-full bg-black/60 text-white text-[10px] flex items-center justify-center"
+                  >
+                    ×
+                  </button>
+                  <div className="absolute inset-x-1 bottom-1 flex justify-between">
+                    <button
+                      type="button"
+                      onClick={() => movePhoto(idx, -1)}
+                      disabled={idx === 0}
+                      aria-label={isAr ? "تحريك الصورة للخلف" : "Move photo backward"}
+                      className="w-6 h-6 rounded-full bg-black/60 text-white disabled:invisible"
+                    >
+                      ‹
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => movePhoto(idx, 1)}
+                      disabled={idx === photos.length - 1}
+                      aria-label={isAr ? "تحريك الصورة للأمام" : "Move photo forward"}
+                      className="w-6 h-6 rounded-full bg-black/60 text-white disabled:invisible"
+                    >
+                      ›
+                    </button>
+                  </div>
+                </>
               )}
             </div>
           ))}
-          {photos.length < 5 && (
+          {photos.length < 8 && (
             <button
               type="button"
               onClick={addPhoto}
@@ -281,7 +386,7 @@ export const ListingForm: React.FC<ListingFormProps> = ({
           )}
         </div>
         {/* Mock picker for non-active slots */}
-        {photos.length < 5 && (
+        {photos.length < 8 && (
           <select
             onChange={(e) => {
               if (photos.length === 0) return;
@@ -489,6 +594,11 @@ export const ListingForm: React.FC<ListingFormProps> = ({
       </label>
 
       {/* CTAs */}
+      {validationError && (
+        <p role="alert" className="rounded-lg bg-error-container px-md py-sm text-label-sm font-bold text-on-error-container">
+          {validationError}
+        </p>
+      )}
       <div className="flex gap-sm mt-2">
         {onSaveDraft && (
           <button

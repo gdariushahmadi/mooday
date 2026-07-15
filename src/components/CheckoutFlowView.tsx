@@ -47,6 +47,7 @@ interface CheckoutCopy {
   applePayBody: string;
   codLabel: string;
   codBody: string;
+  codUnavailable: string;
   secureCheckoutAed: (n: number) => string;
   processing: string;
   orderReview: string;
@@ -94,6 +95,7 @@ const COPY: Record<"en" | "ar", CheckoutCopy> = {
     applePayBody: "One-tap payment via Apple Pay.",
     codLabel: "Cash on Delivery",
     codBody: "Pay in cash when your order arrives.",
+    codUnavailable: "Cash on Delivery is unavailable for orders over AED 5,000.",
     secureCheckoutAed: (n) => `Secure checkout (AED ${n})`,
     processing: "Securing escrow payment...",
     orderReview: "Order review",
@@ -140,6 +142,7 @@ const COPY: Record<"en" | "ar", CheckoutCopy> = {
     applePayBody: "الدفع بنقرة واحدة عبر Apple Pay.",
     codLabel: "الدفع عند الاستلام",
     codBody: "ادفع نقداً عند استلام طلبك.",
+    codUnavailable: "الدفع عند الاستلام غير متاح للطلبات التي تتجاوز ٥٬٠٠٠ درهم.",
     secureCheckoutAed: (n) => `إتمام الدفع (AED ${n})`,
     processing: "جاري تأمين المبلغ...",
     orderReview: "مراجعة الطلب",
@@ -233,6 +236,7 @@ export const CheckoutFlowView: React.FC<CheckoutFlowViewProps> = ({
   // Confirmation
   const [isProcessing, setIsProcessing] = useState(false);
   const [isDone, setIsDone] = useState(false);
+  const [formError, setFormError] = useState("");
 
   // Items + totals
   const items: CartItem[] = checkoutProduct
@@ -286,13 +290,14 @@ export const CheckoutFlowView: React.FC<CheckoutFlowViewProps> = ({
     e.preventDefault();
     if (showNewAddressForm) {
       if (!newFullName || !newPhone || !newStreet) {
-        alert(t.errorRequired);
+        setFormError(t.errorRequired);
         return;
       }
     } else if (!selectedAddressId) {
-      alert(t.errorRequired);
+      setFormError(t.errorRequired);
       return;
     }
+    setFormError("");
     setStep(2);
   };
 
@@ -306,14 +311,19 @@ export const CheckoutFlowView: React.FC<CheckoutFlowViewProps> = ({
         newCvv.length < 3 ||
         !newCardHolder
       ) {
-        alert(t.errorRequired);
+        setFormError(t.errorRequired);
         return;
       }
     }
     if (paymentChoice === "saved-card" && !selectedCardId) {
-      alert(t.errorRequired);
+      setFormError(t.errorRequired);
       return;
     }
+    if (paymentChoice === "cod" && total > 5000) {
+      setFormError(t.codUnavailable);
+      return;
+    }
+    setFormError("");
     setIsProcessing(true);
     setTimeout(() => {
       setIsProcessing(false);
@@ -393,6 +403,15 @@ export const CheckoutFlowView: React.FC<CheckoutFlowViewProps> = ({
           </span>
         </div>
       </div>
+
+      {formError && (
+        <p
+          role="alert"
+          className="rounded-lg bg-error-container px-md py-sm text-label-sm font-bold text-on-error-container"
+        >
+          {formError}
+        </p>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-12 gap-lg mt-md">
         <div className="md:col-span-7 bg-surface-container-lowest border border-surface-container-high rounded-xl p-lg shadow-sm">
@@ -833,8 +852,15 @@ const CheckoutPaymentStep: React.FC<PaymentStepProps> = ({
         active={paymentChoice === "cod"}
         onClick={() => onSelectChoice("cod")}
         isAr={isAr}
+        disabled={total > 5000}
       />
     </div>
+
+    {total > 5000 && (
+      <p role="note" className="text-label-sm font-bold text-error">
+        {t.codUnavailable}
+      </p>
+    )}
 
     {/* Saved cards list (visible when "Card" chosen) */}
     {(paymentChoice === "saved-card" || paymentChoice === "new-card") && (
@@ -1057,17 +1083,19 @@ const PaymentOptionTile: React.FC<{
   active: boolean;
   onClick: () => void;
   isAr: boolean;
-}> = ({ label, icon, active, onClick, isAr }) => (
+  disabled?: boolean;
+}> = ({ label, icon, active, onClick, isAr, disabled = false }) => (
   <button
     type="button"
     role="radio"
     aria-checked={active}
     onClick={onClick}
+    disabled={disabled}
     className={`border-2 py-3 px-2 rounded-xl flex flex-col items-center justify-center gap-1 cursor-pointer active:scale-95 transition-all ${
       active
         ? "border-primary bg-primary/5 text-primary"
         : "border-outline-variant text-outline"
-    }`}
+    } ${disabled ? "cursor-not-allowed opacity-45" : ""}`}
   >
     <span
       className="material-symbols-outlined text-[26px] no-mirror"

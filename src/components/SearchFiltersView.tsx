@@ -10,7 +10,7 @@ import {
 } from "@/data/categories";
 import { SIZES, SIZES_AR, COLOURS, type Size } from "@/data/attributes";
 import { ClickableCard } from "./ClickableCard";
-import { formatAED, formatAEDLabel } from "@/lib/format";
+import { formatAEDLabel } from "@/lib/format";
 
 interface SearchFiltersViewProps {
   onSelectProduct: (product: Product) => void;
@@ -25,6 +25,9 @@ const COPY = {
     searchPlaceholder: "Search for bags, dresses, decor...",
     search: "Search",
     clearSearch: "Clear search",
+    filters: "Filters",
+    showFilters: "Show filters",
+    hideFilters: "Hide filters",
     categories: "Categories",
     condition: "Item Condition",
     size: "Size",
@@ -46,12 +49,16 @@ const COPY = {
     noResults: "We couldn't find any items matching your search.",
     clearAll: "Clear all filters",
     apply: "Apply",
+    price: "Price",
   },
   ar: {
     back: "رجوع",
     searchPlaceholder: "ابحث عن حقيبة، فستان، ديكور...",
     search: "بحث",
     clearSearch: "مسح البحث",
+    filters: "الفلاتر",
+    showFilters: "عرض الفلاتر",
+    hideFilters: "إخفاء الفلاتر",
     categories: "الفئات",
     condition: "حالة المنتج",
     size: "المقاس",
@@ -73,6 +80,7 @@ const COPY = {
     noResults: "لم نجد أي منتجات تطابق بحثك.",
     clearAll: "مسح كل الفلاتر",
     apply: "تطبيق",
+    price: "السعر",
   },
 } as const;
 
@@ -81,16 +89,33 @@ const COPY = {
 function readUrlFilters() {
   if (typeof window === "undefined") return null;
   const p = new URLSearchParams(window.location.search);
+  const category = p.get("cat") ?? "All";
+  const condition = p.get("cond") ?? "All";
+  const color = p.get("color") ?? "";
+  const mode = p.get("mode");
+  const sort = p.get("sort");
+  const validPrice = (value: string | null) =>
+    value != null && /^\d+$/.test(value) ? value : "";
   return {
     q: p.get("q") ?? "",
-    cat: p.get("cat") ?? "All",
-    cond: p.get("cond") ?? "All",
-    sizes: (p.get("size") ?? "").split(",").filter(Boolean) as Size[],
-    color: p.get("color") ?? "",
-    min: p.get("min") ?? "",
-    max: p.get("max") ?? "",
-    mode: (p.get("mode") as "all" | "resell" | "rent") ?? "all",
-    sort: (p.get("sort") as SortOption) ?? "relevance",
+    cat: CATEGORIES.includes(category as (typeof CATEGORIES)[number])
+      ? category
+      : "All",
+    cond: CONDITIONS.includes(condition as (typeof CONDITIONS)[number])
+      ? condition
+      : "All",
+    sizes: (p.get("size") ?? "")
+      .split(",")
+      .filter((size): size is Size => SIZES.includes(size as Size)),
+    color: COLOURS.some((item) => item.key === color) ? color : "",
+    min: validPrice(p.get("min")),
+    max: validPrice(p.get("max")),
+    mode: mode === "resell" ? ("resell" as const) : ("all" as const),
+    sort: (["newest", "priceAsc", "priceDesc"] as const).includes(
+      sort as "newest" | "priceAsc" | "priceDesc",
+    )
+      ? (sort as SortOption)
+      : "relevance",
   };
 }
 
@@ -158,6 +183,7 @@ export const SearchFiltersView: React.FC<SearchFiltersViewProps> = ({
   const [sortBy, setSortBy] = useState<SortOption>(
     initial?.sort ?? "relevance",
   );
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   // Debounce the search query 300ms.
   useEffect(() => {
@@ -208,6 +234,82 @@ export const SearchFiltersView: React.FC<SearchFiltersViewProps> = ({
     setSelectedMode("all");
     setSortBy("relevance");
   };
+
+  const activeFilterCount =
+    (selectedCategory !== "All" ? 1 : 0) +
+    (selectedCondition !== "All" ? 1 : 0) +
+    selectedSizes.length +
+    (selectedColor ? 1 : 0) +
+    (minPrice || maxPrice ? 1 : 0) +
+    (selectedMode !== "all" ? 1 : 0);
+
+  const activeFilters = [
+    ...(selectedCategory !== "All"
+      ? [
+          {
+            key: "category",
+            label: isAr
+              ? CATEGORIES_AR[
+                  selectedCategory as keyof typeof CATEGORIES_AR
+                ]
+              : selectedCategory,
+            clear: () => setSelectedCategory("All"),
+          },
+        ]
+      : []),
+    ...(selectedCondition !== "All"
+      ? [
+          {
+            key: "condition",
+            label: isAr
+              ? CONDITIONS_AR[
+                  selectedCondition as keyof typeof CONDITIONS_AR
+                ]
+              : selectedCondition,
+            clear: () => setSelectedCondition("All"),
+          },
+        ]
+      : []),
+    ...selectedSizes.map((size) => ({
+      key: `size-${size}`,
+      label: isAr ? SIZES_AR[size] : size,
+      clear: () => toggleSize(size),
+    })),
+    ...(selectedColor
+      ? [
+          {
+            key: "color",
+            label:
+              (isAr
+                ? COLOURS.find((item) => item.key === selectedColor)?.ar
+                : COLOURS.find((item) => item.key === selectedColor)?.en) ??
+              selectedColor,
+            clear: () => setSelectedColor(""),
+          },
+        ]
+      : []),
+    ...(minPrice || maxPrice
+      ? [
+          {
+            key: "price",
+            label: `${t.price}: ${minPrice || "0"}–${maxPrice || "∞"}`,
+            clear: () => {
+              setMinPrice("");
+              setMaxPrice("");
+            },
+          },
+        ]
+      : []),
+    ...(selectedMode === "resell"
+      ? [
+          {
+            key: "mode",
+            label: t.resell,
+            clear: () => setSelectedMode("all"),
+          },
+        ]
+      : []),
+  ];
 
   // Filter + sort pipeline.
   const filteredListings = useMemo(() => {
@@ -333,17 +435,78 @@ export const SearchFiltersView: React.FC<SearchFiltersViewProps> = ({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-lg mt-md font-sans">
-        {/* Left Column: Filters Sidebar */}
-        <aside className="lg:col-span-3 flex flex-col gap-md">
-          {/* Clear all */}
+      <div className="flex items-center justify-between gap-sm font-sans">
+        <span className="text-body-md text-on-surface-variant whitespace-nowrap">
+          {t.found(filteredListings.length)}
+        </span>
+        <div className="flex items-center gap-xs min-w-0">
           <button
+            type="button"
+            onClick={() => setFiltersOpen((open) => !open)}
+            aria-expanded={filtersOpen}
+            aria-controls="search-filters-panel"
+            aria-label={filtersOpen ? t.hideFilters : t.showFilters}
+            className="lg:hidden min-h-10 flex items-center gap-1 rounded-full border border-outline-variant bg-surface px-3 text-label-sm font-bold text-on-surface"
+          >
+            <span className="material-symbols-outlined text-[18px]" aria-hidden="true">
+              tune
+            </span>
+            {t.filters}
+            {activeFilterCount > 0 && (
+              <span className="min-w-5 h-5 px-1 rounded-full bg-primary text-on-primary flex items-center justify-center text-[11px]">
+                {activeFilterCount}
+              </span>
+            )}
+          </button>
+          <label htmlFor="sort-select" className="sr-only">
+            {t.sortBy}
+          </label>
+          <select
+            id="sort-select"
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value as SortOption)}
+            aria-label={t.sortBy}
+            className="min-h-10 min-w-0 max-w-[9rem] sm:max-w-none bg-surface border border-outline-variant rounded-full px-sm text-label-sm text-on-surface focus:border-primary outline-none cursor-pointer"
+          >
+            <option value="relevance">{t.relevance}</option>
+            <option value="newest">{t.newest}</option>
+            <option value="priceAsc">{t.priceLow}</option>
+            <option value="priceDesc">{t.priceHigh}</option>
+          </select>
+        </div>
+      </div>
+
+      {(activeFilters.length > 0 || searchQuery || sortBy !== "relevance") && (
+        <div className="flex gap-xs overflow-x-auto pb-1 font-sans" aria-label={t.filters}>
+          {activeFilters.map((filter) => (
+            <button
+              key={filter.key}
+              type="button"
+              onClick={filter.clear}
+              className="shrink-0 min-h-9 flex items-center gap-1 rounded-full bg-primary-container px-3 text-label-sm font-bold text-on-primary-container"
+            >
+              {filter.label}
+              <span className="material-symbols-outlined text-[16px]" aria-hidden="true">
+                close
+              </span>
+            </button>
+          ))}
+          <button
+            type="button"
             onClick={clearAll}
-            className="text-label-sm text-primary font-bold uppercase tracking-wider self-end hover:underline"
+            className="shrink-0 min-h-9 px-2 text-label-sm font-bold text-primary underline-offset-2 hover:underline"
           >
             {t.clearAll}
           </button>
+        </div>
+      )}
 
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-lg font-sans">
+        {/* Left Column: Filters Sidebar */}
+        <aside
+          id="search-filters-panel"
+          className={`${filtersOpen ? "flex" : "hidden"} lg:col-span-3 lg:flex flex-col gap-md`}
+        >
           {/* Category Filter */}
           <FilterSection title={t.categories}>
             <div className="flex flex-wrap lg:flex-col gap-xs">
@@ -522,34 +685,18 @@ export const SearchFiltersView: React.FC<SearchFiltersViewProps> = ({
               ))}
             </div>
           </FilterSection>
+
+          <button
+            type="button"
+            onClick={() => setFiltersOpen(false)}
+            className="lg:hidden btn-primary min-h-11 px-6 rounded-full text-label-sm font-bold uppercase tracking-wider"
+          >
+            {t.apply}
+          </button>
         </aside>
 
         {/* Right Column: Search Results */}
         <main className="lg:col-span-9 flex flex-col gap-md">
-          <div className="flex justify-between items-center gap-md text-body-md text-on-surface-variant">
-            <span>{t.found(filteredListings.length)}</span>
-            {/* Sort dropdown */}
-            <div className="flex items-center gap-sm">
-              <label
-                htmlFor="sort-select"
-                className="text-label-sm text-on-surface-variant whitespace-nowrap"
-              >
-                {t.sortBy}:
-              </label>
-              <select
-                id="sort-select"
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value as SortOption)}
-                className="bg-surface border border-outline-variant rounded-lg px-sm py-1 text-label-sm text-on-surface focus:border-primary outline-none cursor-pointer"
-              >
-                <option value="relevance">{t.relevance}</option>
-                <option value="newest">{t.newest}</option>
-                <option value="priceAsc">{t.priceLow}</option>
-                <option value="priceDesc">{t.priceHigh}</option>
-              </select>
-            </div>
-          </div>
-
           {filteredListings.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 gap-md text-center">
               <span

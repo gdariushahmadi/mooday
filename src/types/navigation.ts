@@ -25,7 +25,24 @@ export type ViewState =
   | "edit-listing"
   | "sales"
   | "notifications"
-  | "chats";
+  | "chats"
+  | "edit-profile"
+  | "addresses"
+  | "payment-methods"
+  | "help"
+  | "leave-review"
+  | "my-reviews"
+  | "report"
+  | "return-request"
+  | "payouts"
+  | "blocked-users"
+  | "dispute"
+  | "disputes-list"
+  | "signup"
+  | "otp"
+  | "signin"
+  | "forgot-password"
+  | "social-login";
 
 /** Views that can be deep-linked via ?view=. */
 export const VALID_VIEWS: readonly ViewState[] = [
@@ -48,6 +65,23 @@ export const VALID_VIEWS: readonly ViewState[] = [
   "sales",
   "notifications",
   "chats",
+  "edit-profile",
+  "addresses",
+  "payment-methods",
+  "help",
+  "leave-review",
+  "my-reviews",
+  "report",
+  "return-request",
+  "payouts",
+  "blocked-users",
+  "dispute",
+  "disputes-list",
+  "signup",
+  "otp",
+  "signin",
+  "forgot-password",
+  "social-login",
 ] as const;
 
 /**

@@ -10,7 +10,7 @@ import { WelcomeView } from "@/components/WelcomeView";
 import { InstallPrompt } from "@/components/InstallPrompt";
 
 export default function Home() {
-  const { language, cart, notifications } = useApp();
+  const { language, cart } = useApp();
   const isAr = language === "ar";
   // When `?mobile=1` is in the URL, the app re-renders at a fixed mobile
   // width (no extra wrapper, no visual frame) so it can be embedded cleanly
@@ -26,15 +26,28 @@ export default function Home() {
     activeChatThreadId,
     changeTab,
     setView,
+    openSignIn,
+    openSignUp,
   } = nav;
 
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
-  const unreadCount = notifications.filter((n) => n.isUnread).length;
 
   // Cold-launch welcome screen takes over the whole app until the user
   // confirms. After that, the normal shell renders.
   if (welcome.shouldShow) {
-    return <WelcomeView onEnter={welcome.markSeen} />;
+    return (
+      <WelcomeView
+        onEnter={welcome.markSeen}
+        onSignIn={() => {
+          welcome.markSeen();
+          openSignIn();
+        }}
+        onSignUp={() => {
+          welcome.markSeen();
+          openSignUp();
+        }}
+      />
+    );
   }
 
   // Hide chrome (header + bottom nav) when a full-page overlay is active.
@@ -44,10 +57,17 @@ export default function Home() {
     currentView !== "checkout" &&
     currentView !== "bag";
   const showBottomNav =
-    !selectedProduct && !activeChatThreadId && currentView !== "checkout";
+    !selectedProduct &&
+    !activeChatThreadId &&
+    currentView !== "checkout" &&
+    currentView !== "bag";
 
   return (
-    <div className="min-h-dvh flex flex-col pb-24 md:pb-0 bg-background text-on-background antialiased selection:bg-primary-fixed selection:text-on-primary-fixed">
+    <div
+      className={`min-h-dvh flex flex-col bg-background text-on-background antialiased selection:bg-primary-fixed selection:text-on-primary-fixed ${
+        showBottomNav ? "app-shell-with-nav" : ""
+      }`}
+    >
       {/* Skip to main content — visible on keyboard focus only */}
       <a
         href="#main-content"
@@ -58,11 +78,15 @@ export default function Home() {
 
       {/* Top App Bar */}
       {showHeader && (
-        <header className="w-full sticky top-0 z-50 bg-surface/85 backdrop-blur-md border-b border-surface-container-high flex items-center justify-between px-margin-mobile py-md">
+        <header
+          data-testid="app-header"
+          className="app-shell-header sticky top-0 z-50 grid w-full grid-cols-[44px_minmax(0,1fr)_44px] items-center border-b border-surface-container-high bg-surface/90 px-margin-mobile pb-md backdrop-blur-md"
+        >
           {/* Menu / Settings */}
           <button
+            type="button"
             onClick={() => setView("settings")}
-            className="text-primary active:scale-95 transition-transform p-2 rounded-full flex items-center justify-center hover:bg-surface-container-low"
+            className="flex h-11 w-11 items-center justify-center rounded-full text-primary transition-colors hover:bg-surface-container-low active:scale-95"
             aria-label={isAr ? "الإعدادات" : "Settings"}
           >
             <span
@@ -74,53 +98,36 @@ export default function Home() {
           </button>
 
           {/* Title Logo */}
-          <h1
-            onClick={() => changeTab("home")}
-            className="font-serif text-display-lg-mobile text-primary italic cursor-pointer tracking-widest hover:opacity-85 select-none"
-          >
-            Mooday
+          <h1 className="min-w-0 text-center font-serif text-display-lg-mobile italic tracking-widest text-primary">
+            <button
+              type="button"
+              onClick={() => changeTab("home")}
+              className="rounded-lg px-2 py-1 transition-opacity hover:opacity-85 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+              aria-label={isAr ? "العودة إلى الرئيسية" : "Go to Home"}
+            >
+              Mooday
+            </button>
           </h1>
 
-          {/* Shopping Bag + Notifications */}
-          <div className="flex items-center gap-1">
-            {/* Notifications Bell */}
-            <button
-              onClick={() => setView("notifications")}
-              className="text-primary active:scale-95 transition-transform p-2 rounded-full flex items-center justify-center hover:bg-surface-container-low relative"
-              aria-label={isAr ? "التنبيهات" : "Notifications"}
+          {/* Shopping Bag */}
+          <button
+            type="button"
+            onClick={() => setView("bag")}
+            className="relative flex h-11 w-11 items-center justify-center rounded-full text-primary transition-colors hover:bg-surface-container-low active:scale-95"
+            aria-label={isAr ? "حقيبة التسوق" : "Shopping Bag"}
+          >
+            <span
+              className="material-symbols-outlined text-[24px]"
+              aria-hidden="true"
             >
-              <span
-                className="material-symbols-outlined text-[24px]"
-                aria-hidden="true"
-              >
-                notifications
+              shopping_bag
+            </span>
+            {cartCount > 0 && (
+              <span className="absolute end-0 top-0 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-primary px-1 font-sans text-[10px] font-bold text-on-primary">
+                {cartCount > 9 ? "9+" : cartCount}
               </span>
-              {unreadCount > 0 && (
-                <span className="absolute top-0 right-0 w-4.5 h-4.5 bg-tertiary text-on-tertiary text-[10px] font-bold rounded-full flex items-center justify-center font-sans">
-                  {unreadCount > 9 ? "9+" : unreadCount}
-                </span>
-              )}
-            </button>
-
-            {/* Shopping Bag */}
-            <button
-              onClick={() => setView("bag")}
-              className="text-primary active:scale-95 transition-transform p-2 rounded-full flex items-center justify-center hover:bg-surface-container-low relative"
-              aria-label={isAr ? "حقيبة التسوق" : "Shopping Bag"}
-            >
-              <span
-                className="material-symbols-outlined text-[24px]"
-                aria-hidden="true"
-              >
-                shopping_bag
-              </span>
-              {cartCount > 0 && (
-                <span className="absolute top-0 right-0 w-4.5 h-4.5 bg-primary text-on-primary text-[10px] font-bold rounded-full flex items-center justify-center font-sans">
-                  {cartCount}
-                </span>
-              )}
-            </button>
-          </div>
+            )}
+          </button>
         </header>
       )}
 
@@ -134,7 +141,11 @@ export default function Home() {
 
       {/* Bottom Nav Bar */}
       {showBottomNav && (
-        <nav className="fixed bottom-0 w-full z-40 pb-safe border-t border-surface-container-high bg-surface/95 backdrop-blur-md flex justify-around items-center h-20 px-gutter shadow-lg">
+        <nav
+          data-testid="bottom-navigation"
+          aria-label={isAr ? "التنقل الرئيسي" : "Primary navigation"}
+          className="app-bottom-nav fixed inset-x-0 bottom-0 z-40 grid grid-cols-5 items-center border-t border-surface-container-high bg-surface/95 px-sm shadow-lg backdrop-blur-md"
+        >
           <BottomNavButton
             tab="home"
             activeTab={activeTab}
@@ -152,8 +163,9 @@ export default function Home() {
 
           {/* Elevated Sell Button */}
           <button
+            type="button"
             onClick={() => changeTab("sell")}
-            className="flex flex-col items-center justify-center -mt-8 active:scale-95 transition-transform"
+            className="-mt-8 flex min-h-11 min-w-0 flex-col items-center justify-center transition-transform active:scale-95"
             aria-label={isAr ? "بيع" : "Sell"}
           >
             <div className="w-14 h-14 bg-primary text-on-primary rounded-full flex items-center justify-center shadow-xl btn-tactile border-4 border-surface">
@@ -209,9 +221,11 @@ const BottomNavButton: React.FC<BottomNavButtonProps> = ({
   const isActive = activeTab === tab;
   return (
     <button
+      type="button"
       onClick={onClick}
       aria-pressed={isActive}
-      className={`flex flex-col items-center justify-center px-4 py-1 active:scale-95 transition-transform ${
+      aria-current={isActive ? "page" : undefined}
+      className={`flex min-h-11 min-w-0 flex-col items-center justify-center px-1 py-1 transition-transform active:scale-95 ${
         isActive
           ? "text-primary font-bold"
           : "text-on-surface-variant opacity-60"

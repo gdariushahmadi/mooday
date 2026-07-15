@@ -30,6 +30,23 @@ describe("navigation types", () => {
         "sales",
         "notifications",
         "chats",
+        "edit-profile",
+        "addresses",
+        "payment-methods",
+        "help",
+        "leave-review",
+        "my-reviews",
+        "report",
+        "return-request",
+        "payouts",
+        "blocked-users",
+        "dispute",
+        "disputes-list",
+        "signup",
+        "otp",
+        "signin",
+        "forgot-password",
+        "social-login",
       ]);
     });
   });

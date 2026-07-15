@@ -38,7 +38,27 @@ function makeContext(
     notifications: [],
     markNotificationRead: vi.fn(),
     markAllNotificationsRead: vi.fn(),
+    userProfile: { fullNameEn: "Test User", fullNameAr: "مستخدم اختبار", handle: "@test", avatar: "/sellers/test.jpg", bioEn: "Test bio", bioAr: "نبذة", locationEn: "Dubai", locationAr: "دبي", styleTagsEn: [], styleTagsAr: [], rating: 5, reviewsCount: 0, followers: 0, following: 0 },
+    updateUserProfile: vi.fn(),
+    myReviews: [],
+    addMyReview: vi.fn(),
+    blockedUsers: [],
+    blockUser: vi.fn(),
+    unblockUser: vi.fn(),
+    reports: [],
+    submitReport: vi.fn(),
+    disputes: [],
+    openDispute: vi.fn(),
     updateOrderStatus: vi.fn(),
+    currentUser: null,
+    authError: null,
+    signUp: vi.fn(() => "user-test"),
+    signIn: vi.fn(() => true),
+    signOut: vi.fn(),
+    verifyOtp: vi.fn(() => true),
+    sendOtp: vi.fn(() => "000000"),
+    updateCurrentUserName: vi.fn(),
+    resetPassword: vi.fn(() => true),
     ...overrides,
   };
 }
@@ -57,8 +77,6 @@ function renderSell(opts: { language?: "en" | "ar" } = {}) {
 
 beforeEach(() => {
   localStorage.clear();
-  // Stub alert so the validation case doesn't pop a real dialog.
-  globalThis.alert = vi.fn();
 });
 
 describe("SellItemView (D-19)", () => {
@@ -118,6 +136,57 @@ describe("SellItemView (D-19)", () => {
     expect(
       screen.getByRole("button", { name: /Save as draft/i }),
     ).toBeInTheDocument();
+  });
+
+  it("shows inline validation instead of opening a browser alert", async () => {
+    const user = userEvent.setup();
+    const alertSpy = vi.spyOn(globalThis, "alert");
+    renderSell();
+
+    await user.click(
+      screen.getByRole("button", { name: /Publish listing/i }),
+    );
+
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      /complete the required fields/i,
+    );
+    expect(alertSpy).not.toHaveBeenCalled();
+  });
+
+  it("supports eight photos and lets the seller reorder them", async () => {
+    const user = userEvent.setup();
+    renderSell();
+
+    const firstBefore = screen.getByAltText("Photo 1").getAttribute("src");
+    await user.click(screen.getByRole("button", { name: /^Add$/i }));
+    const backward = screen.getAllByRole("button", {
+      name: /Move photo backward/i,
+    });
+    await user.click(backward[1]);
+    expect(screen.getByAltText("Photo 1")).not.toHaveAttribute(
+      "src",
+      firstBefore,
+    );
+
+    for (let i = 0; i < 6; i += 1) {
+      await user.click(screen.getByRole("button", { name: /^Add$/i }));
+    }
+    expect(screen.getByText("(8/8)")).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /^Add$/i }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("restores an autosaved create-listing draft", () => {
+    localStorage.setItem(
+      "mooday_listing_form_draft",
+      JSON.stringify({ titleEn: "Restored silk dress", price: "740" }),
+    );
+
+    renderSell();
+
+    expect(screen.getByDisplayValue("Restored silk dress")).toBeInTheDocument();
+    expect(screen.getByDisplayValue("740")).toBeInTheDocument();
   });
 
   it("Back button calls onBack", async () => {

@@ -10,7 +10,7 @@
  * (component tree, route layout, etc.) to force clients to refetch.
  */
 
-const CACHE_VERSION = "mooday-v1";
+const CACHE_VERSION = "mooday-v2";
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 const IMAGE_CACHE = `${CACHE_VERSION}-images`;
@@ -76,6 +76,27 @@ function isImage(url) {
   );
 }
 
+function isSensitiveRequest(request, url) {
+  return (
+    request.headers.has("authorization") ||
+    url.pathname.startsWith("/api/") ||
+    url.pathname.startsWith("/auth/") ||
+    (url.origin !== self.location.origin &&
+      (url.hostname.endsWith(".supabase.co") ||
+        url.pathname.startsWith("/auth/v1/") ||
+        url.pathname.startsWith("/rest/v1/")))
+  );
+}
+
+function canCacheResponse(response) {
+  const cacheControl = response.headers.get("cache-control") || "";
+  return (
+    response.ok &&
+    !response.headers.has("set-cookie") &&
+    !/private|no-store/i.test(cacheControl)
+  );
+}
+
 // ---------- fetch ----------
 self.addEventListener("fetch", (event) => {
   const { request } = event;
@@ -85,14 +106,23 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(request.url);
   if (!url.protocol.startsWith("http")) return;
 
+  // Authenticated/API traffic must never enter Cache Storage. Supabase keeps
+  // its own session lifecycle and these responses can contain private data.
+  if (isSensitiveRequest(request, url)) {
+    event.respondWith(fetch(request));
+    return;
+  }
+
   // 1) Navigations -> network-first, offline fallback.
   if (request.mode === "navigate") {
     event.respondWith(
       (async () => {
         try {
           const fresh = await fetch(request);
-          const cache = await caches.open(RUNTIME_CACHE);
-          cache.put(request, fresh.clone());
+          if (canCacheResponse(fresh)) {
+            const cache = await caches.open(RUNTIME_CACHE);
+            await cache.put(request, fresh.clone());
+          }
           return fresh;
         } catch (_err) {
           const cached = await caches.match(request);
@@ -123,13 +153,13 @@ self.addEventListener("fetch", (event) => {
   }
 
   // 3) Images -> stale-while-revalidate.
-  if (isImage(url)) {
+  if (url.origin === self.location.origin && isImage(url)) {
     event.respondWith(
       caches.open(IMAGE_CACHE).then(async (cache) => {
         const cached = await cache.match(request);
         const network = fetch(request)
           .then((response) => {
-            if (response.ok) cache.put(request, response.clone());
+            if (canCacheResponse(response)) cache.put(request, response.clone());
             return response;
           })
           .catch(() => cached);
@@ -144,7 +174,7 @@ self.addEventListener("fetch", (event) => {
     (async () => {
       try {
         const response = await fetch(request);
-        if (response.ok) {
+        if (canCacheResponse(response)) {
           const cache = await caches.open(RUNTIME_CACHE);
           cache.put(request, response.clone());
         }

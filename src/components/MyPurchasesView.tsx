@@ -16,6 +16,7 @@ import { formatAEDLabel } from "@/lib/format";
 interface MyPurchasesViewProps {
   onBack: () => void;
   onOpenOrder: (orderId: string) => void;
+  onContactSeller?: (order: Order) => void;
 }
 
 interface PurchasesCopy {
@@ -92,6 +93,7 @@ type FilterId = "all" | "active" | "completed" | "cancelled";
 export const MyPurchasesView: React.FC<MyPurchasesViewProps> = ({
   onBack,
   onOpenOrder,
+  onContactSeller,
 }) => {
   const { language, orders } = useApp();
   const isAr = language === "ar";
@@ -202,9 +204,8 @@ export const MyPurchasesView: React.FC<MyPurchasesViewProps> = ({
               isAr={isAr}
               t={t}
               onOpen={() => onOpenOrder(order.id)}
-              onContact={() => {
-                // Phase 1: no-op. Phase 3 wires to createChatThread.
-              }}
+              onReview={() => onOpenOrder(order.id)}
+              onContact={() => onContactSeller?.(order)}
             />
           ))}
         </div>
@@ -220,8 +221,9 @@ const OrderCard: React.FC<{
   isAr: boolean;
   t: PurchasesCopy;
   onOpen: () => void;
+  onReview: () => void;
   onContact: () => void;
-}> = ({ order, isAr, t, onOpen, onContact }) => {
+}> = ({ order, isAr, t, onOpen, onReview, onContact }) => {
   const statusLabel = isAr
     ? ORDER_STATUS_LABEL_AR[order.status]
     : ORDER_STATUS_LABEL_EN[order.status];
@@ -280,6 +282,7 @@ const OrderCard: React.FC<{
             type="button"
             onClick={(e) => {
               e.stopPropagation();
+              onReview();
             }}
             aria-label={t.review}
             className="text-label-sm text-primary font-bold active:scale-95 transition-transform"

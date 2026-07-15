@@ -1,7 +1,9 @@
 "use client";
 
-import React from "react";
-import { useApp } from "@/context/AppContext";
+import React, { useEffect, useState } from "react";
+import { useApp, type Product } from "@/context/AppContext";
+
+const SAVED_FOR_LATER_KEY = "mooday_saved_for_later";
 
 interface ShoppingBagViewProps {
   onBack: () => void;
@@ -12,8 +14,35 @@ export const ShoppingBagView: React.FC<ShoppingBagViewProps> = ({
   onBack,
   onCheckout,
 }) => {
-  const { language, cart, removeFromCart, updateQuantity } = useApp();
+  const { language, cart, addToCart, removeFromCart, updateQuantity } = useApp();
   const isAr = language === "ar";
+  const [savedForLater, setSavedForLater] = useState<Product[]>(() => {
+    try {
+      return JSON.parse(localStorage.getItem(SAVED_FOR_LATER_KEY) ?? "[]");
+    } catch {
+      return [];
+    }
+  });
+
+  useEffect(() => {
+    localStorage.setItem(SAVED_FOR_LATER_KEY, JSON.stringify(savedForLater));
+  }, [savedForLater]);
+
+  const saveForLater = (product: Product) => {
+    setSavedForLater((current) =>
+      current.some((item) => item.id === product.id)
+        ? current
+        : [...current, product],
+    );
+    removeFromCart(product.id);
+  };
+
+  const moveToBag = (product: Product) => {
+    addToCart(product);
+    setSavedForLater((current) =>
+      current.filter((item) => item.id !== product.id),
+    );
+  };
 
   const totalOriginal = cart.reduce(
     (sum, item) => sum + item.product.originalPrice * item.quantity,
@@ -106,6 +135,13 @@ export const ShoppingBagView: React.FC<ShoppingBagViewProps> = ({
                         ? item.product.conditionAr
                         : item.product.conditionEn}
                     </span>
+                    <button
+                      type="button"
+                      onClick={() => saveForLater(item.product)}
+                      className="block mt-2 text-label-sm font-bold text-primary underline-offset-2 hover:underline"
+                    >
+                      {isAr ? "حفظ لوقت لاحق" : "Save for later"}
+                    </button>
                   </div>
 
                   <div className="flex justify-between items-end mt-2">
@@ -208,6 +244,39 @@ export const ShoppingBagView: React.FC<ShoppingBagViewProps> = ({
             </div>
           </section>
         </main>
+      )}
+
+      {savedForLater.length > 0 && (
+        <section className="flex flex-col gap-sm border-t border-surface-container-high pt-lg">
+          <h2 className="font-serif text-headline-sm text-on-surface">
+            {isAr ? "محفوظة لوقت لاحق" : "Saved for later"}
+          </h2>
+          {savedForLater.map((product) => (
+            <div
+              key={product.id}
+              className="flex items-center gap-md rounded-xl border border-surface-container-high bg-surface-container-low p-md"
+            >
+              <img
+                src={product.image}
+                alt={isAr ? product.titleAr : product.titleEn}
+                className="h-16 w-16 rounded-lg object-cover"
+              />
+              <div className="min-w-0 flex-1">
+                <p className="truncate font-serif text-label-md text-on-surface">
+                  {isAr ? product.titleAr : product.titleEn}
+                </p>
+                <p className="text-label-sm font-bold text-primary">AED {product.price}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => moveToBag(product)}
+                className="rounded-full border border-primary px-3 py-2 text-label-sm font-bold text-primary"
+              >
+                {isAr ? "إلى الحقيبة" : "Move to bag"}
+              </button>
+            </div>
+          ))}
+        </section>
       )}
     </div>
   );

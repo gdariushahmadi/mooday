@@ -18,7 +18,24 @@ interface DiscoverFeedViewProps {
 type ViewMode = "featured" | "compact";
 type FeedTab = "foryou" | "trending" | "designers" | "newin";
 
-const categories = CATEGORIES;
+const CATEGORY_PRIORITY = [
+  "All",
+  "Bags",
+  "Clothing",
+  "Dresses",
+  "Shoes",
+  "Accessories",
+] as const;
+
+// Keep the product taxonomy intact while presenting the showcase's most
+// important lanes first. Any future categories are appended automatically.
+const categories = [
+  ...CATEGORY_PRIORITY.filter((category) => CATEGORIES.includes(category)),
+  ...CATEGORIES.filter(
+    (category) =>
+      !(CATEGORY_PRIORITY as readonly string[]).includes(category),
+  ),
+];
 const categoriesAr = CATEGORIES_AR;
 
 const FEED_TABS_EN: Record<FeedTab, string> = {
@@ -115,26 +132,36 @@ export const DiscoverFeedView: React.FC<DiscoverFeedViewProps> = ({
   })();
 
   const t = isAr ? FEED_TABS_AR : FEED_TABS_EN;
+  const saveLabel = (title: string, saved: boolean) =>
+    isAr
+      ? saved
+        ? `إزالة ${title} من المحفوظات`
+        : `حفظ ${title}`
+      : saved
+        ? `Remove ${title} from saved`
+        : `Save ${title}`;
 
   return (
     <div className="w-full flex flex-col gap-lg pb-10">
       {/* Tab Navigation */}
-      <nav className="flex items-center justify-between border-b border-surface-variant gap-md">
+      <nav className="flex min-w-0 items-center gap-sm border-b border-surface-variant">
         <div
-          className="flex space-x-gutter overflow-x-auto no-scrollbar pb-3"
+          className="inline-scroll-cue no-scrollbar flex min-w-0 flex-1 snap-x snap-mandatory gap-3 overflow-x-auto pb-3"
           role="tablist"
           aria-label={isAr ? "تبويبات الاكتشاف" : "Discover tabs"}
+          aria-describedby="discover-tabs-hint"
         >
           {FEED_TAB_ORDER.map((tKey) => {
             const isActive = tab === tKey;
             return (
               <button
+                type="button"
                 key={tKey}
                 onClick={() => handleTabChange(tKey)}
                 role="tab"
                 aria-selected={isActive}
                 aria-controls="discover-feed-panel"
-                className={`pb-1 border-b-2 uppercase tracking-widest text-label-md whitespace-nowrap px-1 transition-colors ${
+                className={`flex min-h-11 snap-start items-center whitespace-nowrap border-b-2 px-1 text-[12px] uppercase tracking-[0.12em] transition-colors ${
                   isActive
                     ? "border-primary text-primary font-bold"
                     : "border-transparent text-on-surface-variant hover:text-on-surface"
@@ -145,13 +172,19 @@ export const DiscoverFeedView: React.FC<DiscoverFeedViewProps> = ({
             );
           })}
         </div>
+        <span id="discover-tabs-hint" className="sr-only">
+          {isAr
+            ? "مرري أفقياً لرؤية جميع تبويبات الاكتشاف"
+            : "Scroll horizontally to see every Discover tab"}
+        </span>
         {/* Language Quick Switcher */}
         <button
+          type="button"
           onClick={handleLangToggle}
           aria-label={
             isAr ? "التبديل إلى اللغة الإنجليزية" : "Switch to Arabic"
           }
-          className="text-primary font-bold border border-primary/20 px-3 py-1 rounded-full text-label-sm active:scale-95 transition-transform bg-surface-container-low hover:bg-surface-container-high flex-shrink-0"
+          className="flex-shrink-0 rounded-full border border-primary/20 bg-surface-container-low px-3 py-1 text-label-sm font-bold text-primary transition-colors hover:bg-surface-container-high active:scale-95"
         >
           {isAr ? "English" : "عربي"}
         </button>
@@ -174,6 +207,7 @@ export const DiscoverFeedView: React.FC<DiscoverFeedViewProps> = ({
               aria-label={isAr ? "طريقة العرض" : "View mode"}
             >
               <button
+                type="button"
                 onClick={() => setViewMode("featured")}
                 aria-pressed={viewMode === "featured"}
                 aria-label={isAr ? "عرض مميز" : "Featured view"}
@@ -191,6 +225,7 @@ export const DiscoverFeedView: React.FC<DiscoverFeedViewProps> = ({
                 </span>
               </button>
               <button
+                type="button"
                 onClick={() => setViewMode("compact")}
                 aria-pressed={viewMode === "compact"}
                 aria-label={isAr ? "نوافذ صغيرة" : "Compact view"}
@@ -210,12 +245,18 @@ export const DiscoverFeedView: React.FC<DiscoverFeedViewProps> = ({
             </div>
           </div>
 
-          <div className="flex gap-sm overflow-x-auto no-scrollbar -mx-margin-mobile px-margin-mobile md:mx-0 md:px-0 pb-xs">
+          <div
+            className="no-scrollbar -mx-margin-mobile flex snap-x snap-mandatory gap-sm overflow-x-auto px-margin-mobile pb-xs md:mx-0 md:px-0"
+            role="group"
+            aria-label={isAr ? "فئات المنتجات" : "Product categories"}
+          >
             {categories.map((cat) => (
               <button
+                type="button"
                 key={cat}
                 onClick={() => setSelectedCategory(cat)}
-                className={`flex-shrink-0 px-4 py-2 rounded-full text-label-sm uppercase tracking-wider transition-all border ${
+                aria-pressed={selectedCategory === cat}
+                className={`flex-shrink-0 snap-start rounded-full border px-4 py-2 text-label-sm uppercase tracking-wider transition-colors ${
                   selectedCategory === cat
                     ? "bg-primary text-on-primary border-primary font-bold"
                     : "bg-surface-container-lowest text-on-surface border-surface-container-high hover:bg-surface-container-high"
@@ -294,6 +335,7 @@ export const DiscoverFeedView: React.FC<DiscoverFeedViewProps> = ({
                 product={product}
                 isLiked={likes.includes(product.id)}
                 isAr={isAr}
+                saveLabel={saveLabel}
                 toggleLike={() => toggleLike(product.id)}
                 onClick={() => onSelectProduct(product)}
               />
@@ -310,6 +352,7 @@ export const DiscoverFeedView: React.FC<DiscoverFeedViewProps> = ({
                 product={product}
                 isLiked={likes.includes(product.id)}
                 isAr={isAr}
+                saveLabel={saveLabel}
                 toggleLike={() => toggleLike(product.id)}
                 onClick={() => onSelectProduct(product)}
                 isFeatured={idx === 0 && selectedCategory === "All"}
@@ -328,9 +371,10 @@ const CompactProductCard: React.FC<{
   product: Product;
   isLiked: boolean;
   isAr: boolean;
+  saveLabel: (title: string, saved: boolean) => string;
   toggleLike: () => void;
   onClick: () => void;
-}> = ({ product, isLiked, isAr, toggleLike, onClick }) => {
+}> = ({ product, isLiked, isAr, saveLabel, toggleLike, onClick }) => {
   const productTitle = isAr ? product.titleAr : product.titleEn;
   return (
     <ClickableCard
@@ -340,15 +384,14 @@ const CompactProductCard: React.FC<{
       className="bg-surface-container-lowest rounded-xl border border-surface-container-high overflow-hidden group cursor-pointer hover:shadow-md transition-all relative"
     >
       <button
+        type="button"
         onClick={(e) => {
           e.stopPropagation();
           toggleLike();
         }}
         aria-pressed={isLiked}
-        aria-label={
-          isLiked ? `Remove ${productTitle} from saved` : `Save ${productTitle}`
-        }
-        className={`absolute top-2 right-2 z-10 w-8 h-8 rounded-full bg-white/70 backdrop-blur-md flex items-center justify-center transition-colors ${
+        aria-label={saveLabel(productTitle, isLiked)}
+        className={`absolute end-2 top-2 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-white/70 backdrop-blur-md transition-colors ${
           isLiked
             ? "text-primary"
             : "text-on-surface-variant hover:text-primary"
@@ -392,10 +435,19 @@ const FeaturedProductCard: React.FC<{
   product: Product;
   isLiked: boolean;
   isAr: boolean;
+  saveLabel: (title: string, saved: boolean) => string;
   toggleLike: () => void;
   onClick: () => void;
   isFeatured: boolean;
-}> = ({ product, isLiked, isAr, toggleLike, onClick, isFeatured }) => {
+}> = ({
+  product,
+  isLiked,
+  isAr,
+  saveLabel,
+  toggleLike,
+  onClick,
+  isFeatured,
+}) => {
   const productTitle = isAr ? product.titleAr : product.titleEn;
   return (
     <ClickableCard
@@ -407,7 +459,7 @@ const FeaturedProductCard: React.FC<{
       } bg-surface-container-lowest rounded-xl shadow-sm overflow-hidden group border border-surface-container-high transition-all duration-500 hover:shadow-md relative cursor-pointer`}
     >
       {/* Badge */}
-      <div className="absolute top-md left-md z-10 bg-white/70 backdrop-blur-md px-3 py-1 rounded-full border border-white/50">
+      <div className="absolute start-md top-md z-10 rounded-full border border-white/50 bg-white/70 px-3 py-1 backdrop-blur-md">
         <span className="font-bold uppercase tracking-widest text-label-sm text-primary flex items-center gap-1">
           <span
             className="material-symbols-outlined text-[12px]"
@@ -432,15 +484,14 @@ const FeaturedProductCard: React.FC<{
 
       {/* Heart/Like Button */}
       <button
+        type="button"
         onClick={(e) => {
           e.stopPropagation();
           toggleLike();
         }}
         aria-pressed={isLiked}
-        aria-label={
-          isLiked ? `Remove ${productTitle} from saved` : `Save ${productTitle}`
-        }
-        className={`absolute top-md right-md z-10 w-10 h-10 rounded-full bg-white/70 backdrop-blur-md flex items-center justify-center transition-colors ${
+        aria-label={saveLabel(productTitle, isLiked)}
+        className={`absolute end-md top-md z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white/70 backdrop-blur-md transition-colors ${
           isLiked
             ? "text-primary"
             : "text-on-surface-variant hover:text-primary"
@@ -465,7 +516,8 @@ const FeaturedProductCard: React.FC<{
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000 ease-out"
           src={product.image}
           alt={productTitle}
-          loading="lazy"
+          loading={isFeatured ? "eager" : "lazy"}
+          fetchPriority={isFeatured ? "high" : "auto"}
         />
       </div>
 
@@ -492,7 +544,7 @@ const FeaturedProductCard: React.FC<{
               </p>
             )}
           </div>
-          <div className="text-right flex-shrink-0">
+          <div className="flex-shrink-0 text-end">
             <span className="block text-on-surface-variant line-through text-body-md opacity-60">
               {`AED ${product.originalPrice}`}
             </span>
@@ -549,6 +601,14 @@ const DesignersTab: React.FC<{
   onSelectProduct: (p: Product) => void;
   isAr: boolean;
 }> = ({ sections, likes, toggleLike, onSelectProduct, isAr }) => {
+  const saveLabel = (title: string, saved: boolean) =>
+    isAr
+      ? saved
+        ? `إزالة ${title} من المحفوظات`
+        : `حفظ ${title}`
+      : saved
+        ? `Remove ${title} from saved`
+        : `Save ${title}`;
   if (sections.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-16 gap-md text-center">
@@ -590,6 +650,7 @@ const DesignersTab: React.FC<{
                 product={product}
                 isLiked={likes.includes(product.id)}
                 isAr={isAr}
+                saveLabel={saveLabel}
                 toggleLike={() => toggleLike(product.id)}
                 onClick={() => onSelectProduct(product)}
               />
