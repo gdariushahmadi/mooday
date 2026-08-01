@@ -38,6 +38,7 @@ function makeContext(overrides: Partial<AppContextType> = {}): AppContextType {
     chats: [THREAD],
     sendChatMessage: vi.fn(),
     createChatThread: vi.fn(() => "t1"),
+    markChatRead: vi.fn(),
     addresses: [],
     addAddress: vi.fn(),
     updateAddress: vi.fn(),
@@ -184,20 +185,22 @@ describe("ChatOverlay (F-29/F-30)", () => {
     );
   });
 
-  it("communicates that image upload is unavailable without inserting fake content", () => {
+  it("inserts a Phase 1 photo stub message when Attach image is clicked", async () => {
+    const user = userEvent.setup();
     const { ctx } = renderChat();
     const button = screen.getByRole("button", { name: /Attach image/i });
-    expect(button).toBeDisabled();
-    expect(button).toHaveAttribute("title", expect.stringMatching(/media upload/i));
-    expect(ctx.sendChatMessage).not.toHaveBeenCalled();
+    expect(button).toBeEnabled();
+    await user.click(button);
+    expect(ctx.sendChatMessage).toHaveBeenCalledWith("t1", "📷 Photo");
   });
 
-  it("communicates that voice upload is unavailable without inserting fake content", () => {
+  it("inserts a Phase 1 voice stub message when Voice note is clicked", async () => {
+    const user = userEvent.setup();
     const { ctx } = renderChat();
     const button = screen.getByRole("button", { name: /Voice note/i });
-    expect(button).toBeDisabled();
-    expect(button).toHaveAttribute("title", expect.stringMatching(/media upload/i));
-    expect(ctx.sendChatMessage).not.toHaveBeenCalled();
+    expect(button).toBeEnabled();
+    await user.click(button);
+    expect(ctx.sendChatMessage).toHaveBeenCalledWith("t1", "🎙 Voice note");
   });
 
   it("shows 'Chat not found' for an unknown thread id", () => {

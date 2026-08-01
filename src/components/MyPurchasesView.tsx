@@ -17,6 +17,8 @@ interface MyPurchasesViewProps {
   onBack: () => void;
   onOpenOrder: (orderId: string) => void;
   onContactSeller?: (order: Order) => void;
+  /** Open leave-review for a delivered order. */
+  onLeaveReview?: (orderId: string) => void;
 }
 
 interface PurchasesCopy {
@@ -94,6 +96,7 @@ export const MyPurchasesView: React.FC<MyPurchasesViewProps> = ({
   onBack,
   onOpenOrder,
   onContactSeller,
+  onLeaveReview,
 }) => {
   const { language, orders } = useApp();
   const isAr = language === "ar";
@@ -204,7 +207,11 @@ export const MyPurchasesView: React.FC<MyPurchasesViewProps> = ({
               isAr={isAr}
               t={t}
               onOpen={() => onOpenOrder(order.id)}
-              onReview={() => onOpenOrder(order.id)}
+              onReview={() =>
+                onLeaveReview
+                  ? onLeaveReview(order.id)
+                  : onOpenOrder(order.id)
+              }
               onContact={() => onContactSeller?.(order)}
             />
           ))}

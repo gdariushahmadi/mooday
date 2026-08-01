@@ -9,7 +9,7 @@ export default function AuthCallbackPage() {
 
   useEffect(() => {
     const code = new URLSearchParams(window.location.search).get("code");
-    const next = new URLSearchParams(window.location.search).get("next") || "/";
+    const next = new URLSearchParams(window.location.search).get("next") || "/app";
     const backend = getPhase2Backend();
     const safeNext = next.startsWith("/") && !next.startsWith("//");
     if (!backend || !code || !safeNext) {
@@ -35,7 +35,7 @@ export default function AuthCallbackPage() {
             : "Completing your secure sign in…"}
         </p>
         {error && (
-          <Link className="mt-5 inline-block font-bold text-primary underline" href="/?view=signin">
+          <Link className="mt-5 inline-block font-bold text-primary underline" href="/app?view=signin">
             Return to sign in
           </Link>
         )}

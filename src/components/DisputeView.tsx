@@ -28,7 +28,6 @@ interface DisputeCopy {
   chatWithSupport: string;
   backToOrder: string;
   resolveHint: string;
-  resolveHintAr: string;
   // Status labels — keys mirror DisputeStatus.
   open: string;
   investigating: string;
@@ -51,7 +50,6 @@ const COPY: Record<"en" | "ar", DisputeCopy> = {
     backToOrder: "Back to order",
     resolveHint:
       "Once a dispute is resolved, funds are returned to your wallet within 2 business days.",
-    resolveHintAr: "",
     open: "Open",
     investigating: "Investigating",
     resolved: "Resolved",
@@ -69,8 +67,7 @@ const COPY: Record<"en" | "ar", DisputeCopy> = {
     bodyPh: "أضف سياقاً جديداً لفريق الدعم.",
     chatWithSupport: "تواصل مع الدعم",
     backToOrder: "العودة للطلب",
-    resolveHint: "",
-    resolveHintAr: "بعد حل النزاع، يتم إرجاع المبلغ إلى محفظتك خلال يومين عمل.",
+    resolveHint: "بعد حل النزاع، يتم إرجاع المبلغ إلى محفظتك خلال يومين عمل.",
     open: "مفتوح",
     investigating: "قيد التحقيق",
     resolved: "تم الحل",
@@ -295,7 +292,7 @@ export const DisputeView: React.FC<DisputeViewProps> = ({
       </div>
 
       <p className="text-[11px] text-on-surface-variant text-center px-1">
-        {isAr ? t.resolveHintAr : t.resolveHint}
+        {t.resolveHint}
       </p>
     </div>
   );

@@ -1,7 +1,17 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useApp } from "@/context/AppContext";
+
+const PREF_PUSH_KEY = "mooday-pref-push";
+const PREF_DARK_KEY = "mooday-pref-dark";
+
+function readPref(key: string, fallback: boolean): boolean {
+  if (typeof window === "undefined") return fallback;
+  const raw = window.localStorage.getItem(key);
+  if (raw === null) return fallback;
+  return raw === "1";
+}
 
 interface SettingsViewProps {
   onBack: () => void;
@@ -99,8 +109,8 @@ const COPY: Record<"en" | "ar", SettingsCopy> = {
  * (G-33 Edit Profile, G-35 Addresses, G-36 Payment Methods, G-38 Help)
  * plus the still-placeholder Trust row (H-43 Blocked users).
  *
- * The language picker is real; sign-out and clear-cache are intentional
- * no-ops for Phase 1 (logged in `signOutHint` / `clearCacheHint`).
+ * The language picker is real; preference toggles persist locally.
+ * Clear-cache removes Cache Storage entries when available.
  */
 export const SettingsView: React.FC<SettingsViewProps> = ({
   onBack,
@@ -113,12 +123,49 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   onSignOut,
   onSignIn,
 }) => {
-  const { language, setLanguage, currentUser } = useApp();
+  const { language, setLanguage, currentUser, userProfile } = useApp();
   const isAr = language === "ar";
   const t = isAr ? COPY.ar : COPY.en;
 
+  const [pushEnabled, setPushEnabled] = useState(() =>
+    readPref(PREF_PUSH_KEY, true),
+  );
+  const [darkMode, setDarkMode] = useState(() =>
+    readPref(PREF_DARK_KEY, false),
+  );
+  const [cacheStatus, setCacheStatus] = useState<"idle" | "cleared" | "busy">(
+    "idle",
+  );
+
+  useEffect(() => {
+    document.documentElement.classList.toggle("dark", darkMode);
+  }, [darkMode]);
+
   const handleLanguageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setLanguage(e.target.value as "en" | "ar");
+  };
+
+  const handlePushToggle = (v: boolean) => {
+    setPushEnabled(v);
+    window.localStorage.setItem(PREF_PUSH_KEY, v ? "1" : "0");
+  };
+
+  const handleDarkToggle = (v: boolean) => {
+    setDarkMode(v);
+    window.localStorage.setItem(PREF_DARK_KEY, v ? "1" : "0");
+  };
+
+  const handleClearCache = async () => {
+    setCacheStatus("busy");
+    try {
+      if (typeof caches !== "undefined") {
+        const keys = await caches.keys();
+        await Promise.all(keys.map((k) => caches.delete(k)));
+      }
+      setCacheStatus("cleared");
+    } catch {
+      setCacheStatus("idle");
+    }
   };
 
   const sections: SettingSection[] = [
@@ -129,8 +176,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         {
           labelEn: "Edit profile",
           labelAr: "تعديل الملف",
-          valueEn: isAr ? "فاطمة المنصوري" : "Fatima AlMansoori",
-          valueAr: isAr ? "فاطمة المنصوري" : "Fatima AlMansoori",
+          valueEn: isAr ? userProfile?.fullNameAr : userProfile?.fullNameEn,
+          valueAr: isAr ? userProfile?.fullNameAr : userProfile?.fullNameEn,
           icon: "person",
           onNavigate: onOpenEditProfile,
         },
@@ -171,14 +218,16 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           labelAr: "الإشعارات",
           icon: "notifications",
           isToggle: true,
-          toggleValue: true,
+          toggleValue: pushEnabled,
+          onToggle: handlePushToggle,
         },
         {
           labelEn: "Dark mode",
           labelAr: "الوضع الداكن",
           icon: "dark_mode",
           isToggle: true,
-          toggleValue: false,
+          toggleValue: darkMode,
+          onToggle: handleDarkToggle,
         },
       ],
     },
@@ -198,6 +247,17 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           labelEn: "Mooday Safe Escrow Policy",
           labelAr: "سياسة ضمان مودي الآمن",
           icon: "shield",
+          onNavigate: () => {
+            if (onOpenHelp) {
+              onOpenHelp();
+              return;
+            }
+            window.alert(
+              isAr
+                ? "مودي تحتفظ بالمبلغ في الضمان حتى يؤكد المشتري الاستلام. بعد التأكيد بثلاثة أيام يتم تحويل المبلغ للبائع."
+                : "Mooday holds payment in escrow until the buyer confirms delivery. Funds are released to the seller 3 days after confirmation.",
+            );
+          },
         },
       ],
     },
@@ -209,8 +269,25 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           labelEn: t.clearCache,
           labelAr: t.clearCache,
           icon: "cleaning_services",
-          valueEn: t.clearCacheHint,
-          valueAr: t.clearCacheHint,
+          valueEn:
+            cacheStatus === "cleared"
+              ? isAr
+                ? "تم المسح"
+                : "Cleared"
+              : cacheStatus === "busy"
+                ? isAr
+                  ? "جارٍ المسح…"
+                  : "Clearing…"
+                : t.clearCacheHint,
+          valueAr:
+            cacheStatus === "cleared"
+              ? "تم المسح"
+              : cacheStatus === "busy"
+                ? "جارٍ المسح…"
+                : t.clearCacheHint,
+          onNavigate: () => {
+            void handleClearCache();
+          },
         },
         {
           labelEn: "Help & Support",
@@ -323,14 +400,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                       aria-hidden="true"
                     >
                       <span
-                        className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-transform ${
+                        className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${
                           item.toggleValue
-                            ? isAr
-                              ? "right-5"
-                              : "right-1"
-                            : isAr
-                              ? "right-5"
-                              : "left-1"
+                            ? "end-1 start-auto"
+                            : "start-1 end-auto"
                         }`}
                       />
                     </span>

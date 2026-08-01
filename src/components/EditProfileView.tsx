@@ -149,14 +149,19 @@ export const EditProfileView: React.FC<EditProfileViewProps> = ({
         updateUserProfile({
           avatar,
           handle,
-          fullNameEn: fullName,
-          fullNameAr: fullName,
-          locationEn: city,
-          locationAr: city,
-          bioEn: bio,
-          bioAr: bio,
-          styleTagsEn: tags,
-          styleTagsAr: tags,
+          ...(isAr
+            ? {
+                fullNameAr: fullName,
+                bioAr: bio,
+                locationAr: city,
+                styleTagsAr: tags,
+              }
+            : {
+                fullNameEn: fullName,
+                bioEn: bio,
+                locationEn: city,
+                styleTagsEn: tags,
+              }),
         }),
       );
       onSaved?.();

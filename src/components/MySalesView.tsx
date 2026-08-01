@@ -5,6 +5,7 @@ import { useApp } from "@/context/AppContext";
 import { type Sale, shipmentLabel, payoutLabel } from "@/data/sales";
 import { deriveSalesFromOrders } from "@/data/sales";
 import { formatAEDLabel } from "@/lib/format";
+import { isOwnListing } from "@/lib/ownership";
 
 interface SalesCopy {
   title: string;
@@ -122,12 +123,29 @@ export const MySalesView: React.FC<MySalesViewProps> = ({
   onBack,
   onOpenOrder,
 }) => {
-  const { language, orders, updateOrderStatus } = useApp();
+  const {
+    language,
+    orders,
+    updateOrderStatus,
+    userProfile,
+    listings,
+    currentUserId,
+  } = useApp();
   const isAr = language === "ar";
   const t = isAr ? COPY.ar : COPY.en;
   const [filter, setFilter] = React.useState<FilterId>("all");
 
-  const sales: Sale[] = useMemo(() => deriveSalesFromOrders(orders), [orders]);
+  const sales: Sale[] = useMemo(() => {
+    const ownedListingIds = listings
+      .filter((p) => isOwnListing(p, currentUserId))
+      .map((p) => p.id);
+    return deriveSalesFromOrders(orders, {
+      sellerNameEn: userProfile.fullNameEn,
+      sellerNames: [userProfile.fullNameEn, userProfile.fullNameAr],
+      ownedListingIds,
+      currentUserId,
+    });
+  }, [orders, userProfile, listings, currentUserId]);
 
   const totals = useMemo(() => {
     let pending = 0;

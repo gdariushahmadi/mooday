@@ -73,7 +73,17 @@ export const DiscoverFeedView: React.FC<DiscoverFeedViewProps> = ({
   onSelectProduct,
   onSelectCategory,
 }) => {
-  const { language, setLanguage, listings, likes, toggleLike } = useApp();
+  const {
+    language,
+    setLanguage,
+    listings,
+    likes,
+    toggleLike,
+    listingsError,
+    listingsLoading,
+    refreshListings,
+    blockedUsers,
+  } = useApp();
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [viewMode, setViewMode] = useState<ViewMode>("featured");
   const [tab, setTab] = useState<FeedTab>(readTabFromUrl);
@@ -99,9 +109,16 @@ export const DiscoverFeedView: React.FC<DiscoverFeedViewProps> = ({
     setLanguage(isAr ? "en" : "ar");
   };
 
-  const filteredListings = listings.filter(
-    (item) => selectedCategory === "All" || item.category === selectedCategory,
+  const blockedNames = new Set(
+    blockedUsers.flatMap((u) => [u.nameEn, u.nameAr].filter(Boolean)),
   );
+
+  const filteredListings = listings.filter((item) => {
+    if (blockedNames.has(item.sellerNameEn) || blockedNames.has(item.sellerNameAr)) {
+      return false;
+    }
+    return selectedCategory === "All" || item.category === selectedCategory;
+  });
 
   // Per-tab ordering/grouping.
   const tabbedListings = (() => {
@@ -143,6 +160,32 @@ export const DiscoverFeedView: React.FC<DiscoverFeedViewProps> = ({
 
   return (
     <div className="w-full flex flex-col gap-lg pb-10">
+      {listingsError ? (
+        <div
+          role="alert"
+          className="flex flex-col gap-sm rounded-xl border border-error/30 bg-error/5 p-md sm:flex-row sm:items-center sm:justify-between"
+        >
+          <p className="text-label-sm text-on-surface">
+            {isAr
+              ? `تعذر تحميل المنتجات: ${listingsError}`
+              : `Couldn’t load listings: ${listingsError}`}
+          </p>
+          <button
+            type="button"
+            disabled={listingsLoading}
+            onClick={() => void refreshListings?.()}
+            className="btn-primary shrink-0 rounded-xl px-4 py-2 text-label-sm font-bold uppercase tracking-wider disabled:opacity-50"
+          >
+            {listingsLoading
+              ? isAr
+                ? "جارٍ التحميل…"
+                : "Loading…"
+              : isAr
+                ? "إعادة المحاولة"
+                : "Retry"}
+          </button>
+        </div>
+      ) : null}
       {/* Tab Navigation */}
       <nav className="flex min-w-0 items-center gap-sm border-b border-surface-variant">
         <div

@@ -21,6 +21,9 @@ vi.mock("@/components/AppContent", () => ({
   AppContent: () => <div data-testid="app-content" />,
 }));
 vi.mock("@/components/InstallPrompt", () => ({ InstallPrompt: () => null }));
+vi.mock("@/components/AuthSheet", () => ({
+  AuthSheet: () => null,
+}));
 vi.mock("@/components/WelcomeView", () => ({
   WelcomeView: () => <div data-testid="welcome-view" />,
 }));
@@ -45,6 +48,7 @@ function setShellState(
     setView,
     openSignIn: vi.fn(),
     openSignUp: vi.fn(),
+    openSocialLogin: vi.fn(),
     ...overrides,
   });
 }
@@ -54,6 +58,7 @@ beforeEach(() => {
   mocks.useApp.mockReturnValue({
     language: "en",
     cart: [{ quantity: 12 }],
+    currentUser: null,
   });
   mocks.useWelcomeGuard.mockReturnValue({
     shouldShow: false,
@@ -72,10 +77,10 @@ describe("app shell", () => {
     expect(
       screen.getByRole("button", { name: "Shopping Bag" }),
     ).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Account" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Sign in" })).toBeInTheDocument();
     expect(
-      screen.queryByRole("button", { name: "Notifications" }),
-    ).not.toBeInTheDocument();
+      screen.getByRole("button", { name: "Notifications" }),
+    ).toBeInTheDocument();
     expect(screen.getByText("9+")).toBeInTheDocument();
   });
 
@@ -88,6 +93,9 @@ describe("app shell", () => {
 
     await user.click(screen.getByRole("button", { name: "Shopping Bag" }));
     expect(setView).toHaveBeenCalledWith("bag");
+
+    await user.click(screen.getByRole("button", { name: "Notifications" }));
+    expect(setView).toHaveBeenCalledWith("notifications");
 
     await user.click(screen.getByRole("button", { name: "Go to Home" }));
     expect(changeTab).toHaveBeenCalledWith("home");

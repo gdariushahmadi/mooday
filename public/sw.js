@@ -17,6 +17,7 @@ const IMAGE_CACHE = `${CACHE_VERSION}-images`;
 const OFFLINE_URL = "/offline.html";
 
 const APP_SHELL = [
+  "/app",
   "/",
   OFFLINE_URL,
   "/manifest.json",
@@ -198,7 +199,7 @@ self.addEventListener("push", (event) => {
     badge: data.badge || "/icons/badge-72x72.png",
     image: data.image,
     data: {
-      url: data.url || "/",
+      url: data.url || "/app",
       dateOfArrival: Date.now(),
     },
     vibrate: [100, 50, 100],
@@ -212,7 +213,7 @@ self.addEventListener("push", (event) => {
 // ---------- notificationclick ----------
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
-  const targetUrl = event.notification.data?.url || "/";
+  const targetUrl = event.notification.data?.url || "/app";
   event.waitUntil(
     (async () => {
       const allClients = await clients.matchAll({ type: "window", includeUncontrolled: true });

@@ -84,7 +84,29 @@ const COPY: Record<"en" | "ar", HelpCopy> = {
     submitted: "تم العثور على الطلب — اضغطي للفتح.",
     notFound: "لا يوجد طلب بهذا الرقم.",
     channelsHeading: "طرق أخرى للتواصل",
-    channels: [],
+    channels: [
+      {
+        icon: "mail",
+        titleEn: "Email",
+        titleAr: "البريد",
+        bodyEn: "support@mooday.app · Replies in 4h",
+        bodyAr: "support@mooday.app · رد خلال ٤ ساعات",
+      },
+      {
+        icon: "smartphone",
+        titleEn: "WhatsApp",
+        titleAr: "واتساب",
+        bodyEn: "+971 50 555 9988 · Sun–Thu 9am–6pm",
+        bodyAr: "+971 50 555 9988 · أحد–خميس ٩ص–٦م",
+      },
+      {
+        icon: "forum",
+        titleEn: "Community",
+        titleAr: "المجتمع",
+        bodyEn: "Join other Mooday sellers & buyers in our Discord.",
+        bodyAr: "انضمي لبائعات ومشتريات مودي في Discord.",
+      },
+    ],
   },
 };
 
@@ -143,6 +165,7 @@ export const HelpSupportView: React.FC<HelpSupportViewProps> = ({
     "idle",
   );
   const [contactOpen, setContactOpen] = useState(false);
+  const [channelStatus, setChannelStatus] = useState("");
 
   const handleLookup = (e: React.FormEvent) => {
     e.preventDefault();
@@ -153,6 +176,18 @@ export const HelpSupportView: React.FC<HelpSupportViewProps> = ({
     } else {
       setLookupStatus("missing");
     }
+  };
+
+  const handleChannelClick = (icon: string) => {
+    if (icon === "mail") {
+      window.location.href = "mailto:support@mooday.app";
+      return;
+    }
+    setChannelStatus(
+      isAr
+        ? "سيتم ربط هذه القناة في المرحلة ٣."
+        : "This channel will connect in Phase 3.",
+    );
   };
 
   return (
@@ -288,9 +323,11 @@ export const HelpSupportView: React.FC<HelpSupportViewProps> = ({
         </h2>
         <div className="flex flex-col gap-sm">
           {t.channels.map((ch, i) => (
-            <article
+            <button
               key={i}
-              className="flex items-center gap-md p-md bg-surface-container-lowest border border-surface-container-high rounded-xl"
+              type="button"
+              onClick={() => handleChannelClick(ch.icon)}
+              className="flex items-center gap-md p-md bg-surface-container-lowest border border-surface-container-high rounded-xl text-start hover:shadow-sm transition-shadow active:scale-[0.99]"
             >
               <span
                 className="material-symbols-outlined text-[28px] text-primary no-mirror"
@@ -306,8 +343,13 @@ export const HelpSupportView: React.FC<HelpSupportViewProps> = ({
                   {isAr ? ch.bodyAr : ch.bodyEn}
                 </div>
               </div>
-            </article>
+            </button>
           ))}
+          {channelStatus && (
+            <p role="status" className="rounded-lg bg-primary/5 p-sm text-label-sm text-primary">
+              {channelStatus}
+            </p>
+          )}
         </div>
       </section>
     </div>

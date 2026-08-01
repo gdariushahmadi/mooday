@@ -157,7 +157,7 @@ export const SearchFiltersView: React.FC<SearchFiltersViewProps> = ({
   onSelectProduct,
   onBack,
 }) => {
-  const { language, listings, likes, toggleLike } = useApp();
+  const { language, listings, likes, toggleLike, blockedUsers } = useApp();
   const isAr = language === "ar";
   const t = isAr ? COPY.ar : COPY.en;
 
@@ -316,8 +316,18 @@ export const SearchFiltersView: React.FC<SearchFiltersViewProps> = ({
     const q = debouncedQuery.toLowerCase();
     const min = minPrice ? parseInt(minPrice, 10) : 0;
     const max = maxPrice ? parseInt(maxPrice, 10) : Infinity;
+    const blockedNames = new Set(
+      blockedUsers.flatMap((u) => [u.nameEn, u.nameAr].filter(Boolean)),
+    );
 
     let result = listings.filter((item) => {
+      if (
+        blockedNames.has(item.sellerNameEn) ||
+        blockedNames.has(item.sellerNameAr)
+      ) {
+        return false;
+      }
+
       // Text search across EN title, AR title, and category.
       const matchesSearch =
         !q ||
@@ -374,6 +384,7 @@ export const SearchFiltersView: React.FC<SearchFiltersViewProps> = ({
     return result;
   }, [
     listings,
+    blockedUsers,
     debouncedQuery,
     selectedCategory,
     selectedCondition,

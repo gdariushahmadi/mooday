@@ -55,6 +55,7 @@ export const ShoppingBagView: React.FC<ShoppingBagViewProps> = ({
   const discount = totalOriginal - totalDiscounted;
   const shipping = totalDiscounted > 1000 || totalDiscounted === 0 ? 0 : 25; // Free shipping over 1000 AED
   const finalTotal = totalDiscounted + shipping;
+  const freeShippingRemaining = Math.max(0, 1000 - totalDiscounted);
 
   return (
     <div className="w-full max-w-[1200px] mx-auto flex flex-col gap-lg pb-10">
@@ -230,8 +231,8 @@ export const ShoppingBagView: React.FC<ShoppingBagViewProps> = ({
               {shipping > 0 && (
                 <div className="bg-tertiary-container/10 border border-tertiary-container/20 p-2 rounded-lg text-[11px] text-on-tertiary-container text-center mt-2">
                   {isAr
-                    ? "أضف بقيمة AED 1,000 للحصول على شحن مجاني!"
-                    : "Add AED 1,000 more to unlock FREE shipping!"}
+                    ? `أضف بقيمة AED ${freeShippingRemaining.toLocaleString("en-AE")} للحصول على شحن مجاني!`
+                    : `Add AED ${freeShippingRemaining.toLocaleString("en-AE")} more to unlock FREE shipping!`}
                 </div>
               )}
 

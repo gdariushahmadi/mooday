@@ -9,6 +9,7 @@ import {
   payoutLabel,
 } from "@/data/sales";
 import { formatAEDLabel } from "@/lib/format";
+import { isOwnListing } from "@/lib/ownership";
 
 interface PayoutsViewProps {
   onBack: () => void;
@@ -88,11 +89,21 @@ const COPY: Record<"en" | "ar", PayoutsCopy> = {
  *  - **History**: every sale row with payout pill + paid-out timestamp.
  */
 export const PayoutsView: React.FC<PayoutsViewProps> = ({ onBack }) => {
-  const { language, orders } = useApp();
+  const { language, orders, userProfile, listings, currentUserId } = useApp();
   const isAr = language === "ar";
   const t = isAr ? COPY.ar : COPY.en;
 
-  const sales: Sale[] = useMemo(() => deriveSalesFromOrders(orders), [orders]);
+  const sales: Sale[] = useMemo(() => {
+    const ownedListingIds = listings
+      .filter((p) => isOwnListing(p, currentUserId))
+      .map((p) => p.id);
+    return deriveSalesFromOrders(orders, {
+      sellerNameEn: userProfile.fullNameEn,
+      sellerNames: [userProfile.fullNameEn, userProfile.fullNameAr],
+      ownedListingIds,
+      currentUserId,
+    });
+  }, [orders, userProfile, listings, currentUserId]);
 
   const totals = useMemo(() => {
     let pending = 0;

@@ -152,22 +152,17 @@ export const CategoryLandingView: React.FC<CategoryLandingViewProps> = ({
     (p) => p.category === category && p.mode !== "rent", // rent reserved Phase 4
   );
 
-  // Available sub-categories for this category, derived from the data
-  // using `deriveSubCategory` (shared with ProductDetailsView breadcrumb).
-  const subCategoriesEn = React.useMemo(() => {
-    const seen = new Set<string>();
+  // Available sub-categories as EN/AR pairs. URL + filter state always use
+  // the EN key, even when the chip label is rendered in Arabic.
+  const subCategoryPairs = React.useMemo(() => {
+    const seen = new Map<string, string>();
     for (const p of categoryListings) {
-      seen.add(deriveSubCategory(p.category, p.titleEn, "en"));
+      const en = deriveSubCategory(p.category, p.titleEn, "en");
+      if (!seen.has(en)) {
+        seen.set(en, deriveSubCategory(p.category, p.titleEn, "ar"));
+      }
     }
-    return Array.from(seen);
-  }, [categoryListings]);
-
-  const subCategoriesAr = React.useMemo(() => {
-    const seen = new Set<string>();
-    for (const p of categoryListings) {
-      seen.add(deriveSubCategory(p.category, p.titleEn, "ar"));
-    }
-    return Array.from(seen);
+    return Array.from(seen.entries()).map(([en, ar]) => ({ en, ar }));
   }, [categoryListings]);
 
   // Filter to active sub-category if set (match by EN name — the URL
@@ -287,20 +282,20 @@ export const CategoryLandingView: React.FC<CategoryLandingViewProps> = ({
           >
             {t.subAll}
           </button>
-          {(isAr ? subCategoriesAr : subCategoriesEn).map((sub) => (
+          {subCategoryPairs.map(({ en, ar }) => (
             <button
-              key={sub}
+              key={en}
               type="button"
               role="tab"
-              aria-selected={subCategory === sub}
-              onClick={() => onSubCategoryChange(sub)}
+              aria-selected={subCategory === en}
+              onClick={() => onSubCategoryChange(en)}
               className={`flex-shrink-0 snap-start px-4 py-2 rounded-full text-label-sm transition-all border ${
-                subCategory === sub
+                subCategory === en
                   ? "bg-primary text-on-primary border-primary font-bold"
                   : "bg-surface-container-lowest text-on-surface border-surface-container-high hover:bg-surface-container-high"
               }`}
             >
-              {sub}
+              {isAr ? ar : en}
             </button>
           ))}
         </div>

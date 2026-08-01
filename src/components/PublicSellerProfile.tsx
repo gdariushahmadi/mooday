@@ -19,6 +19,8 @@ interface PublicSellerProfileProps {
   onBack: () => void;
   onSelectProduct: (product: Product) => void;
   onOpenChat: (sellerId: string) => void;
+  /** Open the report flow targeting this seller. */
+  onReport?: () => void;
   listings: Product[];
 }
 
@@ -89,9 +91,10 @@ export const PublicSellerProfile: React.FC<PublicSellerProfileProps> = ({
   onBack,
   onSelectProduct,
   onOpenChat,
+  onReport,
   listings,
 }) => {
-  const { language, toggleLike, likes } = useApp();
+  const { language, toggleLike, likes, blockUser, submitReport } = useApp();
   const isAr = language === "ar";
   const t = isAr ? COPY.ar : COPY.en;
 
@@ -100,6 +103,7 @@ export const PublicSellerProfile: React.FC<PublicSellerProfileProps> = ({
   const [tab, setTab] = useState<ProfileTab>("listings");
   const [reviewFilter, setReviewFilter] = useState<ReviewFilter>(0);
   const [following, setFollowing] = useState(false);
+  const [actionHint, setActionHint] = useState<string | null>(null);
 
   if (!seller) {
     return (
@@ -138,6 +142,60 @@ export const PublicSellerProfile: React.FC<PublicSellerProfileProps> = ({
   const city = isAr ? seller.cityAr : seller.cityEn;
   const sellerDisplayName = isAr ? seller.nameAr : seller.nameEn;
   const sellerType = isAr ? seller.typeAr : seller.typeEn;
+
+  const baseFollowers = 100 + sellerReviews.length * 47;
+  const followersCount = following ? baseFollowers + 1 : baseFollowers;
+  const followingCount = 40 + sellerListings.length * 12;
+
+  const handleShare = async () => {
+    const url =
+      typeof window !== "undefined" ? window.location.href : "https://mooday.app";
+    try {
+      if (typeof navigator !== "undefined" && navigator.share) {
+        await navigator.share({ title: sellerDisplayName, url });
+      } else if (typeof navigator !== "undefined" && navigator.clipboard) {
+        await navigator.clipboard.writeText(url);
+        setActionHint(isAr ? "تم نسخ الرابط" : "Link copied");
+      }
+    } catch {
+      // User cancelled share sheet — ignore.
+    }
+  };
+
+  const handleReport = () => {
+    if (onReport) {
+      onReport();
+      return;
+    }
+    const record = submitReport({
+      kind: "user",
+      targetId: sellerId,
+      targetLabelEn: seller.nameEn,
+      targetLabelAr: seller.nameAr,
+      reason: "other",
+      body: isAr
+        ? `بلاغ عن البائع ${sellerDisplayName}`
+        : `Report against seller ${sellerDisplayName}`,
+      photos: [],
+    });
+    setActionHint(
+      isAr
+        ? `تم فتح البلاغ ${record.caseNumber}`
+        : `Report opened ${record.caseNumber}`,
+    );
+  };
+
+  const handleBlock = () => {
+    blockUser({
+      nameEn: seller.nameEn,
+      nameAr: seller.nameAr,
+      avatar: seller.avatar,
+      reasonEn: "Blocked from seller profile",
+      reasonAr: "تم الحظر من ملف البائع",
+    });
+    setActionHint(isAr ? "تم حظر البائع" : "Seller blocked");
+    onBack();
+  };
 
   const filterStars = [0, 5, 4, 3, 2, 1] as const;
 
@@ -216,8 +274,8 @@ export const PublicSellerProfile: React.FC<PublicSellerProfileProps> = ({
           label={t.reviews}
           isAr={isAr}
         />
-        <StatCell value="1,420" label={t.followers} isAr={isAr} />
-        <StatCell value="382" label={t.following} isAr={isAr} />
+        <StatCell value={followersCount.toLocaleString()} label={t.followers} isAr={isAr} />
+        <StatCell value={followingCount.toLocaleString()} label={t.following} isAr={isAr} />
       </section>
 
       {/* Style tags */}
@@ -260,10 +318,15 @@ export const PublicSellerProfile: React.FC<PublicSellerProfileProps> = ({
 
       {/* Secondary actions */}
       <section className="flex gap-sm justify-end">
-        <IconAction label={t.share} icon="share" />
-        <IconAction label={t.report} icon="flag" />
-        <IconAction label={t.block} icon="block" />
+        <IconAction label={t.share} icon="share" onClick={() => void handleShare()} />
+        <IconAction label={t.report} icon="flag" onClick={handleReport} />
+        <IconAction label={t.block} icon="block" onClick={handleBlock} />
       </section>
+      {actionHint ? (
+        <p role="status" className="text-center text-label-sm text-primary">
+          {actionHint}
+        </p>
+      ) : null}
 
       {/* Tabs */}
       <nav className="flex border-b border-surface-variant" role="tablist">
@@ -420,12 +483,15 @@ const StatCell: React.FC<{ value: string; label: string; isAr: boolean }> = ({
   </div>
 );
 
-const IconAction: React.FC<{ label: string; icon: string }> = ({
-  label,
-  icon,
-}) => (
+const IconAction: React.FC<{
+  label: string;
+  icon: string;
+  onClick?: () => void;
+}> = ({ label, icon, onClick }) => (
   <button
+    type="button"
     aria-label={label}
+    onClick={onClick}
     className="w-10 h-10 rounded-full border border-surface-container-high text-on-surface-variant hover:text-primary hover:border-primary transition-colors flex items-center justify-center active:scale-95"
   >
     <span className="material-symbols-outlined text-[20px]" aria-hidden="true">

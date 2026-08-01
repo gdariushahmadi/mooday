@@ -91,6 +91,7 @@ function makeContext(overrides: Partial<AppContextType> = {}): AppContextType {
     chats: [],
     sendChatMessage: vi.fn(),
     createChatThread: vi.fn(() => "t1"),
+    markChatRead: vi.fn(),
     addresses: [ADDR_HOME, ADDR_WORK],
     addAddress: vi.fn(),
     updateAddress: vi.fn(),
@@ -342,9 +343,10 @@ describe("CheckoutFlowView — payment step (C-14)", () => {
 });
 
 describe("CheckoutFlowView — confirmation (C-15)", () => {
-  it("after payment, shows the Order placed screen", async () => {
+  it("after payment, records an order and shows Order placed", async () => {
     const user = userEvent.setup();
-    const { onSuccess } = renderCheckout();
+    const recordOrder = vi.fn();
+    const { onSuccess } = renderCheckout({ context: { recordOrder } });
     // Advance through steps.
     await user.click(
       screen.getByRole("button", { name: /Continue to payment/i }),
@@ -355,6 +357,12 @@ describe("CheckoutFlowView — confirmation (C-15)", () => {
     expect(
       await screen.findByText("Order placed", {}, { timeout: 3000 }),
     ).toBeInTheDocument();
+    expect(recordOrder).toHaveBeenCalledTimes(1);
+    expect(recordOrder.mock.calls[0][0]).toMatchObject({
+      status: "processing",
+      paymentBrandEn: "Visa",
+      paymentLast4: "4242",
+    });
 
     await user.click(screen.getByRole("button", { name: /Back to home/i }));
     expect(onSuccess).toHaveBeenCalled();

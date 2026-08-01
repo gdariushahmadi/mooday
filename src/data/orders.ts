@@ -84,9 +84,12 @@ export interface Order {
   addressCityAr: string;
   addressStreetEn: string;
   addressStreetAr: string;
+  /** Optional shipping recipient name (buyer snapshot for seller-side views). */
+  addressFullNameEn?: string;
+  addressFullNameAr?: string;
   /** "Visa •••• 4242" — last-4 only, no PAN. */
-  paymentBrandEn: "Visa" | "Mastercard" | "Amex" | "Apple Pay";
-  paymentBrandAr: "فيزا" | "ماستركارد" | "أمريكان إكسبريس" | "آبل باي";
+  paymentBrandEn: "Visa" | "Mastercard" | "Amex" | "Apple Pay" | "Cash";
+  paymentBrandAr: "فيزا" | "ماستركارد" | "أمريكان إكسبريس" | "آبل باي" | "نقداً";
   paymentLast4: string;
   subtotal: number;
   shipping: number;

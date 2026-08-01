@@ -60,6 +60,7 @@ function makeContext(overrides: Partial<AppContextType> = {}): AppContextType {
     chats: [],
     sendChatMessage: vi.fn(),
     createChatThread: vi.fn(() => "t1"),
+    markChatRead: vi.fn(),
     addresses: [],
     addAddress: vi.fn(),
     updateAddress: vi.fn(),
@@ -143,11 +144,37 @@ describe("MyClosetView (D-20)", () => {
     expect(screen.getByRole("tab", { name: "Reserved" })).toBeInTheDocument();
   });
 
-  it("renders all 3 listings by default", () => {
+  it("renders only the seller's own listings (custom-* / sellerId)", () => {
     renderCloset();
-    expect(screen.getByText("Vintage Handbag")).toBeInTheDocument();
+    expect(screen.queryByText("Vintage Handbag")).not.toBeInTheDocument();
     expect(screen.getByText("My draft")).toBeInTheDocument();
     expect(screen.getByText("My active listing")).toBeInTheDocument();
+  });
+
+  it("includes remote listings matching currentUserId", () => {
+    const owned: Product = {
+      ...BASE_PRODUCT,
+      id: "uuid-owned",
+      titleEn: "My UUID listing",
+      titleAr: "عرضي",
+      sellerId: "user-1",
+    };
+    render(
+      <AppContext.Provider
+        value={makeContext({
+          listings: [BASE_PRODUCT, owned],
+          currentUserId: "user-1",
+        })}
+      >
+        <MyClosetView
+          onBack={vi.fn()}
+          onEditListing={vi.fn()}
+          onCreateListing={vi.fn()}
+        />
+      </AppContext.Provider>,
+    );
+    expect(screen.getByText("My UUID listing")).toBeInTheDocument();
+    expect(screen.queryByText("Vintage Handbag")).not.toBeInTheDocument();
   });
 
   it("'Drafts' tab shows only draft listings", async () => {

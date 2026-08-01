@@ -22,6 +22,7 @@ function makeContext(overrides: Partial<AppContextType> = {}): AppContextType {
     chats: [],
     sendChatMessage: vi.fn(),
     createChatThread: vi.fn(() => "test-thread"),
+    markChatRead: vi.fn(),
     addresses: [],
     addAddress: vi.fn(),
     updateAddress: vi.fn(),

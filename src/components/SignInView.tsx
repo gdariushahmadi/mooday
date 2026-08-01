@@ -11,9 +11,11 @@
  * Pre-seeded QA login: layla@mooday.app / mooday123
  */
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useApp } from "@/context/AppContext";
 import { AUTH_ERROR_MESSAGE_EN, AUTH_ERROR_MESSAGE_AR } from "@/data/users";
+
+const REMEMBER_EMAIL_KEY = "mooday_remember_email";
 
 interface SignInViewProps {
   onBack: () => void;
@@ -62,6 +64,14 @@ const COPY = {
   },
 } as const;
 
+function readRememberedEmail(): string {
+  try {
+    return window.localStorage.getItem(REMEMBER_EMAIL_KEY) ?? "";
+  } catch {
+    return "";
+  }
+}
+
 export const SignInView: React.FC<SignInViewProps> = ({
   onBack,
   onSignUp,
@@ -78,6 +88,14 @@ export const SignInView: React.FC<SignInViewProps> = ({
   const [remember, setRemember] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
+  useEffect(() => {
+    const saved = readRememberedEmail();
+    if (saved) {
+      setEmail(saved);
+      setRemember(true);
+    }
+  }, []);
+
   const errorMessage = authError
     ? isAr
       ? AUTH_ERROR_MESSAGE_AR[authError]
@@ -88,10 +106,22 @@ export const SignInView: React.FC<SignInViewProps> = ({
     e.preventDefault();
     setSubmitting(true);
     try {
+      const trimmed = email.trim();
       const ok = await Promise.resolve(
-        signIn({ email: email.trim(), password }),
+        signIn({ email: trimmed, password }),
       );
-      if (ok) onSuccess();
+      if (ok) {
+        try {
+          if (remember) {
+            window.localStorage.setItem(REMEMBER_EMAIL_KEY, trimmed);
+          } else {
+            window.localStorage.removeItem(REMEMBER_EMAIL_KEY);
+          }
+        } catch {
+          // Ignore quota / private-mode errors.
+        }
+        onSuccess();
+      }
     } finally {
       setSubmitting(false);
     }

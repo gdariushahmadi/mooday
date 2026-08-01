@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { useApp, Product } from "@/context/AppContext";
 import { ClickableCard } from "./ClickableCard";
+import { isOwnListing } from "@/lib/ownership";
 
 interface UserProfileViewProps {
   onSelectProduct: (product: Product) => void;
@@ -40,6 +41,7 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({
     addresses: addressesFromContext,
     paymentMethods: paymentMethodsFromContext,
     userProfile,
+    currentUserId,
   } = useApp();
   const isAr = language === "ar";
 
@@ -47,12 +49,17 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({
     "listings" | "likes" | "chats" | "rentals"
   >("listings");
 
-  // User's custom created listings (for simplicity, we assume custom listings belong to this user)
-  const userListings = listings.filter((item) => item.id.startsWith("custom-"));
+  // Listings owned by the signed-in user (sellerId match or custom-* mock).
+  const userListings = listings.filter((item) =>
+    isOwnListing(item, currentUserId),
+  );
   const likedItems = listings.filter((item) => likes.includes(item.id));
 
   return (
-    <div className="w-full max-w-[1000px] mx-auto flex flex-col gap-lg pb-10">
+    <div
+      dir={isAr ? "rtl" : "ltr"}
+      className="w-full max-w-[1000px] mx-auto flex flex-col gap-lg pb-10"
+    >
       {/* Profile Card Header */}
       <section className="bg-surface-container-low border border-surface-container-high rounded-xl p-lg flex flex-col sm:flex-row items-center gap-lg shadow-sm relative">
         <img
@@ -88,7 +95,10 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({
                 <span
                   key={i}
                   className="material-symbols-outlined text-[18px]"
-                  style={{ fontVariationSettings: "'FILL' 1" }}
+                  style={{
+                    fontVariationSettings:
+                      i < Math.round(userProfile.rating) ? "'FILL' 1" : "'FILL' 0",
+                  }}
                 >
                   star
                 </span>
@@ -145,7 +155,7 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({
       )}
 
       {/* Quick action: My Purchases + Messages + Addresses + Payment Methods */}
-      <div className="hidden">
+      <div className="grid grid-cols-2 gap-sm">
         {onOpenPurchases && (
           <button
             type="button"
@@ -376,6 +386,7 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({
           <LikesTabContent
             likedItems={likedItems}
             isAr={isAr}
+            handle={userProfile.handle}
             onSelectProduct={onSelectProduct}
           />
         )}
@@ -467,8 +478,9 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({
 const LikesTabContent: React.FC<{
   likedItems: Product[];
   isAr: boolean;
+  handle: string;
   onSelectProduct: (p: Product) => void;
-}> = ({ likedItems, isAr, onSelectProduct }) => {
+}> = ({ likedItems, isAr, handle, onSelectProduct }) => {
   const [filter, setFilter] = React.useState<string>("all");
   const [shareCopied, setShareCopied] = React.useState(false);
 
@@ -484,7 +496,8 @@ const LikesTabContent: React.FC<{
       : likedItems.filter((i) => i.category === filter);
 
   const handleShare = async () => {
-    const link = `https://mooday.app/@fatima_dxb/loves?cats=${encodeURIComponent(filter)}`;
+    const slug = handle.replace(/^@/, "") || "closet";
+    const link = `https://mooday.app/@${slug}/loves?cats=${encodeURIComponent(filter)}`;
     try {
       if (typeof navigator !== "undefined" && navigator.clipboard) {
         await navigator.clipboard.writeText(link);

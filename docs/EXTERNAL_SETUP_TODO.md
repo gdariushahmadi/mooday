@@ -11,16 +11,26 @@ a `NEXT_PUBLIC_*` variable or commit it to Git.
   available region and record the project reference in the team password
   manager.
 - [ ] Link the repository to staging with the Supabase CLI.
-- [ ] Review all pending migrations, take a staging backup, then apply the
-  identity migration, `202607150002_phase_3_listings.sql`, and
-  `202607150003_phase_3_listing_media.sql` in order.
+- [ ] Review all pending migrations, take a staging backup, then apply
+  identity through admin migrations in order:
+  `202607150001_phase_2_identity.sql`,
+  `202607150002_phase_3_listings.sql`,
+  `202607150003_phase_3_listing_media.sql`,
+  `202607150004_phase_3_public_seller_profiles.sql`,
+  `202607150005_phase_3_user_likes_and_cart.sql`,
+  `202607150006_phase_3_orders.sql`,
+  `202607150007_phase_3_social.sql`,
+  `202607150008_phase_3_5_admin.sql`.
 - [ ] Confirm that `profiles`, `addresses`, `set_default_address`, triggers,
   grants, and all RLS policies exist.
 - [ ] Confirm that `listings` and `listing_images` exist and that anonymous
-  access returns active listings only.
+  access returns **active + approved** listings only (`approved_at IS NOT NULL`).
+- [ ] Confirm likes (`user_likes`), cart (`cart_items`), orders, and social
+  tables (chats / notifications / reports / disputes) exist with RLS.
 - [ ] Confirm that the private `listing-media` bucket has a 10 MB limit,
   JPEG/PNG/WebP allow-list, and the expected Storage RLS policies.
-- [ ] Run the database/RLS tests against an isolated staging test database.
+- [ ] Run the database/RLS tests against an isolated staging test database
+  (`supabase/tests/phase_2_*.sql` and `phase_3_*.sql`).
 - [ ] Copy `supabase/templates/confirmation.html` and `recovery.html` into the
   matching Supabase Auth email templates. Keep `{{ .Token }}` intact so the UI
   receives a six-digit code rather than a confirmation link.
@@ -54,8 +64,11 @@ a `NEXT_PUBLIC_*` variable or commit it to Git.
 
 - [ ] Create the staging and production web projects/deployments.
 - [ ] Set these values separately in each environment:
-  `NEXT_PUBLIC_DATA_SOURCE=supabase`, `NEXT_PUBLIC_SUPABASE_URL`,
+  `NEXT_PUBLIC_DATA_SOURCE=supabase`,
+  `NEXT_PUBLIC_MARKETPLACE_DATA_SOURCE=supabase` (optional; listings/likes/cart),
+  `NEXT_PUBLIC_SUPABASE_URL`,
   `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, and `NEXT_PUBLIC_SITE_URL`.
+  Server-only: `SUPABASE_SERVICE_ROLE_KEY` for admin actions.
 - [ ] Confirm that preview deployments do not accidentally use the production
   database.
 - [ ] Configure the custom domains, TLS, redirects, and DNS records.

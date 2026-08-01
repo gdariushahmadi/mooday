@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import type { Product } from "@/context/AppContext";
 import {
   SELL_CATEGORIES,
@@ -12,6 +12,7 @@ import { SIZES } from "@/data/attributes";
 import { COLOURS, findColour } from "@/data/attributes";
 import { mockImageOptions } from "@/data/mock-images";
 import { formatAEDLabel } from "@/lib/format";
+import { ListingPhotoPicker } from "./ListingPhotoPicker";
 
 /** Bilingual form copy. */
 export interface ListingFormCopy {
@@ -103,6 +104,14 @@ interface ListingFormProps {
     typeEn: string;
     typeAr: string;
   };
+  /**
+   * Phase 3 slice 7: receives the real `File` objects the user staged,
+   * in the same order as `data.images`. The parent uses this to call
+   * `media.upload` after the listing row is created. URLs without a
+   * matching entry here are public/mock paths the picker let through
+   * unchanged.
+   */
+  onStagedFiles?: (files: File[]) => void;
 }
 
 /**
@@ -123,14 +132,15 @@ export const ListingForm: React.FC<ListingFormProps> = ({
   onCancel,
   draftKey,
   user,
+  onStagedFiles,
 }) => {
   const t = isAr ? LISTING_FORM_COPY_AR : LISTING_FORM_COPY_EN;
   const restored = useMemo(() => {
     if (initial || !draftKey || typeof window === "undefined") return null;
     try {
-      return JSON.parse(window.localStorage.getItem(draftKey) ?? "null") as
-        | Record<string, unknown>
-        | null;
+      return JSON.parse(
+        window.localStorage.getItem(draftKey) ?? "null",
+      ) as Record<string, unknown> | null;
     } catch {
       return null;
     }
@@ -153,9 +163,7 @@ export const ListingForm: React.FC<ListingFormProps> = ({
     (restored?.category as string) ?? initial?.category ?? "Dresses",
   );
   const [condition, setCondition] = useState(
-    (restored?.condition as string) ??
-      initial?.conditionEn ??
-      "New with Tags",
+    (restored?.condition as string) ?? initial?.conditionEn ?? "New with Tags",
   );
   const [price, setPrice] = useState(
     (restored?.price as string) ??
@@ -183,6 +191,10 @@ export const ListingForm: React.FC<ListingFormProps> = ({
     (restored?.photos as string[] | undefined) ??
       initial?.images ?? [mockImageOptions[0].url],
   );
+  // Phase 3 slice 7: tracks real staged files keyed by the object URL
+  // emitted from ListingPhotoPicker. Submission reads these to call
+  // `media.upload` after the listing row exists.
+  const stagedFilesRef = useRef<Map<string, File>>(new Map());
   const [validationError, setValidationError] = useState("");
 
   useEffect(() => {
@@ -275,34 +287,19 @@ export const ListingForm: React.FC<ListingFormProps> = ({
       onSaveDraft(data);
     } else {
       if (draftKey) window.localStorage.removeItem(draftKey);
+      if (onStagedFiles) {
+        const staged = (data.images ?? photos)
+          .map((url) => stagedFilesRef.current.get(url) ?? null)
+          .filter((f): f is File => f !== null);
+        onStagedFiles(staged);
+      }
       onSubmit(data);
     }
   };
 
   // ---------- handlers ----------
-  const addPhoto = () => {
-    if (photos.length >= 8) return;
-    // Round-robin pick from mock options so the demo has variety.
-    const next =
-      mockImageOptions[(photos.length * 3 + 1) % mockImageOptions.length].url;
-    setPhotos([...photos, next]);
-  };
-  const removePhoto = (idx: number) => {
-    if (photos.length <= 1) return;
-    setPhotos(photos.filter((_, i) => i !== idx));
-  };
-  const pickPhoto = (url: string, idx: number) => {
-    const next = [...photos];
-    next[idx] = url;
-    setPhotos(next);
-  };
-  const movePhoto = (idx: number, direction: -1 | 1) => {
-    const destination = idx + direction;
-    if (destination < 0 || destination >= photos.length) return;
-    const next = [...photos];
-    [next[idx], next[destination]] = [next[destination], next[idx]];
-    setPhotos(next);
-  };
+  // Photo handlers live in ListingPhotoPicker (slice 7). ListingForm
+  // only needs the resulting array of URLs at submit time.
 
   return (
     <form
@@ -315,97 +312,43 @@ export const ListingForm: React.FC<ListingFormProps> = ({
           {t.photos}{" "}
           <span className="text-outline font-sans">({photos.length}/8)</span>
         </legend>
-        <div className="flex gap-sm flex-wrap">
-          {photos.map((url, idx) => (
-            <div
-              key={`${url}-${idx}`}
-              className="relative w-24 h-24 rounded-lg overflow-hidden border border-surface-container-high"
-            >
-              <img
-                alt={`Photo ${idx + 1}`}
-                src={url}
-                className="w-full h-full object-cover"
-              />
-              {idx === 0 && (
-                <span className="absolute top-1 start-1 text-[8px] uppercase tracking-wider bg-primary text-on-primary px-1.5 py-0.5 rounded font-bold">
-                  {isAr ? "رئيسية" : "Cover"}
-                </span>
-              )}
-              {photos.length > 1 && (
-                <>
-                  <button
-                    type="button"
-                    onClick={() => removePhoto(idx)}
-                    aria-label={
-                      isAr ? `حذف الصورة ${idx + 1}` : `Remove photo ${idx + 1}`
-                    }
-                    className="absolute top-1 end-1 w-5 h-5 rounded-full bg-black/60 text-white text-[10px] flex items-center justify-center"
-                  >
-                    ×
-                  </button>
-                  <div className="absolute inset-x-1 bottom-1 flex justify-between">
-                    <button
-                      type="button"
-                      onClick={() => movePhoto(idx, -1)}
-                      disabled={idx === 0}
-                      aria-label={isAr ? "تحريك الصورة للخلف" : "Move photo backward"}
-                      className="w-6 h-6 rounded-full bg-black/60 text-white disabled:invisible"
-                    >
-                      ‹
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => movePhoto(idx, 1)}
-                      disabled={idx === photos.length - 1}
-                      aria-label={isAr ? "تحريك الصورة للأمام" : "Move photo forward"}
-                      className="w-6 h-6 rounded-full bg-black/60 text-white disabled:invisible"
-                    >
-                      ›
-                    </button>
-                  </div>
-                </>
-              )}
-            </div>
-          ))}
-          {photos.length < 8 && (
-            <button
-              type="button"
-              onClick={addPhoto}
-              className="w-24 h-24 rounded-lg border-2 border-dashed border-outline-variant flex flex-col items-center justify-center gap-1 text-outline hover:border-primary hover:text-primary transition-colors"
-            >
-              <span
-                className="material-symbols-outlined text-[24px] no-mirror"
-                aria-hidden="true"
-              >
-                add_a_photo
-              </span>
-              <span className="text-[10px] uppercase tracking-wider">
-                {isAr ? "إضافة" : "Add"}
-              </span>
-            </button>
-          )}
-        </div>
-        {/* Mock picker for non-active slots */}
-        {photos.length < 8 && (
-          <select
-            onChange={(e) => {
-              if (photos.length === 0) return;
-              pickPhoto(e.target.value, photos.length - 1);
-            }}
-            className="text-label-sm p-2 bg-surface border border-outline-variant rounded-lg"
-            value=""
-            aria-label={isAr ? "تغيير آخر صورة" : "Swap last photo"}
-          >
-            <option value="">
-              {isAr ? "أو اختر من المكتبة..." : "Or pick from library..."}
-            </option>
-            {mockImageOptions.map((opt, i) => (
-              <option key={`${opt.url}-${i}`} value={opt.url}>
-                {opt.name}
-              </option>
-            ))}
-          </select>
-        )}
+        <ListingPhotoPicker
+          photos={photos}
+          onChange={setPhotos}
+          isAr={isAr}
+          copy={{
+            add: isAr ? "إضافة" : "Add",
+            cover: isAr ? "رئيسية" : "Cover",
+            removePhoto: (n) =>
+              isAr ? `حذف الصورة ${n}` : `Remove photo ${n}`,
+            moveBack: isAr ? "تحريك الصورة للخلف" : "Move photo backward",
+            moveForward: isAr ? "تحريك الصورة للأمام" : "Move photo forward",
+            dragHint: isAr
+              ? "حد حتى 8 صور (PNG/JPEG/WebP، 10MB لكل صورة)."
+              : "Up to 8 photos (PNG/JPEG/WebP, 10MB each).",
+            tooLarge: (mb) =>
+              isAr
+                ? `الحجم الأقصى ${mb.toFixed(0)}MB.`
+                : `Max size is ${mb.toFixed(0)}MB.`,
+            unsupportedType: isAr
+              ? "نوع الصورة غير مدعوم. استخدم PNG أو JPEG أو WebP."
+              : "Unsupported image type. Use PNG, JPEG, or WebP.",
+            swapLast: isAr ? "تغيير آخر صورة" : "Swap last photo",
+            orPickFromLibrary: isAr
+              ? "أو اختر من المكتبة..."
+              : "Or pick from library...",
+          }}
+          mockLibrary={mockImageOptions.map((opt) => ({
+            name: opt.name,
+            url: opt.url,
+          }))}
+          onFileStage={(file) => {
+            // Track by a synthetic URL so the staged map can be looked
+            // up from the same array the form holds at submit time.
+            const url = URL.createObjectURL(file);
+            stagedFilesRef.current.set(url, file);
+          }}
+        />
       </fieldset>
 
       {/* Title */}
@@ -595,7 +538,10 @@ export const ListingForm: React.FC<ListingFormProps> = ({
 
       {/* CTAs */}
       {validationError && (
-        <p role="alert" className="rounded-lg bg-error-container px-md py-sm text-label-sm font-bold text-on-error-container">
+        <p
+          role="alert"
+          className="rounded-lg bg-error-container px-md py-sm text-label-sm font-bold text-on-error-container"
+        >
           {validationError}
         </p>
       )}

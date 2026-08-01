@@ -5,6 +5,7 @@ import { useApp, type Product, type CartItem } from "@/context/AppContext";
 import { formatAEDLabel } from "@/lib/format";
 import type { Address } from "@/data/addresses";
 import type { PaymentMethod } from "@/data/paymentMethods";
+import type { Order } from "@/data/orders";
 
 interface CheckoutFlowViewProps {
   /** Direct-checkout product, or null when checking out the bag. */
@@ -60,6 +61,9 @@ interface CheckoutCopy {
   backToHome: string;
   orderPlaced: string;
   escrowBody: string;
+  emptyTitle: string;
+  emptyBody: string;
+  emptyBack: string;
 }
 
 const COPY: Record<"en" | "ar", CheckoutCopy> = {
@@ -109,6 +113,9 @@ const COPY: Record<"en" | "ar", CheckoutCopy> = {
     orderPlaced: "Order placed",
     escrowBody:
       "Your payment has been secured in Mooday's Escrow vault. Funds will only be released to the seller after you receive the item and confirm it matches the description.",
+    emptyTitle: "Your bag is empty",
+    emptyBody: "Add something you love before checking out.",
+    emptyBack: "Back to shopping",
   },
   ar: {
     pageTitle: "إتمام الشراء",
@@ -156,6 +163,9 @@ const COPY: Record<"en" | "ar", CheckoutCopy> = {
     orderPlaced: "تم تسجيل الطلب",
     escrowBody:
       "تم تأمين المبلغ في حساب مودي. لن يتم تسليم المبلغ للبائع إلا بعد استلامك للطلب وتأكيد مطابقته للوصف.",
+    emptyTitle: "حقيبتك فارغة",
+    emptyBody: "أضيفي شيئاً تحبينه قبل إتمام الشراء.",
+    emptyBack: "العودة للتسوق",
   },
 };
 
@@ -199,7 +209,8 @@ export const CheckoutFlowView: React.FC<CheckoutFlowViewProps> = ({
   onBack,
   onSuccess,
 }) => {
-  const { language, cart, clearCart, addresses, paymentMethods } = useApp();
+  const { language, cart, clearCart, addresses, paymentMethods, recordOrder } =
+    useApp();
   const isAr = language === "ar";
   const t = isAr ? COPY.ar : COPY.en;
 
@@ -303,6 +314,7 @@ export const CheckoutFlowView: React.FC<CheckoutFlowViewProps> = ({
 
   const handlePaymentSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (items.length === 0) return;
     if (paymentChoice === "new-card") {
       const digits = newCardNumber.replace(/\s/g, "");
       if (
@@ -326,6 +338,78 @@ export const CheckoutFlowView: React.FC<CheckoutFlowViewProps> = ({
     setFormError("");
     setIsProcessing(true);
     setTimeout(() => {
+      const addr = selectedAddress;
+      let paymentBrandEn: Order["paymentBrandEn"] = "Visa";
+      let paymentBrandAr: Order["paymentBrandAr"] = "فيزا";
+      let paymentLast4 = "0000";
+
+      if (paymentChoice === "apple") {
+        paymentBrandEn = "Apple Pay";
+        paymentBrandAr = "آبل باي";
+        paymentLast4 = "APPL";
+      } else if (paymentChoice === "cod") {
+        paymentBrandEn = "Cash";
+        paymentBrandAr = "نقداً";
+        paymentLast4 = "COD";
+      } else if (paymentChoice === "saved-card" && selectedCardId) {
+        const card = paymentMethods.find((m) => m.id === selectedCardId);
+        if (card) {
+          paymentBrandEn = card.brandEn as Order["paymentBrandEn"];
+          paymentBrandAr = card.brandAr as Order["paymentBrandAr"];
+          paymentLast4 = card.last4;
+        }
+      } else if (paymentChoice === "new-card") {
+        const digits = newCardNumber.replace(/\s/g, "");
+        paymentLast4 = digits.slice(-4) || "0000";
+        if (digits.startsWith("34") || digits.startsWith("37")) {
+          paymentBrandEn = "Amex";
+          paymentBrandAr = "أمريكان إكسبريس";
+        } else if (digits.startsWith("5")) {
+          paymentBrandEn = "Mastercard";
+          paymentBrandAr = "ماستركارد";
+        } else {
+          paymentBrandEn = "Visa";
+          paymentBrandAr = "فيزا";
+        }
+      }
+
+      const now = new Date().toISOString();
+      const order: Order = {
+        id: `ord-${Date.now()}`,
+        dateOrdered: now,
+        status: "processing",
+        lineItems: items.map((item) => ({
+          product: item.product,
+          quantity: item.quantity,
+          priceAtPurchase: item.product.price,
+        })),
+        addressCityEn: addr?.cityEn ?? "",
+        addressCityAr: addr?.cityAr ?? "",
+        addressStreetEn: addr?.streetEn ?? "",
+        addressStreetAr: addr?.streetAr ?? "",
+        addressFullNameEn: addr?.fullNameEn,
+        addressFullNameAr: addr?.fullNameAr,
+        paymentBrandEn,
+        paymentBrandAr,
+        paymentLast4,
+        subtotal,
+        shipping,
+        total,
+        courier: {
+          nameEn: "Aramex",
+          nameAr: "أرامكس",
+          trackingNumber: `ARMX-${String(Date.now()).slice(-7)}`,
+        },
+        timeline: [
+          {
+            status: "processing",
+            date: now,
+            descriptionEn: "Order placed, payment secured in Mooday escrow.",
+            descriptionAr: "تم تسجيل الطلب وتأمين المبلغ في حساب مودي.",
+          },
+        ],
+      };
+      recordOrder(order);
       setIsProcessing(false);
       setIsDone(true);
       if (!checkoutProduct) {
@@ -342,6 +426,56 @@ export const CheckoutFlowView: React.FC<CheckoutFlowViewProps> = ({
         onHome={onSuccess}
         t={t}
       />
+    );
+  }
+
+  if (items.length === 0) {
+    return (
+      <div className="w-full max-w-[800px] mx-auto flex flex-col gap-lg pb-10">
+        <div className="flex items-center justify-between border-b border-outline-variant pb-4">
+          <button
+            type="button"
+            onClick={onBack}
+            aria-label={isAr ? "رجوع" : "Back"}
+            className="text-on-surface hover:bg-surface-container-low transition-colors rounded-full p-2 flex items-center justify-center active:scale-95"
+          >
+            <span
+              className="material-symbols-outlined no-mirror"
+              aria-hidden="true"
+            >
+              arrow_back
+            </span>
+          </button>
+          <h1 className="font-serif text-headline-sm text-primary tracking-widest uppercase flex-grow text-center">
+            {t.pageTitle}
+          </h1>
+          <div className="w-10" aria-hidden="true" />
+        </div>
+        <div
+          data-testid="checkout-empty"
+          className="flex flex-col items-center justify-center gap-md py-16 text-center px-md"
+        >
+          <span
+            className="material-symbols-outlined text-[64px] text-outline no-mirror"
+            aria-hidden="true"
+          >
+            shopping_bag
+          </span>
+          <h2 className="font-serif text-headline-sm text-on-surface">
+            {t.emptyTitle}
+          </h2>
+          <p className="text-body-md text-on-surface-variant max-w-sm">
+            {t.emptyBody}
+          </p>
+          <button
+            type="button"
+            onClick={onBack}
+            className="btn-primary mt-sm px-lg py-3 rounded-xl text-label-md uppercase tracking-widest font-bold shadow-lg btn-tactile active:scale-[0.98] transition-transform"
+          >
+            {t.emptyBack}
+          </button>
+        </div>
+      </div>
     );
   }
 

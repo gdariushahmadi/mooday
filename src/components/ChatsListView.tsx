@@ -60,7 +60,7 @@ export const ChatsListView: React.FC<ChatsListViewProps> = ({
   onBack,
   onOpenThread,
 }) => {
-  const { language, chats } = useApp();
+  const { language, chats, markChatRead } = useApp();
   const isAr = language === "ar";
   const t = isAr ? COPY.ar : COPY.en;
   const [query, setQuery] = React.useState("");
@@ -82,6 +82,11 @@ export const ChatsListView: React.FC<ChatsListViewProps> = ({
       return 0;
     });
   }, [chats, query]);
+
+  const openThread = (threadId: string) => {
+    markChatRead(threadId);
+    onOpenThread(threadId);
+  };
 
   return (
     <div
@@ -161,7 +166,7 @@ export const ChatsListView: React.FC<ChatsListViewProps> = ({
                   </div>
                 )}
                 <ClickableCard
-                  onClick={() => onOpenThread(thread.id)}
+                  onClick={() => openThread(thread.id)}
                   ariaLabel={`${thread.sellerName} — ${thread.productTitle}`}
                   className="flex items-center gap-md p-md bg-surface-container-lowest border border-surface-container-high rounded-xl hover:shadow-sm transition-shadow"
                 >
@@ -176,6 +181,18 @@ export const ChatsListView: React.FC<ChatsListViewProps> = ({
                       src={thread.productImage}
                       className="absolute -bottom-1 -end-1 w-6 h-6 rounded object-cover border-2 border-surface"
                     />
+                    {(thread.unread ?? 0) > 0 && (
+                      <span
+                        className="absolute -top-1 -start-1 min-w-5 h-5 px-1 rounded-full bg-error text-on-error text-[10px] font-bold flex items-center justify-center"
+                        aria-label={
+                          isAr
+                            ? `${thread.unread} غير مقروءة`
+                            : `${thread.unread} unread`
+                        }
+                      >
+                        {thread.unread}
+                      </span>
+                    )}
                   </div>
                   <div className="flex-grow min-w-0">
                     <div className="flex items-center justify-between gap-sm">

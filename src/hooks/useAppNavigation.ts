@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useApp, type Product } from "@/context/AppContext";
 import {
   type TabId,
@@ -11,6 +11,7 @@ import {
   viewFromTab,
 } from "@/types/navigation";
 import { CATEGORIES } from "@/data/categories";
+import { getSellerProfile } from "@/data/seller-profile";
 
 export type CategorySort = "newest" | "price-asc" | "price-desc" | "saves";
 
@@ -20,6 +21,11 @@ export const VALID_CATEGORY_SORTS: readonly CategorySort[] = [
   "price-desc",
   "saves",
 ] as const;
+
+export type OpenReportOpts = {
+  orderId?: string;
+  targetId?: string;
+};
 
 export interface AppNavigation {
   /** Active bottom-nav tab (kept in sync with currentView for tab views). */
@@ -44,6 +50,8 @@ export interface AppNavigation {
   activeOrderId: string | null;
   /** Active listing being edited (D-21 Edit Listing). */
   activeListingId: string | null;
+  /** Listing/seller id being reported (H-40), or null. */
+  activeReportTargetId: string | null;
   /** All listings, exposed so deep components (e.g. PublicSellerProfile) can filter. */
   listings: Product[];
 
@@ -52,6 +60,7 @@ export interface AppNavigation {
   closeProduct: () => void;
   navigateToCart: () => void;
   startChat: (product: Product) => void;
+  startChatWithSeller: (sellerId: string) => void;
   closeChat: () => void;
   openChat: (threadId: string) => void;
   openSeller: (sellerId: string) => void;
@@ -82,19 +91,19 @@ export interface AppNavigation {
   closePaymentMethods: () => void;
   openHelp: () => void;
   closeHelp: () => void;
-  openLeaveReview: () => void;
+  openLeaveReview: (orderId?: string) => void;
   closeLeaveReview: () => void;
   openMyReviews: () => void;
   closeMyReviews: () => void;
-  openReport: () => void;
+  openReport: (opts?: OpenReportOpts) => void;
   closeReport: () => void;
-  openReturnRequest: () => void;
+  openReturnRequest: (orderId?: string) => void;
   closeReturnRequest: () => void;
   openPayouts: () => void;
   closePayouts: () => void;
   openBlockedUsers: () => void;
   closeBlockedUsers: () => void;
-  openDispute: () => void;
+  openDispute: (orderId?: string) => void;
   closeDispute: () => void;
   openDisputesList: () => void;
   closeDisputesList: () => void;
@@ -117,6 +126,20 @@ export interface AppNavigation {
   goHome: () => void;
 }
 
+function resolveInitialView(): ViewState {
+  const checkoutId = readUrlParam("checkout");
+  if (checkoutId) return "checkout";
+  const v = readUrlParam("view") as ViewState | null;
+  if (v && VALID_VIEWS.includes(v)) return v;
+  // Deep-link params without ?view= — same pattern as seller.
+  if (readUrlParam("seller")) return "seller";
+  if (readUrlParam("category")) return "category";
+  if (readUrlParam("product")) return "home";
+  // Search intent via ?q= (or bare search query) without ?view=.
+  if (readUrlParam("q")) return "search";
+  return "home";
+}
+
 /**
  * Central navigation state for the app shell.
  *
@@ -129,17 +152,9 @@ export function useAppNavigation(): AppNavigation {
   const { createChatThread, listings } = useApp();
 
   const [activeTab, setActiveTab] = useState<TabId>(() =>
-    tabFromView(readUrlParam("view")),
+    tabFromView(readUrlParam("view") ?? resolveInitialView()),
   );
-  const [currentView, setCurrentView] = useState<ViewState>(() => {
-    const checkoutId = readUrlParam("checkout");
-    if (checkoutId) return "checkout";
-    const v = readUrlParam("view") as ViewState | null;
-    if (v && VALID_VIEWS.includes(v)) return v;
-    // If ?seller= is present without ?view, default to the seller view.
-    if (readUrlParam("seller")) return "seller";
-    return "home";
-  });
+  const [currentView, setCurrentView] = useState<ViewState>(resolveInitialView);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(() => {
     const productId = readUrlParam("product");
     if (!productId) return null;
@@ -182,6 +197,28 @@ export function useAppNavigation(): AppNavigation {
   const [activeListingId, setActiveListingId] = useState<string | null>(() =>
     readUrlParam("edit"),
   );
+  const [activeReportTargetId, setActiveReportTargetId] = useState<
+    string | null
+  >(null);
+
+  // Re-resolve deep-linked product/checkout once async/remote listings load.
+  useEffect(() => {
+    if (listings.length === 0) return;
+    const productId = readUrlParam("product");
+    if (productId) {
+      setSelectedProduct((prev) => {
+        if (prev) return prev;
+        return listings.find((p) => p.id === productId) ?? null;
+      });
+    }
+    const checkoutId = readUrlParam("checkout");
+    if (checkoutId) {
+      setCheckoutProduct((prev) => {
+        if (prev) return prev;
+        return listings.find((p) => p.id === checkoutId) ?? null;
+      });
+    }
+  }, [listings]);
 
   const selectProduct = useCallback((product: Product) => {
     setSelectedProduct(product);
@@ -202,6 +239,54 @@ export function useAppNavigation(): AppNavigation {
       setActiveChatThreadId(threadId);
     },
     [createChatThread],
+  );
+
+  const startChatWithSeller = useCallback(
+    (sellerId: string) => {
+      const seller = getSellerProfile(sellerId);
+      const match =
+        listings.find(
+          (l) =>
+            l.sellerId === sellerId ||
+            (seller != null &&
+              (l.sellerNameEn === seller.nameEn ||
+                l.sellerNameAr === seller.nameAr)),
+        ) ?? null;
+
+      if (match) {
+        const threadId = createChatThread(match);
+        setSelectedProduct(null);
+        setActiveChatThreadId(threadId);
+        return;
+      }
+
+      // No listing yet — open a synthetic thread keyed by seller id.
+      const synthetic: Product = {
+        id: `seller-${sellerId}`,
+        titleEn: seller?.nameEn ? `Chat with ${seller.nameEn}` : "Seller chat",
+        titleAr: seller?.nameAr ? `محادثة مع ${seller.nameAr}` : "محادثة البائع",
+        price: 0,
+        originalPrice: 0,
+        conditionEn: "Good",
+        conditionAr: "جيد",
+        sellerNameEn: seller?.nameEn ?? sellerId,
+        sellerNameAr: seller?.nameAr ?? sellerId,
+        sellerAvatar: seller?.avatar ?? "/sellers/sarah.jpg",
+        sellerTypeEn: seller?.typeEn ?? "Seller",
+        sellerTypeAr: seller?.typeAr ?? "بائع",
+        saves: 0,
+        image: seller?.avatar ?? "/sellers/sarah.jpg",
+        images: [seller?.avatar ?? "/sellers/sarah.jpg"],
+        descriptionEn: "",
+        descriptionAr: "",
+        category: "All",
+        sellerId,
+      };
+      const threadId = createChatThread(synthetic);
+      setSelectedProduct(null);
+      setActiveChatThreadId(threadId);
+    },
+    [createChatThread, listings],
   );
 
   const closeChat = useCallback(() => {
@@ -385,7 +470,9 @@ export function useAppNavigation(): AppNavigation {
     setCurrentView("settings");
   }, []);
 
-  const openLeaveReview = useCallback(() => {
+  const openLeaveReview = useCallback((orderId?: string) => {
+    if (orderId) setActiveOrderId(orderId);
+    setSelectedProduct(null);
     setCurrentView("leave-review");
   }, []);
 
@@ -401,15 +488,33 @@ export function useAppNavigation(): AppNavigation {
     setCurrentView("purchases");
   }, []);
 
-  const openReport = useCallback(() => {
+  const openReport = useCallback((opts?: OpenReportOpts) => {
+    setSelectedProduct(null);
+    setActiveChatThreadId(null);
+    if (opts?.orderId) setActiveOrderId(opts.orderId);
+    setActiveReportTargetId(opts?.targetId ?? null);
     setCurrentView("report");
   }, []);
 
   const closeReport = useCallback(() => {
-    setCurrentView("order");
+    setActiveReportTargetId(null);
+    setActiveOrderId((orderId) => {
+      if (orderId) {
+        setCurrentView("order");
+      } else {
+        setActiveSellerId((sellerId) => {
+          setCurrentView(sellerId ? "seller" : "home");
+          if (!sellerId) setActiveTab("home");
+          return sellerId;
+        });
+      }
+      return orderId;
+    });
   }, []);
 
-  const openReturnRequest = useCallback(() => {
+  const openReturnRequest = useCallback((orderId?: string) => {
+    if (orderId) setActiveOrderId(orderId);
+    setSelectedProduct(null);
     setCurrentView("return-request");
   }, []);
 
@@ -436,7 +541,9 @@ export function useAppNavigation(): AppNavigation {
     setCurrentView("settings");
   }, []);
 
-  const openDispute = useCallback(() => {
+  const openDispute = useCallback((orderId?: string) => {
+    if (orderId) setActiveOrderId(orderId);
+    setSelectedProduct(null);
     setCurrentView("dispute");
   }, []);
 
@@ -553,11 +660,13 @@ export function useAppNavigation(): AppNavigation {
     activeCategorySort,
     activeOrderId,
     activeListingId,
+    activeReportTargetId,
     listings,
     selectProduct,
     closeProduct,
     navigateToCart,
     startChat,
+    startChatWithSeller,
     closeChat,
     openChat,
     openSeller,

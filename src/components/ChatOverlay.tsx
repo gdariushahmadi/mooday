@@ -34,6 +34,7 @@ interface ChatCopy {
   offerDeclinedAr: string;
   offerPendingAr: string;
   imageAttached: string;
+  voiceAttached: string;
   quickReply1: string;
   quickReply2: string;
   quickReply3: string;
@@ -64,6 +65,7 @@ const COPY: Record<"en" | "ar", ChatCopy> = {
     offerDeclinedAr: "مرفوض",
     offerPendingAr: "قيد الانتظار",
     imageAttached: "📷 Photo",
+    voiceAttached: "🎙 Voice note",
     quickReply1: "Is this still available?",
     quickReply2: "Can you share more photos?",
     quickReply3: "What's your best price?",
@@ -92,6 +94,7 @@ const COPY: Record<"en" | "ar", ChatCopy> = {
     offerDeclinedAr: "مرفوض",
     offerPendingAr: "قيد الانتظار",
     imageAttached: "📷 صورة",
+    voiceAttached: "🎙 رسالة صوتية",
     quickReply1: "هل لا يزال متوفراً؟",
     quickReply2: "هل يمكنك مشاركة المزيد من الصور؟",
     quickReply3: "ما هو أفضل سعر؟",
@@ -123,7 +126,7 @@ export const ChatOverlay: React.FC<ChatOverlayProps> = ({
   onBack,
   onCheckout,
 }) => {
-  const { language, chats, sendChatMessage } = useApp();
+  const { language, chats, sendChatMessage, markChatRead } = useApp();
   const isAr = language === "ar";
   const t = isAr ? COPY.ar : COPY.en;
 
@@ -142,6 +145,10 @@ export const ChatOverlay: React.FC<ChatOverlayProps> = ({
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const thread = chats.find((c) => c.id === threadId);
+
+  useEffect(() => {
+    markChatRead(threadId);
+  }, [threadId, thread?.messages.length, markChatRead]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -380,13 +387,13 @@ export const ChatOverlay: React.FC<ChatOverlayProps> = ({
       {/* Input bar */}
       <footer className="bg-surface border-t border-surface-container-high p-md">
         <form onSubmit={handleSend} className="flex gap-sm items-center">
-          {/* Image attach */}
+          {/* Image attach — Phase 1 stub inserts a photo message */}
           <button
             type="button"
             aria-label={t.attachImage}
-            title={t.attachmentUnavailable}
-            disabled
-            className="w-10 h-10 rounded-full bg-surface-container-low flex items-center justify-center text-outline opacity-50 cursor-not-allowed flex-shrink-0"
+            title={t.attachImage}
+            onClick={() => sendChatMessage(threadId, t.imageAttached)}
+            className="w-10 h-10 rounded-full bg-surface-container-low flex items-center justify-center text-on-surface-variant hover:text-primary transition-colors flex-shrink-0 active:scale-95"
           >
             <span
               className="material-symbols-outlined text-[20px] no-mirror"
@@ -413,13 +420,13 @@ export const ChatOverlay: React.FC<ChatOverlayProps> = ({
               local_offer
             </span>
           </button>
-          {/* Voice note */}
+          {/* Voice note — Phase 1 stub inserts a voice message */}
           <button
             type="button"
             aria-label={t.voiceNote}
-            title={t.attachmentUnavailable}
-            disabled
-            className="w-10 h-10 rounded-full bg-surface-container-low flex items-center justify-center text-outline opacity-50 cursor-not-allowed flex-shrink-0"
+            title={t.voiceNote}
+            onClick={() => sendChatMessage(threadId, t.voiceAttached)}
+            className="w-10 h-10 rounded-full bg-surface-container-low flex items-center justify-center text-on-surface-variant hover:text-primary transition-colors flex-shrink-0 active:scale-95"
           >
             <span
               className="material-symbols-outlined text-[20px] no-mirror"

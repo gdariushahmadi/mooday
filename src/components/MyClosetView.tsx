@@ -4,6 +4,7 @@ import React, { useMemo, useState } from "react";
 import { useApp, type Product } from "@/context/AppContext";
 import { ClickableCard } from "./ClickableCard";
 import { formatAEDLabel } from "@/lib/format";
+import { isOwnListing } from "@/lib/ownership";
 
 /** Per-listing status for the closet view. Phase 1 derives this from
  * what we know about each listing — sold ones have matches in the
@@ -22,12 +23,10 @@ interface ClosetCopy {
   bulkSelect: string;
   selectedLabel: (n: number) => string;
   bulkDelete: string;
-  bulkMarkSold: string;
   cancel: string;
   discountPill: (pct: number) => string;
   editLabel: string;
   deleteLabel: string;
-  markSoldLabel: string;
   statusActive: string;
   statusSold: string;
   statusDraft: string;
@@ -50,12 +49,10 @@ const COPY: Record<"en" | "ar", ClosetCopy> = {
     bulkSelect: "Select multiple",
     selectedLabel: (n) => `${n} selected`,
     bulkDelete: "Delete",
-    bulkMarkSold: "Mark as sold",
     cancel: "Cancel",
     discountPill: (pct) => `${pct}% off`,
     editLabel: "Edit",
     deleteLabel: "Delete",
-    markSoldLabel: "Mark as sold",
     statusActive: "Active",
     statusSold: "Sold",
     statusDraft: "Draft",
@@ -77,12 +74,10 @@ const COPY: Record<"en" | "ar", ClosetCopy> = {
     bulkSelect: "اختيار متعدد",
     selectedLabel: (n) => `${n} محدد`,
     bulkDelete: "حذف",
-    bulkMarkSold: "تم البيع",
     cancel: "إلغاء",
     discountPill: (pct) => `${pct}٪ خصم`,
     editLabel: "تعديل",
     deleteLabel: "حذف",
-    markSoldLabel: "تم البيع",
     statusActive: "نشط",
     statusSold: "مُباع",
     statusDraft: "مسودة",
@@ -118,7 +113,7 @@ interface MyClosetViewProps {
  *
  * The seller's view of their own listings, segmented by status
  * (Active · Sold · Draft · Reserved) with a bulk-select toolbar that
- * can mass-delete or mark-sold. Tapping an individual card opens
+ * can mass-delete. Tapping an individual card opens
  * ProductDetailsView; tapping the card's pencil icon opens D-21 Edit
  * Listing. Tapping the card's trash icon removes the listing.
  */
@@ -128,7 +123,7 @@ export const MyClosetView: React.FC<MyClosetViewProps> = ({
   onCreateListing,
   onSelectProduct,
 }) => {
-  const { language, listings, removeListing, orders } = useApp();
+  const { language, listings, removeListing, orders, currentUserId } = useApp();
   const isAr = language === "ar";
   const t = isAr ? COPY.ar : COPY.en;
 
@@ -148,6 +143,7 @@ export const MyClosetView: React.FC<MyClosetViewProps> = ({
 
   const closetListings = useMemo(() => {
     return listings
+      .filter((p) => isOwnListing(p, currentUserId))
       .map((p) => ({ product: p, status: deriveClosetStatus(p, soldIds) }))
       .sort(
         (a, b) =>
@@ -155,7 +151,7 @@ export const MyClosetView: React.FC<MyClosetViewProps> = ({
             Number(a.product.id.startsWith("custom-")) ||
           b.product.saves - a.product.saves,
       );
-  }, [listings, soldIds]);
+  }, [listings, soldIds, currentUserId]);
 
   const filtered = useMemo(() => {
     if (tab === "all") return closetListings;

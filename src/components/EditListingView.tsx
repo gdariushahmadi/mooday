@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useRef, useState } from "react";
 import { useApp, type Product } from "@/context/AppContext";
 import { ListingForm } from "./listing/ListingForm";
 
@@ -13,19 +13,20 @@ interface EditListingViewProps {
 interface EditCopy {
   title: string;
   successToast: string;
+  saveError: string;
 }
 
 const COPY: Record<"en" | "ar", EditCopy> = {
-  en: { title: "Edit listing", successToast: "Listing updated." },
-  ar: { title: "تعديل المنتج", successToast: "تم تحديث المنتج." },
-};
-
-const CURRENT_USER = {
-  nameEn: "Fatima AlMansoori",
-  nameAr: "فاطمة المنصوري",
-  avatar: "/sellers/fatima-almansoori.jpg",
-  typeEn: "Verified Closet",
-  typeAr: "خزانة معتمدة",
+  en: {
+    title: "Edit listing",
+    successToast: "Listing updated.",
+    saveError: "Couldn't update this listing. Please try again.",
+  },
+  ar: {
+    title: "تعديل المنتج",
+    successToast: "تم تحديث المنتج.",
+    saveError: "تعذر تحديث هذا الإعلان. يرجى المحاولة مجدداً.",
+  },
 };
 
 /**
@@ -41,9 +42,20 @@ export const EditListingView: React.FC<EditListingViewProps> = ({
   onBack,
   onSuccess,
 }) => {
-  const { language, updateListing } = useApp();
+  const { language, updateListing, userProfile } = useApp();
   const isAr = language === "ar";
   const t = isAr ? COPY.ar : COPY.en;
+  const stagedFilesRef = useRef<File[]>([]);
+  const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  const user = {
+    nameEn: userProfile.fullNameEn,
+    nameAr: userProfile.fullNameAr,
+    avatar: userProfile.avatar,
+    typeEn: "Verified Closet",
+    typeAr: "خزانة معتمدة",
+  };
 
   return (
     <div
@@ -72,20 +84,54 @@ export const EditListingView: React.FC<EditListingViewProps> = ({
       </div>
 
       <main className="bg-surface-container-lowest border border-surface-container-high rounded-xl p-lg mt-md shadow-sm font-sans">
+        {error && (
+          <p role="alert" className="mb-md rounded-lg bg-error-container p-sm text-error font-bold">
+            {error}
+          </p>
+        )}
         <ListingForm
           isAr={isAr}
           initial={product}
-          user={CURRENT_USER}
+          user={user}
+          onStagedFiles={(files) => {
+            stagedFilesRef.current = files;
+          }}
           onSubmit={(data) => {
-            updateListing(product.id, data);
-            onSuccess();
+            void (async () => {
+              setSaving(true);
+              setError("");
+              try {
+                await updateListing(product.id, { ...data, status: "active" });
+                stagedFilesRef.current = [];
+                onSuccess();
+              } catch {
+                setError(t.saveError);
+              } finally {
+                setSaving(false);
+              }
+            })();
           }}
           onSaveDraft={(data) => {
-            updateListing(product.id, data);
-            onSuccess();
+            void (async () => {
+              setSaving(true);
+              setError("");
+              try {
+                await updateListing(product.id, { ...data, status: "draft" });
+                onSuccess();
+              } catch {
+                setError(t.saveError);
+              } finally {
+                setSaving(false);
+              }
+            })();
           }}
           onCancel={onBack}
         />
+        {saving && (
+          <p className="mt-sm text-label-sm text-on-surface-variant" role="status">
+            {isAr ? "جارٍ الحفظ…" : "Saving…"}
+          </p>
+        )}
       </main>
     </div>
   );

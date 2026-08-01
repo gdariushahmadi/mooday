@@ -5,6 +5,10 @@ export interface BackendConfig {
   marketplaceMode: DataSourceMode;
   supabaseUrl: string | null;
   supabasePublishableKey: string | null;
+  /** Server-only. The service-role key bypasses RLS and is never
+   * shipped to the browser. Reads return null when not configured so
+   * the Admin Server Actions can fail loudly with a clear message. */
+  supabaseServiceRoleKey: string | null;
   siteUrl: string;
 }
 
@@ -25,6 +29,11 @@ export function getBackendConfig(): BackendConfig {
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY?.trim() ||
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim() ||
     null;
+  // SERVICE-ROLE key — server-only. NEVER prefix with NEXT_PUBLIC_.
+  // Admin Server Actions read it from process.env at module-load time
+  // so it stays in the server bundle and never crosses the wire.
+  const supabaseServiceRoleKey =
+    process.env.SUPABASE_SERVICE_ROLE_KEY?.trim() || null;
 
   if (mode === "supabase" && (!supabaseUrl || !supabasePublishableKey)) {
     throw new Error(
@@ -42,6 +51,8 @@ export function getBackendConfig(): BackendConfig {
     marketplaceMode,
     supabaseUrl,
     supabasePublishableKey,
-    siteUrl: process.env.NEXT_PUBLIC_SITE_URL?.trim() || "http://localhost:3000",
+    supabaseServiceRoleKey,
+    siteUrl:
+      process.env.NEXT_PUBLIC_SITE_URL?.trim() || "http://localhost:3000",
   };
 }

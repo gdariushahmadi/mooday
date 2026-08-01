@@ -34,10 +34,17 @@ import {
 } from "@/data/users";
 import { useLocalStorageState } from "@/lib/hooks";
 import {
+  getBackendConfig,
   getPhase2Backend,
   type AuthenticatedUser,
   type OtpPurpose,
 } from "@/services/backend";
+import {
+  hydrateProductsFromRemote,
+  isPublicImageUrl,
+  mapProductToCreateInput,
+  mapProductToUpdatePatch,
+} from "@/services/backend/mappers";
 
 type Awaitable<T> = T | Promise<T>;
 
@@ -69,6 +76,13 @@ export interface Product {
   colorAr?: string;
   /** Listing mode. Defaults to "resell". Rent is reserved for Phase 4. */
   mode?: "resell" | "rent";
+  /**
+   * Owner of the listing. Phase 1 mock data leaves this undefined and the
+   * UI treats listings prefixed `custom-` as the current user's. Phase 3
+   * remote listings populate this from `listings.seller_id` so the Closet
+   * (D-20) and Edit Listing (D-21) flows can filter by ownership.
+   */
+  sellerId?: string;
 }
 
 export interface ChatMessage {
@@ -88,6 +102,8 @@ export interface ChatThread {
   lastMessage: string;
   lastMessageTime: string;
   messages: ChatMessage[];
+  /** Unread seller messages; cleared when the thread is opened. */
+  unread?: number;
 }
 
 export interface CartItem {
@@ -134,19 +150,37 @@ export interface AppContextType {
   language: "en" | "ar";
   setLanguage: (lang: "en" | "ar") => void;
   listings: Product[];
-  addListing: (product: Omit<Product, "id" | "saves">) => void;
-  updateListing: (id: string, patch: Partial<Omit<Product, "id">>) => void;
-  removeListing: (id: string) => void;
+  /** True while a remote marketplace fetch is in flight (Phase 3). */
+  listingsLoading?: boolean;
+  /** Last remote marketplace error, surfaced by the UI for retry. */
+  listingsError?: string | null;
+  /** Force a re-fetch of remote listings (no-op in mock mode). */
+  refreshListings?: () => Promise<void>;
+  addListing: (
+    product: Omit<Product, "id" | "saves">,
+    /** Phase 3 slice 7: real staged files matching `product.images`. */
+    files?: File[],
+    options?: { status?: "draft" | "active" },
+  ) => Awaitable<void>;
+  updateListing: (
+    id: string,
+    patch: Partial<Omit<Product, "id">> & {
+      status?: "draft" | "active" | "sold" | "reserved" | "archived";
+    },
+  ) => Awaitable<void>;
+  removeListing: (id: string) => Awaitable<void>;
   likes: string[];
-  toggleLike: (productId: string) => void;
+  toggleLike: (productId: string) => Awaitable<void>;
   cart: CartItem[];
-  addToCart: (product: Product) => void;
-  removeFromCart: (productId: string) => void;
-  updateQuantity: (productId: string, quantity: number) => void;
-  clearCart: () => void;
+  addToCart: (product: Product) => Awaitable<void>;
+  removeFromCart: (productId: string) => Awaitable<void>;
+  updateQuantity: (productId: string, quantity: number) => Awaitable<void>;
+  clearCart: () => Awaitable<void>;
   chats: ChatThread[];
   sendChatMessage: (threadId: string, text: string) => void;
   createChatThread: (product: Product) => string;
+  /** Clear unread count for a chat thread (called when opening it). */
+  markChatRead: (threadId: string) => void;
   orders: Order[];
   recordOrder: (order: Order) => void;
   updateOrderStatus: (id: string, status: Order["status"]) => void;
@@ -169,7 +203,9 @@ export interface AppContextType {
     dispute: Omit<Dispute, "id" | "status" | "date" | "timeline">,
   ) => Dispute;
   // Group A auth (Phase 1 mock — Phase 2 swaps for real backend)
-  currentUser: { email: string; name: string } | null;
+  currentUser: { id?: string; email: string; name: string } | null;
+  /** Auth user id for ownership filters (Closet / Vault). */
+  currentUserId?: string | null;
   /** Absent in legacy test fixtures; "supabase" means real Phase 2 auth. */
   authMode?: "mock" | "supabase";
   authReady?: boolean;
@@ -241,6 +277,8 @@ const DEFAULT_CHATS: ChatThread[] = [
     productPrice: defaultProducts[0].price,
     lastMessage: "Let me know if you would like to make an offer!",
     lastMessageTime: "Yesterday",
+    // Last message is from the seller → seed one unread.
+    unread: 1,
     messages: [
       {
         id: "1",
@@ -343,9 +381,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const phase2Backend = useMemo(() => getPhase2Backend(), []);
-  const authMode: "mock" | "supabase" = phase2Backend
-    ? "supabase"
-    : "mock";
+  const authMode: "mock" | "supabase" = phase2Backend ? "supabase" : "mock";
   const [language, setLang] = useLocalStorageState<"en" | "ar">(
     STORAGE_KEYS.lang,
     "en",
@@ -353,21 +389,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       serialize: (v) => v,
       deserialize: (v) => (v === "ar" ? "ar" : "en"),
     },
-  );
-
-  const listings = useSyncExternalStore(
-    subscribeStorage,
-    getListingsSnapshot,
-    () => defaultProducts,
-  );
-
-  const [likes, setLikes] = useLocalStorageState<string[]>(
-    STORAGE_KEYS.likes,
-    [],
-  );
-  const [cart, setCart] = useLocalStorageState<CartItem[]>(
-    STORAGE_KEYS.cart,
-    [],
   );
   const [chats, setChats] = useLocalStorageState<ChatThread[]>(
     STORAGE_KEYS.chats,
@@ -390,10 +411,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   const [notifications, setNotifications] = useLocalStorageState<
     AppNotification[]
   >(STORAGE_KEYS.notifications, DEFAULT_NOTIFICATIONS);
-  const [storedUserProfile, setStoredUserProfile] = useLocalStorageState<UserProfile>(
-    "mooday_user_profile",
-    DEFAULT_USER_PROFILE,
-  );
+  const [storedUserProfile, setStoredUserProfile] =
+    useLocalStorageState<UserProfile>(
+      "mooday_user_profile",
+      DEFAULT_USER_PROFILE,
+    );
   const [remoteUserProfile, setRemoteUserProfile] =
     React.useState<UserProfile>(DEFAULT_USER_PROFILE);
   const userProfile = phase2Backend ? remoteUserProfile : storedUserProfile;
@@ -416,6 +438,38 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     STORAGE_KEYS.disputes,
     DEFAULT_DISPUTES,
   );
+  // Phase 3 marketplace state. Pulled from `listings` + `seller_card_view`
+  // + `listing_images` and hydrated into the Phase 1 `Product` shape so the
+  // existing screens render real data without per-component rewiring.
+  const marketplaceMode = useMemo(
+    () => getBackendConfig().marketplaceMode === "supabase" && !!phase2Backend,
+    [phase2Backend],
+  );
+  const localListings = useSyncExternalStore(
+    subscribeStorage,
+    getListingsSnapshot,
+    () => defaultProducts,
+  );
+  const [remoteListings, setRemoteListings] = React.useState<Product[]>([]);
+  const [listingsLoading, setListingsLoading] = React.useState(false);
+  const [listingsError, setListingsError] = React.useState<string | null>(null);
+  const listings = marketplaceMode ? remoteListings : localListings;
+
+  // Liked listing ids + cart lines, sourced from Supabase in marketplace
+  // mode and from localStorage otherwise. Both lists are flat `string[]`
+  // and `CartItem[]`, so the existing views don't need to branch.
+  const [storedLikes, setStoredLikes] = useLocalStorageState<string[]>(
+    STORAGE_KEYS.likes,
+    [],
+  );
+  const [remoteLikes, setRemoteLikes] = React.useState<string[]>([]);
+  const likes = marketplaceMode ? remoteLikes : storedLikes;
+  const [storedCart, setStoredCart] = useLocalStorageState<CartItem[]>(
+    STORAGE_KEYS.cart,
+    [],
+  );
+  const [remoteCart, setRemoteCart] = React.useState<CartItem[]>([]);
+  const cart = marketplaceMode ? remoteCart : storedCart;
   // Auth state (Phase 1 mock — Phase 2 swaps the storage layer for a real backend)
   const [users, setUsers] = useLocalStorageState<User[]>(
     STORAGE_KEYS.users,
@@ -426,8 +480,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     null,
   );
   const [authError, setAuthError] = React.useState<AuthErrorCode | null>(null);
-  const [remoteUser, setRemoteUser] =
-    React.useState<AuthenticatedUser | null>(null);
+  const [remoteUser, setRemoteUser] = React.useState<AuthenticatedUser | null>(
+    null,
+  );
   const [authReady, setAuthReady] = React.useState(!phase2Backend);
   const [pendingAuthEmail, setPendingAuthEmail] = React.useState("");
 
@@ -493,44 +548,269 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     [setLang],
   );
 
-  const addListing = useCallback((product: Omit<Product, "id" | "saves">) => {
-    const newProduct: Product = {
-      ...product,
-      id: `custom-${Date.now()}`,
-      saves: 0,
-    };
-    const current = getListingsSnapshot();
-    writeListings([newProduct, ...current]);
-  }, []);
+  /**
+   * Pull listings + seller cards + image URLs from Supabase and hydrate
+   * them into the Phase 1 `Product` shape. In mock mode this is a no-op.
+   *
+   * Errors are surfaced via `listingsError`; callers can retry by invoking
+   * this method again. Loading state flips `listingsLoading` so screens can
+   * show skeletons without per-call wiring.
+   *
+   * When a user is signed in, this also refreshes the user-scoped likes
+   * and cart so the bag, loves, and closet all stay in sync after a
+   * cross-device action. Sign-out clears the user-scoped state to keep
+   * the cache honest.
+   */
+  const refreshListings = useCallback(async () => {
+    if (!marketplaceMode || !phase2Backend) return;
+    setListingsLoading(true);
+    setListingsError(null);
+    try {
+      const [remoteListingRecords, sellerCards] = await Promise.all([
+        phase2Backend.listings.listVisible(),
+        phase2Backend.sellerCards.listVisible(),
+      ]);
+      const sellerCardsById = new Map(
+        sellerCards.map((card) => [card.sellerId, card]),
+      );
+      const listingIds = remoteListingRecords.map((l) => l.id);
+      const imagesByListingId =
+        listingIds.length === 0
+          ? new Map()
+          : new Map(
+              Object.entries(
+                await phase2Backend.media.listForListings(listingIds),
+              ),
+            );
+      const hydrated = hydrateProductsFromRemote({
+        listings: remoteListingRecords,
+        sellerCardsById,
+        imagesByListingId,
+      });
+      setRemoteListings(hydrated);
 
-  const updateListing = useCallback(
-    (id: string, patch: Partial<Omit<Product, "id">>) => {
+      const authState = await phase2Backend.auth.getCurrentUser();
+      if (!authState) {
+        setRemoteLikes([]);
+        setRemoteCart([]);
+        return;
+      }
+      const [liked, cartItems] = await Promise.all([
+        phase2Backend.likes.listMine(),
+        phase2Backend.cart.listMine(),
+      ]);
+      setRemoteLikes(liked);
+      const productById = new Map(hydrated.map((p) => [p.id, p]));
+      const cartListingIds = cartItems.map((c) => c.listingId);
+      const missingIds = cartListingIds.filter((id) => !productById.has(id));
+      const missing =
+        missingIds.length === 0
+          ? []
+          : await phase2Backend.listings.listByIds(missingIds);
+      const missingById = new Map(missing.map((l) => [l.id, l]));
+      setRemoteCart(
+        cartItems
+          .map((item) => {
+            const product =
+              productById.get(item.listingId) ??
+              hydrateProductsFromRemote({
+                listings: missingById.get(item.listingId)
+                  ? [missingById.get(item.listingId) as never]
+                  : [],
+                sellerCardsById,
+                imagesByListingId: new Map(),
+              })[0];
+            return product ? { product, quantity: item.quantity } : null;
+          })
+          .filter((c): c is CartItem => c !== null),
+      );
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : "Unable to load listings.";
+      setListingsError(message);
+    } finally {
+      setListingsLoading(false);
+    }
+  }, [marketplaceMode, phase2Backend]);
+
+  // Initial + on-auth-change fetch of remote listings. The dependency on
+  // `remoteUser` re-runs on sign-in / sign-out so a fresh session sees the
+  // latest active set immediately.
+  useEffect(() => {
+    if (!marketplaceMode) return;
+    let active = true;
+    void (async () => {
+      if (active) await refreshListings();
+    })();
+    return () => {
+      active = false;
+    };
+  }, [marketplaceMode, refreshListings, remoteUser]);
+
+  const addListing = useCallback(
+    async (
+      product: Omit<Product, "id" | "saves">,
+      files?: File[],
+      options?: { status?: "draft" | "active" },
+    ) => {
+      const status = options?.status ?? "active";
+      if (marketplaceMode && phase2Backend) {
+        const created = await phase2Backend.listings.create(
+          mapProductToCreateInput(product, status),
+        );
+        // Persist photos. Real staged files (slice 7) upload to the
+        // private bucket; Phase 1 mock URLs persist as passthrough
+        // `listing_images.storage_path` rows.
+        const photos = product.images?.length
+          ? product.images
+          : product.image
+            ? [product.image]
+            : [];
+        const fileByUrl = new Map<string, File>();
+        for (const f of files ?? []) {
+          fileByUrl.set(URL.createObjectURL(f), f);
+        }
+        for (let i = 0; i < photos.length; i += 1) {
+          const path = photos[i];
+          const stagedFile = fileByUrl.get(path);
+          if (stagedFile) {
+            await phase2Backend.media.upload(
+              created.id,
+              {
+                filename:
+                  stagedFile.name ||
+                  `photo-${i}.${stagedFile.type.split("/")[1] ?? "jpg"}`,
+                mimeType: stagedFile.type as never,
+                sizeBytes: stagedFile.size,
+                body: stagedFile,
+              },
+              i,
+            );
+            continue;
+          }
+          if (!isPublicImageUrl(path)) continue;
+          await phase2Backend.media.upload(
+            created.id,
+            {
+              filename: path.split("/").pop() || `photo-${i}`,
+              mimeType: "image/jpeg",
+              sizeBytes: 1,
+              body: new Blob([]),
+            },
+            i,
+          );
+        }
+        await refreshListings();
+        return;
+      }
+      const newProduct: Product = {
+        ...product,
+        id: `custom-${Date.now()}`,
+        saves: 0,
+        ...(session?.userId ? { sellerId: session.userId } : {}),
+      };
       const current = getListingsSnapshot();
-      const next = current.map((p) => (p.id === id ? { ...p, ...patch } : p));
-      writeListings(next);
+      writeListings([newProduct, ...current]);
     },
-    [],
+    [marketplaceMode, phase2Backend, refreshListings, session],
   );
 
-  const removeListing = useCallback((id: string) => {
-    const current = getListingsSnapshot();
-    writeListings(current.filter((p) => p.id !== id));
-  }, []);
+  const updateListing = useCallback(
+    async (
+      id: string,
+      patch: Partial<Omit<Product, "id">> & {
+        status?: "draft" | "active" | "sold" | "reserved" | "archived";
+      },
+    ) => {
+      if (marketplaceMode && phase2Backend) {
+        await phase2Backend.listings.update(id, mapProductToUpdatePatch(patch));
+        await refreshListings();
+        return;
+      }
+      const { status: _status, ...productPatch } = patch;
+      const current = getListingsSnapshot();
+      const next = current.map((p) =>
+        p.id === id ? { ...p, ...productPatch } : p,
+      );
+      writeListings(next);
+    },
+    [marketplaceMode, phase2Backend, refreshListings],
+  );
+
+  const removeListing = useCallback(
+    async (id: string) => {
+      if (marketplaceMode && phase2Backend) {
+        // Cascade storage + metadata rows first so a partial failure leaves
+        // the listing visible (and therefore retryable).
+        await phase2Backend.media.removeAllForListing(id);
+        await phase2Backend.listings.remove(id);
+        await refreshListings();
+        return;
+      }
+      const current = getListingsSnapshot();
+      writeListings(current.filter((p) => p.id !== id));
+    },
+    [marketplaceMode, phase2Backend, refreshListings],
+  );
 
   const toggleLike = useCallback(
-    (productId: string) => {
-      setLikes((prev) =>
+    async (productId: string) => {
+      if (marketplaceMode && phase2Backend) {
+        const result = await phase2Backend.likes.toggle(productId);
+        setRemoteLikes((prev) => {
+          if (result.liked) return [...prev, productId];
+          return prev.filter((id) => id !== productId);
+        });
+        return;
+      }
+      setStoredLikes((prev) =>
         prev.includes(productId)
           ? prev.filter((id) => id !== productId)
           : [...prev, productId],
       );
     },
-    [setLikes],
+    [marketplaceMode, phase2Backend],
   );
 
   const addToCart = useCallback(
-    (product: Product) => {
-      setCart((prev) => {
+    async (product: Product) => {
+      if (marketplaceMode && phase2Backend) {
+        // Remote cart stores identifiers only; the seller/photo/title
+        // refresh comes from the next listings fetch so a freshly-updated
+        // listing show its new price in the bag immediately.
+        await phase2Backend.cart.add(product.id, 1);
+        const [items, listingRecords] = await Promise.all([
+          phase2Backend.cart.listMine(),
+          phase2Backend.listings.listByIds([product.id]),
+        ]);
+        const listing = listingRecords[0];
+        if (!listing) {
+          setRemoteCart([]);
+          return;
+        }
+        const productById = new Map(remoteListings.map((p) => [p.id, p]));
+        setRemoteCart(
+          items
+            .map((item) => {
+              const fromList = productById.get(item.listingId);
+              const fallback = fromList
+                ? fromList
+                : listing.id === item.listingId
+                  ? hydrateProductsFromRemote({
+                      listings: [listing],
+                      sellerCardsById: new Map(),
+                      imagesByListingId: new Map(),
+                    })[0]
+                  : undefined;
+              return fallback
+                ? { product: fallback, quantity: item.quantity }
+                : null;
+            })
+            .filter((c): c is CartItem => c !== null),
+        );
+        return;
+      }
+      setStoredCart((prev) => {
         const idx = prev.findIndex((item) => item.product.id === product.id);
         if (idx > -1) {
           return prev.map((item, i) =>
@@ -540,33 +820,61 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
         return [...prev, { product, quantity: 1 }];
       });
     },
-    [setCart],
+    [marketplaceMode, phase2Backend, remoteListings],
   );
 
   const removeFromCart = useCallback(
-    (productId: string) => {
-      setCart((prev) => prev.filter((item) => item.product.id !== productId));
-    },
-    [setCart],
-  );
-
-  const clearCart = useCallback(() => {
-    setCart([]);
-  }, [setCart]);
-
-  const updateQuantity = useCallback(
-    (productId: string, quantity: number) => {
-      if (quantity <= 0) {
-        removeFromCart(productId);
+    async (productId: string) => {
+      if (marketplaceMode && phase2Backend) {
+        await phase2Backend.cart.remove(productId);
+        setRemoteCart((prev) =>
+          prev.filter((item) => item.product.id !== productId),
+        );
         return;
       }
-      setCart((prev) =>
+      setStoredCart((prev) =>
+        prev.filter((item) => item.product.id !== productId),
+      );
+    },
+    [marketplaceMode, phase2Backend],
+  );
+
+  const clearCart = useCallback(async () => {
+    if (marketplaceMode && phase2Backend) {
+      await phase2Backend.cart.clear();
+      setRemoteCart([]);
+      return;
+    }
+    setStoredCart([]);
+  }, [marketplaceMode, phase2Backend]);
+
+  const updateQuantity = useCallback(
+    async (productId: string, quantity: number) => {
+      if (quantity <= 0) {
+        await removeFromCart(productId);
+        return;
+      }
+      if (marketplaceMode && phase2Backend) {
+        await phase2Backend.cart.setQuantity(productId, quantity);
+        const next = await phase2Backend.cart.listMine();
+        const productById = new Map(remoteListings.map((p) => [p.id, p]));
+        setRemoteCart(
+          next
+            .map((item) => {
+              const product = productById.get(item.listingId);
+              return product ? { product, quantity: item.quantity } : null;
+            })
+            .filter((c): c is CartItem => c !== null),
+        );
+        return;
+      }
+      setStoredCart((prev) =>
         prev.map((item) =>
           item.product.id === productId ? { ...item, quantity } : item,
         ),
       );
     },
-    [setCart, removeFromCart],
+    [marketplaceMode, phase2Backend, remoteListings, removeFromCart],
   );
 
   const createChatThread = useCallback(
@@ -589,6 +897,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
               ? "مرحباً! كيف يمكنني مساعدتك؟"
               : "Hi! How can I help you?",
           lastMessageTime: "Just now",
+          unread: 0,
           messages: [
             {
               id: "1",
@@ -704,6 +1013,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
             messages: [...prev[idx].messages, sellerMsg],
             lastMessage: replyText,
             lastMessageTime: sellerTime,
+            unread: (prev[idx].unread ?? 0) + 1,
           };
 
           return prev.map((c, i) => (i === idx ? updatedThread : c));
@@ -711,6 +1021,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       }, 1500);
     },
     [setChats, language],
+  );
+
+  const markChatRead = useCallback(
+    (threadId: string) => {
+      setChats((prev) =>
+        prev.map((c) =>
+          c.id === threadId && (c.unread ?? 0) > 0 ? { ...c, unread: 0 } : c,
+        ),
+      );
+    },
+    [setChats],
   );
 
   const addAddress = useCallback(
@@ -744,9 +1065,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     (id: string, patch: Partial<Omit<Address, "id">>) => {
       const commit = () => {
         setAddresses((prev) => {
-          const next = prev.map((a) =>
-            a.id === id ? { ...a, ...patch } : a,
-          );
+          const next = prev.map((a) => (a.id === id ? { ...a, ...patch } : a));
           if (patch.isDefault === true) {
             return next.map((a) => ({ ...a, isDefault: a.id === id }));
           }
@@ -1076,9 +1395,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   const updateCurrentUserName = useCallback(
     (name: string) => {
       if (phase2Backend) {
-        setRemoteUser((current) =>
-          current ? { ...current, name } : current,
-        );
+        setRemoteUser((current) => (current ? { ...current, name } : current));
         return phase2Backend.auth.updateName(name).then((result) => {
           if (!result.ok) setAuthError(result.error);
         });
@@ -1189,16 +1506,25 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   );
 
   // Resolve the active user record from the session + users list.
+  const currentUserId = useMemo(() => {
+    if (phase2Backend) return remoteUser?.id ?? null;
+    return session?.userId ?? null;
+  }, [phase2Backend, remoteUser, session]);
+
   const currentUser = useMemo(() => {
     if (phase2Backend) {
       return remoteUser
-        ? { email: remoteUser.email, name: remoteUser.name }
+        ? {
+            id: remoteUser.id,
+            email: remoteUser.email,
+            name: remoteUser.name,
+          }
         : null;
     }
     if (!session) return null;
     const match = users.find((u) => u.id === session.userId);
     if (!match) return null;
-    return { email: match.email, name: match.nameEn };
+    return { id: match.id, email: match.email, name: match.nameEn };
   }, [phase2Backend, remoteUser, session, users]);
 
   const value = useMemo(
@@ -1206,6 +1532,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       language,
       setLanguage,
       listings,
+      listingsLoading,
+      listingsError,
+      refreshListings,
       addListing,
       updateListing,
       removeListing,
@@ -1219,6 +1548,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       chats,
       sendChatMessage,
       createChatThread,
+      markChatRead,
       addresses,
       addAddress,
       updateAddress,
@@ -1246,6 +1576,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       disputes,
       openDispute,
       currentUser,
+      currentUserId,
       authMode,
       authReady,
       pendingAuthEmail,
@@ -1263,6 +1594,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       language,
       setLanguage,
       listings,
+      listingsLoading,
+      listingsError,
+      refreshListings,
       addListing,
       updateListing,
       removeListing,
@@ -1276,6 +1610,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       chats,
       sendChatMessage,
       createChatThread,
+      markChatRead,
       addresses,
       addAddress,
       updateAddress,
@@ -1303,6 +1638,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       disputes,
       openDispute,
       currentUser,
+      currentUserId,
       authMode,
       authReady,
       pendingAuthEmail,

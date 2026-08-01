@@ -16,6 +16,8 @@
  */
 
 import type { Order } from "./orders";
+import type { Product } from "@/context/AppContext";
+import { isOwnListing } from "@/lib/ownership";
 
 export type ShipmentStatus = "awaiting_pickup" | "in_transit" | "delivered";
 export type PayoutStatus = "pending" | "available" | "paid_out";
@@ -65,8 +67,8 @@ export interface Sale {
   buyerNameAr: string;
   /** The buyer’s masked payment last-4 (for the payouts summary). */
   buyerPaymentLast4: string;
-  buyerPaymentBrandEn: "Visa" | "Mastercard" | "Amex" | "Apple Pay";
-  buyerPaymentBrandAr: "فيزا" | "ماستركارد" | "أمريكان إكسبريس" | "آبل باي";
+  buyerPaymentBrandEn: "Visa" | "Mastercard" | "Amex" | "Apple Pay" | "Cash";
+  buyerPaymentBrandAr: "فيزا" | "ماستركارد" | "أمريكان إكسبريس" | "آبل باي" | "نقداً";
   /** Snapshot of the line item(s) being sold (mirrors Order.lineItems). */
   orderId: string;
   lineItems: Order["lineItems"];
@@ -86,6 +88,17 @@ export interface Sale {
   paidOutAt?: string;
 }
 
+export interface DeriveSalesOpts {
+  /** Exact EN seller display name (e.g. userProfile.fullNameEn). */
+  sellerNameEn?: string;
+  /** One or more seller display names (EN/AR) to match against line items. */
+  sellerNames?: string[];
+  /** Listing ids owned by the current seller. */
+  ownedListingIds?: string[];
+  /** Auth user id — used with `isOwnListing` when products have sellerId. */
+  currentUserId?: string | null;
+}
+
 // ---------- Helpers ----------
 
 function commission(subtotal: number): number {
@@ -97,16 +110,79 @@ export function payoutAmount(subtotal: number): number {
   return subtotal - commission(subtotal);
 }
 
+function normalizeName(name: string): string {
+  return name.trim().toLowerCase();
+}
+
+/** Whether a product line belongs to the current seller under `opts`. */
+function isSellerProduct(product: Product, opts: DeriveSalesOpts): boolean {
+  const names = [
+    ...(opts.sellerNames ?? []),
+    ...(opts.sellerNameEn ? [opts.sellerNameEn] : []),
+  ]
+    .map(normalizeName)
+    .filter(Boolean);
+
+  if (names.length > 0) {
+    const sellerEn = normalizeName(product.sellerNameEn);
+    const sellerAr = normalizeName(product.sellerNameAr);
+    for (const name of names) {
+      if (sellerEn === name || sellerAr === name) return true;
+      // First-token match: "Fatima AlMansoori" → "fatima" matches "Fatima's Edit".
+      const token = name.split(/\s+/)[0] ?? "";
+      if (
+        token.length >= 3 &&
+        (sellerEn.includes(token) || sellerAr.includes(token))
+      ) {
+        return true;
+      }
+    }
+  }
+
+  if (opts.ownedListingIds?.includes(product.id)) return true;
+
+  if (opts.currentUserId != null) {
+    return isOwnListing(product, opts.currentUserId);
+  }
+
+  return false;
+}
+
 /**
  * Derive the Sale records from the buyer's Order list. Each order that
  * hasn't been cancelled produces one Sale; cancelled orders are excluded
  * because they reverse the whole flow.
+ *
+ * When `opts` is provided, only line items belonging to the current seller
+ * are kept — orders with no matching lines are dropped.
  */
-export function deriveSalesFromOrders(orders: Order[]): Sale[] {
+export function deriveSalesFromOrders(
+  orders: Order[],
+  opts?: DeriveSalesOpts,
+): Sale[] {
+  const hasFilter = Boolean(
+    opts &&
+      (opts.sellerNameEn ||
+        (opts.sellerNames && opts.sellerNames.length > 0) ||
+        (opts.ownedListingIds && opts.ownedListingIds.length > 0) ||
+        opts.currentUserId != null),
+  );
+
   return orders
     .filter((o) => o.status !== "cancelled")
-    .map((o): Sale => {
-      const firstLine = o.lineItems[0];
+    .map((o): Sale | null => {
+      const lineItems = hasFilter
+        ? o.lineItems.filter((li) => isSellerProduct(li.product, opts!))
+        : o.lineItems;
+      if (lineItems.length === 0) return null;
+
+      const subtotal = hasFilter
+        ? lineItems.reduce(
+            (sum, li) => sum + li.priceAtPurchase * li.quantity,
+            0,
+          )
+        : o.subtotal;
+
       const shipment: ShipmentStatus =
         o.status === "shipped"
           ? "in_transit"
@@ -119,18 +195,24 @@ export function deriveSalesFromOrders(orders: Order[]): Sale[] {
             ? "paid_out"
             : "available"
           : "pending";
+
+      const buyerNameEn =
+        o.addressFullNameEn?.trim() || "Buyer";
+      const buyerNameAr =
+        o.addressFullNameAr?.trim() || "مشتري";
+
       return {
         id: o.id,
-        buyerNameEn: "Layla Mansour",
-        buyerNameAr: "ليلى منصور",
+        buyerNameEn,
+        buyerNameAr,
         buyerPaymentLast4: o.paymentLast4,
         buyerPaymentBrandEn: o.paymentBrandEn,
         buyerPaymentBrandAr: o.paymentBrandAr,
         orderId: o.id,
-        lineItems: o.lineItems,
-        subtotal: o.subtotal,
-        commission: commission(o.subtotal),
-        payoutAmount: payoutAmount(o.subtotal),
+        lineItems,
+        subtotal,
+        commission: commission(subtotal),
+        payoutAmount: payoutAmount(subtotal),
         shipment,
         payout,
         holdDays: 3,
@@ -142,11 +224,9 @@ export function deriveSalesFromOrders(orders: Order[]): Sale[] {
                 new Date(o.dateOrdered).getTime() + 8 * 86_400_000,
               ).toISOString()
             : undefined,
-        // `firstLine` is currently unused but kept so consumers can pull
-        // seller-facing notes from the snapshot later.
-        ...(firstLine ? {} : {}),
       };
-    });
+    })
+    .filter((s): s is Sale => s !== null);
 }
 
 /** Localised labels for a sale. */

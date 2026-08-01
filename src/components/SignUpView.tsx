@@ -220,13 +220,33 @@ export const SignUpView: React.FC<SignUpViewProps> = ({
           />
           <span>
             {t.termsPrefix}{" "}
-            <span className="text-primary font-bold underline underline-offset-2">
+            <button
+              type="button"
+              className="text-primary font-bold underline underline-offset-2"
+              onClick={() => {
+                window.alert(
+                  isAr
+                    ? "ستتوفر شروط الاستخدام قريباً."
+                    : "Terms of use will be available soon.",
+                );
+              }}
+            >
               {t.termsLink}
-            </span>{" "}
+            </button>{" "}
             &{" "}
-            <span className="text-primary font-bold underline underline-offset-2">
+            <button
+              type="button"
+              className="text-primary font-bold underline underline-offset-2"
+              onClick={() => {
+                window.alert(
+                  isAr
+                    ? "ستتوفر سياسة الخصوصية قريباً."
+                    : "Privacy policy will be available soon.",
+                );
+              }}
+            >
               {t.privacyLink}
-            </span>
+            </button>
             .
           </span>
         </label>

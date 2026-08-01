@@ -60,10 +60,8 @@ export const AppContent: React.FC<AppContentProps> = ({ nav }) => {
     createChatThread,
     listings,
     disputes,
-    language,
     signOut,
   } = useApp();
-  const isAr = language === "ar";
   const {
     currentView,
     selectedProduct,
@@ -73,11 +71,12 @@ export const AppContent: React.FC<AppContentProps> = ({ nav }) => {
     activeCategory,
     activeSubCategory,
     activeCategorySort,
-    activeOrderId,
+    activeReportTargetId,
     selectProduct,
     closeProduct,
     navigateToCart,
     startChat,
+    startChatWithSeller,
     closeChat,
     checkoutFromActiveChat,
     checkoutProductDirect,
@@ -152,6 +151,9 @@ export const AppContent: React.FC<AppContentProps> = ({ nav }) => {
         onStartChat={startChat}
         onCheckoutProduct={checkoutProductDirect}
         onOpenSeller={openSeller}
+        onReportListing={(productId) => {
+          openReport({ targetId: productId });
+        }}
       />
     );
   }
@@ -214,7 +216,10 @@ export const AppContent: React.FC<AppContentProps> = ({ nav }) => {
           onBack={() => {
             closeEditListing();
           }}
-          onSuccess={goHome}
+          onSuccess={() => {
+            closeEditListing();
+            openCloset();
+          }}
         />
       );
     }
@@ -262,9 +267,12 @@ export const AppContent: React.FC<AppContentProps> = ({ nav }) => {
         : null;
       if (!order) {
         return (
-          <DisputesListView
-            onBack={closeLeaveReview}
-            onOpenDispute={(id) => openDispute()}
+          <MyPurchasesView
+            onBack={() => {
+              changeTab("profile");
+            }}
+            onOpenOrder={openOrder}
+            onLeaveReview={(orderId) => openLeaveReview(orderId)}
           />
         );
       }
@@ -280,12 +288,19 @@ export const AppContent: React.FC<AppContentProps> = ({ nav }) => {
         return (
           <ReportView
             orderId={order.id}
-            targetId={order.lineItems[0]?.product.id}
+            targetId={
+              activeReportTargetId ?? order.lineItems[0]?.product.id
+            }
             onBack={closeReport}
           />
         );
       }
-      return <ReportView onBack={closeReport} />;
+      return (
+        <ReportView
+          targetId={activeReportTargetId ?? undefined}
+          onBack={closeReport}
+        />
+      );
     }
     case "return-request": {
       const order = nav.activeOrderId
@@ -293,26 +308,12 @@ export const AppContent: React.FC<AppContentProps> = ({ nav }) => {
         : null;
       if (!order) {
         return (
-          <ReturnRequestView
-            order={{
-              id: "",
-              dateOrdered: "",
-              status: "processing",
-              lineItems: [],
-              addressCityEn: "",
-              addressCityAr: "",
-              addressStreetEn: "",
-              addressStreetAr: "",
-              paymentBrandEn: "Visa",
-              paymentBrandAr: "فيزا",
-              paymentLast4: "",
-              subtotal: 0,
-              shipping: 0,
-              total: 0,
-              courier: { nameEn: "", nameAr: "", trackingNumber: "" },
-              timeline: [],
+          <MyPurchasesView
+            onBack={() => {
+              changeTab("profile");
             }}
-            onBack={closeReturnRequest}
+            onOpenOrder={openOrder}
+            onLeaveReview={(orderId) => openLeaveReview(orderId)}
           />
         );
       }
@@ -330,7 +331,10 @@ export const AppContent: React.FC<AppContentProps> = ({ nav }) => {
         return (
           <DisputesListView
             onBack={closeDispute}
-            onOpenDispute={(id) => openDispute()}
+            onOpenDispute={(disputeId) => {
+              const d = disputes.find((x) => x.id === disputeId);
+              if (d) openDispute(d.orderId);
+            }}
           />
         );
       }
@@ -349,11 +353,9 @@ export const AppContent: React.FC<AppContentProps> = ({ nav }) => {
       return (
         <DisputesListView
           onBack={closeDisputesList}
-          onOpenDispute={(id) => {
-            // For Phase 1 we just navigate back to a generic support view.
-            // Phase 3 will wire to the dispute details.
-            void id;
-            closeDisputesList();
+          onOpenDispute={(disputeId) => {
+            const d = disputes.find((x) => x.id === disputeId);
+            if (d) openDispute(d.orderId);
           }}
         />
       );
@@ -429,8 +431,11 @@ export const AppContent: React.FC<AppContentProps> = ({ nav }) => {
           onSelectProduct={selectProduct}
           onOpenChat={openChat}
           onOpenPurchases={() => setView("purchases")}
-          onOpenSales={() => setView("sales")}
-          onOpenChats={() => setView("chats")}
+          onOpenSales={openSales}
+          onOpenChats={openChats}
+          onOpenEditProfile={openEditProfile}
+          onOpenAddresses={openAddresses}
+          onOpenPaymentMethods={openPaymentMethods}
         />
       );
     case "bag":
@@ -486,7 +491,10 @@ export const AppContent: React.FC<AppContentProps> = ({ nav }) => {
             closeSeller();
             selectProduct(p);
           }}
-          onOpenChat={openChat}
+          onOpenChat={startChatWithSeller}
+          onReport={() => {
+            openReport({ targetId: activeSellerId });
+          }}
           listings={nav.listings ?? []}
         />
       );
@@ -520,6 +528,7 @@ export const AppContent: React.FC<AppContentProps> = ({ nav }) => {
             changeTab("profile");
           }}
           onOpenOrder={openOrder}
+          onLeaveReview={(orderId) => openLeaveReview(orderId)}
           onContactSeller={(order) => {
             const product = order.lineItems[0]?.product;
             if (!product) return;
@@ -538,6 +547,7 @@ export const AppContent: React.FC<AppContentProps> = ({ nav }) => {
               changeTab("profile");
             }}
             onOpenOrder={openOrder}
+            onLeaveReview={(orderId) => openLeaveReview(orderId)}
           />
         );
       }
@@ -553,10 +563,15 @@ export const AppContent: React.FC<AppContentProps> = ({ nav }) => {
             const threadId = createChatThread(product);
             openChat(threadId);
           }}
-          onLeaveReview={openLeaveReview}
-          onReportOrder={openReport}
-          onReturnRequest={openReturnRequest}
-          onOpenDispute={openDispute}
+          onLeaveReview={() => openLeaveReview(order.id)}
+          onReportOrder={() =>
+            openReport({
+              orderId: order.id,
+              targetId: order.lineItems[0]?.product.id,
+            })
+          }
+          onReturnRequest={() => openReturnRequest(order.id)}
+          onOpenDispute={() => openDispute(order.id)}
           onOpenDisputesList={openDisputesList}
         />
       );

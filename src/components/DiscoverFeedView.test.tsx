@@ -76,6 +76,7 @@ function makeContext(language: "en" | "ar" = "en"): AppContextType {
     chats: [],
     sendChatMessage: vi.fn(),
     createChatThread: vi.fn(() => "t1"),
+    markChatRead: vi.fn(),
     addresses: [],
     addAddress: vi.fn(),
     updateAddress: vi.fn(),

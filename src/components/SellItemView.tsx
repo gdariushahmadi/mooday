@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useRef, useState } from "react";
 import { useApp } from "@/context/AppContext";
 import { ListingForm } from "./listing/ListingForm";
 
@@ -11,19 +11,18 @@ interface SellItemViewProps {
 
 interface SellHeaderCopy {
   title: string;
+  saveError: string;
 }
 
 const COPY: Record<"en" | "ar", SellHeaderCopy> = {
-  en: { title: "Sell an Item" },
-  ar: { title: "عرض قطعة للبيع" },
-};
-
-const CURRENT_USER = {
-  nameEn: "Fatima AlMansoori",
-  nameAr: "فاطمة المنصوري",
-  avatar: "/sellers/fatima-almansoori.jpg",
-  typeEn: "Verified Closet",
-  typeAr: "خزانة معتمدة",
+  en: {
+    title: "Sell an Item",
+    saveError: "Couldn't publish this listing. Please try again.",
+  },
+  ar: {
+    title: "عرض قطعة للبيع",
+    saveError: "تعذر نشر هذا الإعلان. يرجى المحاولة مجدداً.",
+  },
 };
 
 /**
@@ -39,9 +38,20 @@ export const SellItemView: React.FC<SellItemViewProps> = ({
   onBack,
   onSuccess,
 }) => {
-  const { language, addListing } = useApp();
+  const { language, addListing, userProfile } = useApp();
   const isAr = language === "ar";
   const t = isAr ? COPY.ar : COPY.en;
+  const stagedFilesRef = useRef<File[]>([]);
+  const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  const user = {
+    nameEn: userProfile.fullNameEn,
+    nameAr: userProfile.fullNameAr,
+    avatar: userProfile.avatar,
+    typeEn: "Verified Closet",
+    typeAr: "خزانة معتمدة",
+  };
 
   return (
     <div
@@ -70,20 +80,56 @@ export const SellItemView: React.FC<SellItemViewProps> = ({
       </div>
 
       <main className="bg-surface-container-lowest border border-surface-container-high rounded-xl p-lg mt-md shadow-sm font-sans">
+        {error && (
+          <p role="alert" className="mb-md rounded-lg bg-error-container p-sm text-error font-bold">
+            {error}
+          </p>
+        )}
         <ListingForm
           isAr={isAr}
-          user={CURRENT_USER}
+          user={user}
           draftKey="mooday_listing_form_draft"
+          onStagedFiles={(files) => {
+            stagedFilesRef.current = files;
+          }}
           onSubmit={(data) => {
-            addListing(data);
-            onSuccess();
+            void (async () => {
+              setSaving(true);
+              setError("");
+              try {
+                await addListing(data, stagedFilesRef.current, {
+                  status: "active",
+                });
+                stagedFilesRef.current = [];
+                onSuccess();
+              } catch {
+                setError(t.saveError);
+              } finally {
+                setSaving(false);
+              }
+            })();
           }}
           onSaveDraft={(data) => {
-            addListing(data);
-            onSuccess();
+            void (async () => {
+              setSaving(true);
+              setError("");
+              try {
+                await addListing(data, undefined, { status: "draft" });
+                onSuccess();
+              } catch {
+                setError(t.saveError);
+              } finally {
+                setSaving(false);
+              }
+            })();
           }}
           onCancel={onBack}
         />
+        {saving && (
+          <p className="mt-sm text-label-sm text-on-surface-variant" role="status">
+            {isAr ? "جارٍ الحفظ…" : "Saving…"}
+          </p>
+        )}
       </main>
     </div>
   );
