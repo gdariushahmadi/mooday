@@ -132,7 +132,8 @@ export const ReportView: React.FC<ReportViewProps> = ({
       return;
     }
     setFormError("");
-    const record = submitReport({
+    void (async () => {
+    const record = await submitReport({
       kind,
       targetId: targetId ?? orderId ?? "unknown",
       targetLabelEn: kind === "listing" ? targetLabel : `Seller: ${targetLabel}`,
@@ -143,6 +144,7 @@ export const ReportView: React.FC<ReportViewProps> = ({
     });
     setSubmittedCase(record.caseNumber);
     onSubmitted?.(record.caseNumber);
+    })();
   };
 
   if (submittedCase) {

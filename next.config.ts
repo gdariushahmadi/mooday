@@ -48,6 +48,12 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  // `standalone` produces a self-contained server bundle in `.next/standalone`
+  // with only the runtime files needed on the server. This is required for
+  // cPanel / Passenger deployments where the host has a small inode and
+  // memory budget. We still keep `public/` and `.next/static/` next to the
+  // standalone output so the Next.js server can serve them.
+  output: "standalone",
   // Pin the workspace root so Turbopack doesn't pick up lockfiles from
   // parent directories in a monorepo checkout.
   turbopack: {

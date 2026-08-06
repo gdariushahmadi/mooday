@@ -180,6 +180,9 @@ export const HelpSupportView: React.FC<HelpSupportViewProps> = ({
 
   const handleChannelClick = (icon: string) => {
     if (icon === "mail") {
+      // Open the mail client via window assignment; an href anchor is
+      // not a viable alternative inside an onClick handler.
+      // eslint-disable-next-line react-hooks/immutability
       window.location.href = "mailto:support@mooday.app";
       return;
     }

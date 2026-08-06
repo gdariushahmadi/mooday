@@ -332,3 +332,276 @@ describe("isPublicImageUrl", () => {
     expect(isPublicImageUrl("some/relative/path")).toBe(false);
   });
 });
+
+import { mapOrderFromRemote, buildCreateOrderInput } from "./mappers-orders";
+import { mapNotificationFromRemote, mapReportFromRemote, mapThreadFromRemote } from "./mappers-social";
+import type { OrderRecord, OrderItemRecord, NotificationRecord, ReportRecord, ChatThreadRecord } from "./contracts";
+
+describe("mapOrderFromRemote", () => {
+  const baseRecord: OrderRecord = {
+    id: "ord-1",
+    buyerId: "buyer-1",
+    sellerId: "seller-1",
+    status: "paid",
+    shippingAddress: {
+      cityEn: "Dubai",
+      cityAr: "دبي",
+      streetEn: "123 Main St",
+      streetAr: "شارع ١٢٣",
+      fullNameEn: "Layla",
+      fullNameAr: "ليلى",
+    },
+    currency: "AED",
+    itemsSubtotalMinor: 10000,
+    shippingFeeMinor: 500,
+    totalMinor: 10500,
+    paymentMethod: "card",
+    paymentBrandEn: "Visa",
+    paymentBrandAr: "فيزا",
+    paymentLast4: "4242",
+    courierNameEn: null,
+    courierNameAr: null,
+    courierTracking: null,
+    createdAt: "2024-01-15T10:00:00Z",
+    updatedAt: "2024-01-15T10:00:00Z",
+  };
+
+  const baseItem: OrderItemRecord = {
+    id: "oi-1",
+    orderId: "ord-1",
+    listingId: "listing-1",
+    titleEnAtPurchase: "Test Handbag",
+    titleArAtPurchase: "حقيبة اختبار",
+    imageUrlAtPurchase: "/products/test.jpg",
+    priceMinorAtPurchase: 10000,
+    quantity: 1,
+    createdAt: "2024-01-15T10:00:00Z",
+  };
+
+  it("converts minor units to AED floats", () => {
+    const order = mapOrderFromRemote({
+      record: { ...baseRecord, items: [baseItem] },
+      listingsById: new Map(),
+    });
+    expect(order.subtotal).toBe(100);
+    expect(order.shipping).toBe(5);
+    expect(order.total).toBe(105);
+    expect(order.lineItems[0].priceAtPurchase).toBe(100);
+  });
+
+  it("maps 'paid' DB status to 'processing' view status", () => {
+    const order = mapOrderFromRemote({
+      record: { ...baseRecord, items: [baseItem] },
+      listingsById: new Map(),
+    });
+    expect(order.status).toBe("processing");
+  });
+
+  it("preserves 'shipped' DB status as-is", () => {
+    const order = mapOrderFromRemote({
+      record: { ...baseRecord, status: "shipped", items: [baseItem] },
+      listingsById: new Map(),
+    });
+    expect(order.status).toBe("shipped");
+  });
+
+  it("seeds timeline with the current status plus prior steps", () => {
+    const order = mapOrderFromRemote({
+      record: { ...baseRecord, status: "delivered", items: [baseItem] },
+      listingsById: new Map(),
+    });
+    expect(order.timeline.map((e) => e.status)).toEqual([
+      "processing",
+      "shipped",
+      "delivered",
+    ]);
+  });
+
+  it("cancelled orders produce a single-event timeline", () => {
+    const order = mapOrderFromRemote({
+      record: { ...baseRecord, status: "cancelled", items: [baseItem] },
+      listingsById: new Map(),
+    });
+    expect(order.timeline).toHaveLength(1);
+    expect(order.timeline[0].status).toBe("cancelled");
+  });
+});
+
+describe("buildCreateOrderInput", () => {
+  it("rounds major-unit prices back to integer minor units", () => {
+    const input = buildCreateOrderInput({
+      order: {
+        id: "ord-x",
+        dateOrdered: "2024-01-15T10:00:00Z",
+        status: "processing",
+        lineItems: [
+          {
+            product: {
+              id: "listing-1",
+              titleEn: "Bag",
+              titleAr: "حقيبة",
+              price: 99.99,
+              originalPrice: 99.99,
+              conditionEn: "New",
+              conditionAr: "جديد",
+              sellerNameEn: "S",
+              sellerNameAr: "S",
+              sellerAvatar: "/s",
+              sellerTypeEn: "Verified",
+              sellerTypeAr: "معتمد",
+              saves: 0,
+              image: "/p.jpg",
+              images: ["/p.jpg"],
+              descriptionEn: "",
+              descriptionAr: "",
+              category: "Bags",
+            },
+            quantity: 1,
+            priceAtPurchase: 99.99,
+          },
+        ],
+        addressCityEn: "Dubai",
+        addressCityAr: "دبي",
+        addressStreetEn: "St",
+        addressStreetAr: "شارع",
+        paymentBrandEn: "Visa",
+        paymentBrandAr: "فيزا",
+        paymentLast4: "4242",
+        subtotal: 99.99,
+        shipping: 5,
+        total: 104.99,
+        courier: { nameEn: "Aramex", nameAr: "أرامكس", trackingNumber: "" },
+        timeline: [],
+      },
+      sellerId: "seller-1",
+    });
+    expect(input.itemsSubtotalMinor).toBe(9999);
+    expect(input.shippingFeeMinor).toBe(500);
+    expect(input.totalMinor).toBe(10499);
+    expect(input.items[0].priceMinorAtPurchase).toBe(9999);
+  });
+
+  it("maps Cash brand to 'cod' payment method", () => {
+    const input = buildCreateOrderInput({
+      order: {
+        id: "ord-y",
+        dateOrdered: "2024-01-15T10:00:00Z",
+        status: "processing",
+        lineItems: [],
+        addressCityEn: "Dubai",
+        addressCityAr: "دبي",
+        addressStreetEn: "St",
+        addressStreetAr: "شارع",
+        paymentBrandEn: "Cash",
+        paymentBrandAr: "نقداً",
+        paymentLast4: "",
+        subtotal: 0,
+        shipping: 0,
+        total: 0,
+        courier: { nameEn: "", nameAr: "", trackingNumber: "" },
+        timeline: [],
+      },
+      sellerId: "seller-1",
+    });
+    expect(input.paymentMethod).toBe("cod");
+  });
+});
+
+describe("mapNotificationFromRemote", () => {
+  it("translates DB kinds to view kinds", () => {
+    const record: NotificationRecord = {
+      id: "n-1",
+      recipientId: "user-1",
+      kind: "chat",
+      titleEn: "New chat",
+      titleAr: "محادثة جديدة",
+      bodyEn: "Hello",
+      bodyAr: "مرحبا",
+      targetKind: "chat",
+      targetId: "thread-1",
+      isUnread: true,
+      createdAt: "2024-01-15T10:00:00Z",
+    };
+    const mapped = mapNotificationFromRemote(record);
+    expect(mapped.type).toBe("chat");
+    expect(mapped.target).toEqual({ kind: "chat", id: "thread-1" });
+    expect(mapped.isUnread).toBe(true);
+  });
+
+  it("omits target when DB targetKind is 'none'", () => {
+    const record: NotificationRecord = {
+      id: "n-2",
+      recipientId: "user-1",
+      kind: "system",
+      titleEn: "Update",
+      titleAr: "تحديث",
+      bodyEn: "",
+      bodyAr: "",
+      targetKind: "none",
+      targetId: null,
+      isUnread: false,
+      createdAt: "2024-01-15T10:00:00Z",
+    };
+    const mapped = mapNotificationFromRemote(record);
+    expect(mapped.target).toBeUndefined();
+  });
+});
+
+describe("mapReportFromRemote", () => {
+  it("maps DB reason 'offensive' to view reason 'inappropriate'", () => {
+    const record: ReportRecord = {
+      id: "r-1",
+      caseNumber: "MOODAY-00001",
+      reporterId: "user-1",
+      target: "user",
+      targetId: "user-2",
+      reason: "offensive",
+      body: "Bad content",
+      status: "open",
+      createdAt: "2024-01-15T10:00:00Z",
+      updatedAt: "2024-01-15T10:00:00Z",
+    };
+    const mapped = mapReportFromRemote(record);
+    expect(mapped.reason).toBe("inappropriate");
+    expect(mapped.caseNumber).toBe("MOODAY-00001");
+  });
+
+  it("coerces DB 'dismissed' status to view 'resolved'", () => {
+    const record: ReportRecord = {
+      id: "r-2",
+      caseNumber: "MOODAY-00002",
+      reporterId: "user-1",
+      target: "listing",
+      targetId: "l-1",
+      reason: "spam",
+      body: "",
+      status: "dismissed",
+      createdAt: "2024-01-15T10:00:00Z",
+      updatedAt: "2024-01-15T10:00:00Z",
+    };
+    const mapped = mapReportFromRemote(record);
+    expect(mapped.status).toBe("resolved");
+  });
+});
+
+describe("mapThreadFromRemote", () => {
+  it("hydrates an empty message list and converts minor price to AED", () => {
+    const record: ChatThreadRecord = {
+      id: "thread-1",
+      buyerId: "buyer-1",
+      sellerId: "seller-1",
+      listingId: "l-1",
+      listingTitleEn: "Bag",
+      listingTitleAr: "حقيبة",
+      listingImageUrl: "/p.jpg",
+      priceMinorAtCreation: 15000,
+      lastMessageBody: "Hi",
+      lastMessageAt: "2024-01-15T10:00:00Z",
+      createdAt: "2024-01-15T09:00:00Z",
+      updatedAt: "2024-01-15T10:00:00Z",
+    };
+    const thread = mapThreadFromRemote(record, "buyer-1", []);
+    expect(thread.productPrice).toBe(150);
+    expect(thread.messages).toHaveLength(0);
+  });
+});

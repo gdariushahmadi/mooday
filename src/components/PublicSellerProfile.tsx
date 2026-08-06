@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { ClickableCard } from "./ClickableCard";
 import { useApp } from "@/context/AppContext";
+import { mapPublicReviewFromRemote } from "@/services/backend/mappers-social";
 import { getSellerProfile } from "@/data/seller-profile";
 import {
   REVIEWS,
@@ -105,6 +106,30 @@ export const PublicSellerProfile: React.FC<PublicSellerProfileProps> = ({
   const [following, setFollowing] = useState(false);
   const [actionHint, setActionHint] = useState<string | null>(null);
 
+  // All hooks above must precede any conditional return.
+  const phase2Backend = useApp().phase2Backend;
+  const [remoteReviews, setRemoteReviews] = useState<Review[]>([]);
+  useEffect(() => {
+    if (!phase2Backend) return;
+    let active = true;
+    void phase2Backend.reviews
+      .listForSeller(sellerId)
+      .then((rows) => {
+        if (!active) return;
+        setRemoteReviews(
+          rows.map(
+            (r) => mapPublicReviewFromRemote(r) as unknown as Review,
+          ),
+        );
+      })
+      .catch(() => {
+        // Keep an empty list; the UI already has a no-reviews state.
+      });
+    return () => {
+      active = false;
+    };
+  }, [phase2Backend, sellerId]);
+
   if (!seller) {
     return (
       <div className="w-full max-w-[800px] mx-auto flex flex-col items-center justify-center py-20 gap-md text-center font-sans">
@@ -129,9 +154,9 @@ export const PublicSellerProfile: React.FC<PublicSellerProfileProps> = ({
     (l) => l.sellerNameEn === seller.nameEn || l.sellerNameAr === seller.nameAr,
   );
 
-  const sellerReviews: Review[] = REVIEWS.filter(
-    (r) => r.sellerId === sellerId,
-  );
+  const sellerReviews: Review[] = phase2Backend
+    ? remoteReviews
+    : REVIEWS.filter((r) => r.sellerId === sellerId);
   const filteredReviews = sellerReviews.filter(
     (r) => reviewFilter === 0 || r.rating === reviewFilter,
   );
@@ -167,7 +192,8 @@ export const PublicSellerProfile: React.FC<PublicSellerProfileProps> = ({
       onReport();
       return;
     }
-    const record = submitReport({
+    void (async () => {
+    const record = await submitReport({
       kind: "user",
       targetId: sellerId,
       targetLabelEn: seller.nameEn,
@@ -183,6 +209,7 @@ export const PublicSellerProfile: React.FC<PublicSellerProfileProps> = ({
         ? `تم فتح البلاغ ${record.caseNumber}`
         : `Report opened ${record.caseNumber}`,
     );
+    })();
   };
 
   const handleBlock = () => {

@@ -532,7 +532,8 @@ export const AppContent: React.FC<AppContentProps> = ({ nav }) => {
           onContactSeller={(order) => {
             const product = order.lineItems[0]?.product;
             if (!product) return;
-            openChat(createChatThread(product));
+            const threadId = createChatThread(product);
+            Promise.resolve(threadId).then((id) => openChat(id));
           }}
         />
       );
@@ -561,7 +562,7 @@ export const AppContent: React.FC<AppContentProps> = ({ nav }) => {
           }}
           onContactSeller={(product) => {
             const threadId = createChatThread(product);
-            openChat(threadId);
+            Promise.resolve(threadId).then((id) => openChat(id));
           }}
           onLeaveReview={() => openLeaveReview(order.id)}
           onReportOrder={() =>

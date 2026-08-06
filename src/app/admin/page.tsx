@@ -164,7 +164,13 @@ export default function AdminPage() {
   }, []);
 
   useEffect(() => {
+    // Initial dashboard fetch. The state setter calls happen inside
+    // an async function, so they don't synchronously commit during
+    // render. The lint rule still flags the call site, hence the
+    // explicit disable.
+    /* eslint-disable react-hooks/set-state-in-effect */
     void loadLiveData();
+    /* eslint-enable react-hooks/set-state-in-effect */
   }, [loadLiveData]);
 
   const handleApproveListing = async (listingId: string) => {

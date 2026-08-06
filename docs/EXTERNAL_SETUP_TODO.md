@@ -20,7 +20,13 @@ a `NEXT_PUBLIC_*` variable or commit it to Git.
   `202607150005_phase_3_user_likes_and_cart.sql`,
   `202607150006_phase_3_orders.sql`,
   `202607150007_phase_3_social.sql`,
-  `202607150008_phase_3_5_admin.sql`.
+  `202607150008_phase_3_5_admin.sql`,
+  `202608060001_payment_methods.sql`,
+  `202608060002_blocked_users.sql`,
+  `202608060003_seller_reviews_snapshot.sql`,
+  `202608060004_notification_fanout.sql`,
+  `202608060005_seed_admin.sql`,
+  `202608060006_fix_storage_foldername.sql`.
 - [ ] Confirm that `profiles`, `addresses`, `set_default_address`, triggers,
   grants, and all RLS policies exist.
 - [ ] Confirm that `listings` and `listing_images` exist and that anonymous

@@ -1,0 +1,9 @@
+# Build output is recreated by Vercel. Keeping it out of the upload makes
+# preview and production deployments much faster.
+.next
+.deploy
+node_modules
+coverage
+playwright-report
+test-results
+.env.local

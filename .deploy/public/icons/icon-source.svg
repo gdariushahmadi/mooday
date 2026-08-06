@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#673657"/>
+      <stop offset="55%" stop-color="#512443"/>
+      <stop offset="100%" stop-color="#3a0e2f"/>
+    </linearGradient>
+    <linearGradient id="shine" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffd8ed" stop-opacity="0.35"/>
+      <stop offset="60%" stop-color="#ffd8ed" stop-opacity="0"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="30%" cy="25%" r="65%">
+      <stop offset="0%" stop-color="#f4b3db" stop-opacity="0.45"/>
+      <stop offset="100%" stop-color="#f4b3db" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <rect x="0" y="0" width="512" height="512" rx="112" ry="112" fill="url(#bg)"/>
+  <rect x="0" y="0" width="512" height="512" rx="112" ry="112" fill="url(#glow)"/>
+
+  <g transform="translate(256 256)">
+    <text
+      x="0" y="0"
+      text-anchor="middle"
+      dominant-baseline="central"
+      font-family="'Bodoni Moda', 'Playfair Display', 'Didot', 'Times New Roman', serif"
+      font-size="320"
+      font-style="italic"
+      font-weight="500"
+      fill="#ffd8ed"
+      letter-spacing="-8"
+    >M</text>
+  </g>
+
+  <rect x="0" y="0" width="512" height="512" rx="112" ry="112" fill="url(#shine)"/>
+</svg>

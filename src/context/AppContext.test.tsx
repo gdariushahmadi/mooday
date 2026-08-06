@@ -202,12 +202,12 @@ describe("AppContext", () => {
   });
 
   describe("chat threads", () => {
-    it("creates a new chat thread for a product", () => {
+    it("creates a new chat thread for a product", async () => {
       const { result } = renderHook(() => useApp(), { wrapper });
 
-      let threadId: string;
-      act(() => {
-        threadId = result.current.createChatThread(TEST_PRODUCT);
+      let threadId: string | undefined;
+      await act(async () => {
+        threadId = await result.current.createChatThread(TEST_PRODUCT);
       });
 
       expect(threadId!).toBe("chat-test-1");
@@ -222,18 +222,18 @@ describe("AppContext", () => {
       expect(newThread!.messages[0].sender).toBe("seller");
     });
 
-    it("returns existing thread id without creating a duplicate", () => {
+    it("returns existing thread id without creating a duplicate", async () => {
       const { result } = renderHook(() => useApp(), { wrapper });
 
-      act(() => {
-        result.current.createChatThread(TEST_PRODUCT);
+      await act(async () => {
+        await result.current.createChatThread(TEST_PRODUCT);
       });
 
       const initialCount = result.current.chats.length;
 
-      let secondId: string;
-      act(() => {
-        secondId = result.current.createChatThread(TEST_PRODUCT);
+      let secondId: string | undefined;
+      await act(async () => {
+        secondId = await result.current.createChatThread(TEST_PRODUCT);
       });
 
       expect(secondId!).toBe("chat-test-1");
@@ -243,8 +243,8 @@ describe("AppContext", () => {
     it("sends a user message and gets an auto-reply", async () => {
       const { result } = renderHook(() => useApp(), { wrapper });
 
-      act(() => {
-        result.current.createChatThread(TEST_PRODUCT);
+      await act(async () => {
+        await result.current.createChatThread(TEST_PRODUCT);
       });
 
       act(() => {
@@ -274,8 +274,8 @@ describe("AppContext", () => {
     it("auto-reply mentions authenticity when asked", async () => {
       const { result } = renderHook(() => useApp(), { wrapper });
 
-      act(() => {
-        result.current.createChatThread(TEST_PRODUCT);
+      await act(async () => {
+        await result.current.createChatThread(TEST_PRODUCT);
       });
 
       act(() => {

@@ -38,12 +38,21 @@ import {
   getPhase2Backend,
   type AuthenticatedUser,
   type OtpPurpose,
+  type ListingRecord,
 } from "@/services/backend";
 import {
   hydrateProductsFromRemote,
   isPublicImageUrl,
   mapProductToCreateInput,
   mapProductToUpdatePatch,
+  mapOrderFromRemote,
+  buildCreateOrderInput,
+  mapThreadFromRemote,
+  mapMessageFromRemote,
+  mapNotificationFromRemote,
+  mapReviewFromRemote,
+  mapReportFromRemote,
+  mapDisputeFromRemote,
 } from "@/services/backend/mappers";
 
 type Awaitable<T> = T | Promise<T>;
@@ -177,37 +186,51 @@ export interface AppContextType {
   updateQuantity: (productId: string, quantity: number) => Awaitable<void>;
   clearCart: () => Awaitable<void>;
   chats: ChatThread[];
-  sendChatMessage: (threadId: string, text: string) => void;
-  createChatThread: (product: Product) => string;
+  sendChatMessage: (threadId: string, text: string) => Awaitable<void>;
+  createChatThread: (product: Product) => Awaitable<string>;
   /** Clear unread count for a chat thread (called when opening it). */
-  markChatRead: (threadId: string) => void;
+  markChatRead: (threadId: string) => Awaitable<void>;
+  /** Accept or decline a "Make an Offer" message in a chat thread. */
+  setChatOfferStatus: (
+    messageId: string,
+    status: "accepted" | "declined",
+  ) => Awaitable<void>;
+  /** Pull the latest chat threads + messages from the remote backend. */
+  refreshChats: () => Promise<void>;
+  chatsLoading: boolean;
   orders: Order[];
-  recordOrder: (order: Order) => void;
-  updateOrderStatus: (id: string, status: Order["status"]) => void;
+  recordOrder: (order: Order) => Awaitable<string | null>;
+  updateOrderStatus: (id: string, status: Order["status"]) => Awaitable<void>;
   notifications: AppNotification[];
   markNotificationRead: (id: string) => void;
   markAllNotificationsRead: () => void;
+  refreshNotifications: () => Promise<void>;
   userProfile: UserProfile;
   updateUserProfile: (patch: Partial<UserProfile>) => Awaitable<void>;
   myReviews: MyReview[];
-  addMyReview: (review: Omit<MyReview, "id">) => void;
+  addMyReview: (review: Omit<MyReview, "id">) => Promise<MyReview>;
+  refreshMyReviews: () => Promise<void>;
   blockedUsers: BlockedUser[];
-  blockUser: (user: Omit<BlockedUser, "id" | "date">) => void;
-  unblockUser: (id: string) => void;
+  blockUser: (user: Omit<BlockedUser, "id" | "date">) => Promise<void>;
+  unblockUser: (id: string) => Promise<void>;
   reports: ReportRecord[];
   submitReport: (
     report: Omit<ReportRecord, "id" | "caseNumber" | "status" | "date">,
-  ) => ReportRecord;
+  ) => Promise<ReportRecord>;
+  refreshReports: () => Promise<void>;
   disputes: Dispute[];
   openDispute: (
     dispute: Omit<Dispute, "id" | "status" | "date" | "timeline">,
-  ) => Dispute;
+  ) => Promise<Dispute>;
+  refreshDisputes: () => Promise<void>;
   // Group A auth (Phase 1 mock — Phase 2 swaps for real backend)
   currentUser: { id?: string; email: string; name: string } | null;
   /** Auth user id for ownership filters (Closet / Vault). */
   currentUserId?: string | null;
   /** Absent in legacy test fixtures; "supabase" means real Phase 2 auth. */
   authMode?: "mock" | "supabase";
+  /** Raw Phase 2 backend handle (null in mock mode). */
+  phase2Backend?: import("@/services/backend").Phase2Backend | null;
   authReady?: boolean;
   pendingAuthEmail?: string;
   authError: AuthErrorCode | null;
@@ -237,9 +260,9 @@ export interface AppContextType {
   removeAddress: (id: string) => Awaitable<void>;
   setDefaultAddress: (id: string) => Awaitable<void>;
   paymentMethods: PaymentMethod[];
-  addPaymentMethod: (method: Omit<PaymentMethod, "id">) => void;
-  removePaymentMethod: (id: string) => void;
-  setDefaultPaymentMethod: (id: string) => void;
+  addPaymentMethod: (method: Omit<PaymentMethod, "id">) => Promise<void>;
+  removePaymentMethod: (id: string) => Promise<void>;
+  setDefaultPaymentMethod: (id: string) => Promise<void>;
 }
 
 // Exported for tests and advanced consumers that need to pass a custom
@@ -394,6 +417,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     STORAGE_KEYS.chats,
     DEFAULT_CHATS,
   );
+  const [remoteThreads, setRemoteThreads] = React.useState<ChatThread[]>([]);
+  // Tracked for future per-thread deep-dives (e.g. typing indicators
+  // that survive a thread switch); currently the chat overlay reads
+  // messages straight from the active thread object.
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [remoteMessagesByThread, setRemoteMessagesByThread] = React.useState<
+    Record<string, ChatMessage[]>
+  >({});
+  const [ordersLoading, setOrdersLoading] = React.useState(false);
+  const [chatsLoading, setChatsLoading] = React.useState(false);
+  const [chatLastRead, setChatLastRead] = useLocalStorageState<
+    Record<string, string>
+  >("mooday_chat_last_read", {});
+  const activeChats = phase2Backend ? remoteThreads : chats;
+  const setActiveChats = phase2Backend ? setRemoteThreads : setChats;
   const [storedAddresses, setStoredAddresses] = useLocalStorageState<Address[]>(
     STORAGE_KEYS.addresses,
     DEFAULT_ADDRESSES,
@@ -404,13 +442,34 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   const [paymentMethods, setPaymentMethods] = useLocalStorageState<
     PaymentMethod[]
   >(STORAGE_KEYS.paymentMethods, DEFAULT_PAYMENT_METHODS);
-  const [orders, setOrders] = useLocalStorageState<Order[]>(
+  const [remotePaymentMethods, setRemotePaymentMethods] = React.useState<
+    PaymentMethod[]
+  >([]);
+  const activePaymentMethods = phase2Backend
+    ? remotePaymentMethods
+    : paymentMethods;
+  const setActivePaymentMethods = phase2Backend
+    ? setRemotePaymentMethods
+    : setPaymentMethods;
+  const [storedOrders, setStoredOrders] = useLocalStorageState<Order[]>(
     STORAGE_KEYS.orders,
     DEFAULT_ORDERS,
   );
+  const [remoteOrders, setRemoteOrders] = React.useState<Order[]>([]);
+  const orders = phase2Backend ? remoteOrders : storedOrders;
+  const setOrders = phase2Backend ? setRemoteOrders : setStoredOrders;
   const [notifications, setNotifications] = useLocalStorageState<
     AppNotification[]
   >(STORAGE_KEYS.notifications, DEFAULT_NOTIFICATIONS);
+  const [remoteNotifications, setRemoteNotifications] = React.useState<
+    AppNotification[]
+  >([]);
+  const activeNotifications = phase2Backend
+    ? remoteNotifications
+    : notifications;
+  const setActiveNotifications = phase2Backend
+    ? setRemoteNotifications
+    : setNotifications;
   const [storedUserProfile, setStoredUserProfile] =
     useLocalStorageState<UserProfile>(
       "mooday_user_profile",
@@ -426,18 +485,36 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     STORAGE_KEYS.myReviews,
     DEFAULT_MY_REVIEWS,
   );
+  const [remoteMyReviews, setRemoteMyReviews] = React.useState<MyReview[]>([]);
+  const activeMyReviews = phase2Backend ? remoteMyReviews : myReviews;
+  const setActiveMyReviews = phase2Backend ? setRemoteMyReviews : setMyReviews;
   const [blockedUsers, setBlockedUsers] = useLocalStorageState<BlockedUser[]>(
     STORAGE_KEYS.blockedUsers,
     DEFAULT_BLOCKED_USERS,
   );
+  const [remoteBlockedUsers, setRemoteBlockedUsers] = React.useState<
+    BlockedUser[]
+  >([]);
+  const activeBlockedUsers = phase2Backend
+    ? remoteBlockedUsers
+    : blockedUsers;
+  const setActiveBlockedUsers = phase2Backend
+    ? setRemoteBlockedUsers
+    : setBlockedUsers;
   const [reports, setReports] = useLocalStorageState<ReportRecord[]>(
     STORAGE_KEYS.reports,
     DEFAULT_REPORTS,
   );
+  const [remoteReports, setRemoteReports] = React.useState<ReportRecord[]>([]);
+  const activeReports = phase2Backend ? remoteReports : reports;
+  const setActiveReports = phase2Backend ? setRemoteReports : setReports;
   const [disputes, setDisputes] = useLocalStorageState<Dispute[]>(
     STORAGE_KEYS.disputes,
     DEFAULT_DISPUTES,
   );
+  const [remoteDisputes, setRemoteDisputes] = React.useState<Dispute[]>([]);
+  const activeDisputes = phase2Backend ? remoteDisputes : disputes;
+  const setActiveDisputes = phase2Backend ? setRemoteDisputes : setDisputes;
   // Phase 3 marketplace state. Pulled from `listings` + `seller_card_view`
   // + `listing_images` and hydrated into the Phase 1 `Product` shape so the
   // existing screens render real data without per-component rewiring.
@@ -494,6 +571,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     localStorage.removeItem(STORAGE_KEYS.users);
     localStorage.removeItem(STORAGE_KEYS.session);
     localStorage.removeItem(STORAGE_KEYS.pendingOtp);
+    // M3+M4: also clear the domain keys that now back themselves with
+    // the real backend. Mock-mode stores are wiped so a refresh on a
+    // different mode doesn't resurrect ghost records.
+    localStorage.removeItem(STORAGE_KEYS.chats);
+    localStorage.removeItem(STORAGE_KEYS.orders);
+    localStorage.removeItem(STORAGE_KEYS.notifications);
+    localStorage.removeItem(STORAGE_KEYS.myReviews);
+    localStorage.removeItem(STORAGE_KEYS.blockedUsers);
+    localStorage.removeItem(STORAGE_KEYS.reports);
+    localStorage.removeItem(STORAGE_KEYS.disputes);
+    localStorage.removeItem(STORAGE_KEYS.paymentMethods);
+    void 0;
 
     let active = true;
     void phase2Backend.auth.getCurrentUser().then((user) => {
@@ -547,6 +636,58 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     },
     [setLang],
   );
+
+  /**
+   * Refresh the current user's buyer-side + seller-side orders from the
+   * remote backend. No-op in mock mode. Hydrates each row into the
+   * Phase 1 `Order` view model. Listing lookups use the cached
+   * `remoteListings` to fill seller / product snapshots without a
+   * second round-trip per order.
+   */
+  const refreshOrders = useCallback(async () => {
+    if (!phase2Backend) return;
+    setOrdersLoading(true);
+    try {
+      const [buyerRows, sellerRows] = await Promise.all([
+        phase2Backend.orders.listMineAsBuyer(),
+        phase2Backend.orders.listMineAsSeller(),
+      ]);
+      const allRows = [...buyerRows, ...sellerRows];
+      // Build a listings-by-id map from the currently-cached remote
+      // listings so we can hydrate line-item products without extra
+      // round-trips. Missing listings still produce a usable order
+      // (the mapper falls back to the snapshot fields on each item).
+      const listingsById = new Map<string, ListingRecord>();
+      try {
+        const ids = Array.from(
+          new Set(
+            allRows
+              .flatMap((r) => r.items)
+              .map((i) => i.listingId)
+              .filter((id): id is string => !!id),
+          ),
+        );
+        if (ids.length > 0) {
+          const records = await phase2Backend.listings.listByIds(ids);
+          for (const rec of records) listingsById.set(rec.id, rec);
+        }
+      } catch {
+        // Listings lookup is best-effort; the mapper handles the gap.
+      }
+      const merged = allRows.map((r) =>
+        mapOrderFromRemote({ record: r, listingsById }),
+      );
+      // Newest first by order placement time.
+      merged.sort((a, b) =>
+        b.dateOrdered.localeCompare(a.dateOrdered),
+      );
+      setRemoteOrders(merged);
+    } catch {
+      // Surface in the UI later; for now keep the previous snapshot.
+    } finally {
+      setOrdersLoading(false);
+    }
+  }, [phase2Backend]);
 
   /**
    * Pull listings + seller cards + image URLs from Supabase and hydrate
@@ -632,20 +773,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       setListingsLoading(false);
     }
   }, [marketplaceMode, phase2Backend]);
-
-  // Initial + on-auth-change fetch of remote listings. The dependency on
-  // `remoteUser` re-runs on sign-in / sign-out so a fresh session sees the
-  // latest active set immediately.
-  useEffect(() => {
-    if (!marketplaceMode) return;
-    let active = true;
-    void (async () => {
-      if (active) await refreshListings();
-    })();
-    return () => {
-      active = false;
-    };
-  }, [marketplaceMode, refreshListings, remoteUser]);
 
   const addListing = useCallback(
     async (
@@ -877,8 +1004,130 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     [marketplaceMode, phase2Backend, remoteListings, removeFromCart],
   );
 
+
+  /**
+   * Refresh the current user's chat threads + their messages. No-op in
+   * mock mode. Threads are sorted most-recent first (matching the
+   * server query). For each thread, unread is derived locally from the
+   * `chatLastRead` map so we don't need a server-side unread column.
+   */
+  const refreshChats = useCallback(async () => {
+    if (!phase2Backend) return;
+    setChatsLoading(true);
+    try {
+      const auth = await phase2Backend.auth.getCurrentUser();
+      if (!auth) {
+        setRemoteThreads([]);
+        setRemoteMessagesByThread({});
+        return;
+      }
+      const threads = await phase2Backend.chats.listMine();
+      const messageMap: Record<string, ChatMessage[]> = {};
+      for (const t of threads) {
+        const msgs = await phase2Backend.chats.listMessages(t.id);
+        messageMap[t.id] = msgs.map((m) => mapMessageFromRemote(m, auth.id));
+      }
+      const mapped = threads.map((t) => {
+        const base = mapThreadFromRemote(t, auth.id, []);
+        const messages = messageMap[t.id] ?? [];
+        // Unread: how many seller messages exist beyond the count we
+        // last marked read. `chatLastRead[threadId]` stores that count
+        // (e.g. "3" means messages #1, #2, #3 from the seller were read).
+        // On first open we mark everything read, so a missing entry
+        // contributes 0 unread.
+        const totalSeller = messages.filter(
+          (m) => m.sender === "seller",
+        ).length;
+        const lastReadCount = chatLastRead[t.id]
+          ? Number.parseInt(chatLastRead[t.id], 10) || 0
+          : 0;
+        const unread = Math.max(0, totalSeller - lastReadCount);
+        return {
+          ...base,
+          messages,
+          unread,
+        };
+      });
+      setRemoteThreads(mapped);
+      setRemoteMessagesByThread(messageMap);
+    } catch {
+      // Surface in the UI later; keep the previous snapshot.
+    } finally {
+      setChatsLoading(false);
+    }
+  }, [phase2Backend, chatLastRead]);
+
+
+  const refreshNotifications = useCallback(async () => {
+    if (!phase2Backend) return;
+    try {
+      const rows = await phase2Backend.notifications.listMine();
+      setRemoteNotifications(rows.map(mapNotificationFromRemote));
+    } catch {
+      // Keep previous snapshot; UI surfaces the issue elsewhere.
+    }
+  }, [phase2Backend]);
+
+  const refreshMyReviews = useCallback(async () => {
+    if (!phase2Backend) return;
+    try {
+      const rows = await phase2Backend.reviews.listMine();
+      // The view model needs a seller display name + avatar; the server
+      // only returns ids. We leave the lookup for the consuming view
+      // (LeaveReviewView, MyReviewsView) and surface the record.
+      setRemoteMyReviews(
+        rows.map((r) =>
+          mapReviewFromRemote({
+            record: r,
+            sellerNameEn: "",
+            sellerNameAr: "",
+            sellerAvatar: "/sellers/placeholder.svg",
+          }),
+        ),
+      );
+    } catch {
+      // Keep previous snapshot.
+    }
+  }, [phase2Backend]);
+
+  const refreshReports = useCallback(async () => {
+    if (!phase2Backend) return;
+    try {
+      const rows = await phase2Backend.reports.listMine();
+      setRemoteReports(rows.map(mapReportFromRemote));
+    } catch {
+      // Keep previous snapshot.
+    }
+  }, [phase2Backend]);
+
+  const refreshDisputes = useCallback(async () => {
+    if (!phase2Backend) return;
+    try {
+      const rows = await phase2Backend.disputes.listMine();
+      setRemoteDisputes(rows.map(mapDisputeFromRemote));
+    } catch {
+      // Keep previous snapshot.
+    }
+  }, [phase2Backend]);
+
   const createChatThread = useCallback(
-    (product: Product): string => {
+    async (product: Product): Promise<string> => {
+      if (phase2Backend) {
+        const sellerId = product.sellerId;
+        if (!sellerId) {
+          throw new Error("Cannot create chat thread without sellerId");
+        }
+        const thread = await phase2Backend.chats.upsertForListing({
+          sellerId,
+          listingId: product.id,
+          listingTitleEn: product.titleEn,
+          listingTitleAr: product.titleAr,
+          listingImageUrl: product.image,
+          priceMinorAtCreation: Math.round(product.price * 100),
+        });
+        await refreshChats();
+        return thread.id;
+      }
       const threadId = `chat-${product.id}`;
 
       setChats((prev) => {
@@ -916,11 +1165,34 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
 
       return threadId;
     },
-    [setChats, language],
+    [phase2Backend, refreshChats, setChats, language],
   );
 
   const sendChatMessage = useCallback(
-    (threadId: string, text: string) => {
+    async (threadId: string, text: string): Promise<void> => {
+      if (phase2Backend) {
+        // Detect "OFFER:amount" pseudo-syntax (used by ChatOverlay's
+        // Make-Offer flow) and route to the offer message type.
+        const offerMatch = /^OFFER:(\d+(?:\.\d+)?):/.exec(text);
+        if (offerMatch) {
+          const amount = Number.parseFloat(offerMatch[1]);
+          await phase2Backend.chats.sendMessage(threadId, {
+            type: "offer",
+            body: text,
+            imageUrl: null,
+            offerMinor: Math.round(amount * 100),
+          });
+        } else {
+          await phase2Backend.chats.sendMessage(threadId, {
+            type: "text",
+            body: text,
+            imageUrl: null,
+            offerMinor: null,
+          });
+        }
+        await refreshChats();
+        return;
+      }
       const now = new Date();
       const timeStr = now.toLocaleTimeString([], {
         hour: "2-digit",
@@ -1020,18 +1292,47 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
         });
       }, 1500);
     },
-    [setChats, language],
+    [phase2Backend, refreshChats, setChats, language],
   );
 
   const markChatRead = useCallback(
-    (threadId: string) => {
+    async (threadId: string): Promise<void> => {
+      if (phase2Backend) {
+        // Persist the count of seller messages seen so far. The next
+        // refreshChats() will subtract this from the live total.
+        const thread = remoteThreads.find((t) => t.id === threadId);
+        const totalSeller = thread
+          ? thread.messages.filter((m) => m.sender === "seller").length
+          : 0;
+        setChatLastRead((prev) => ({
+          ...prev,
+          [threadId]: String(totalSeller),
+        }));
+        setRemoteThreads((prev) =>
+          prev.map((t) => (t.id === threadId ? { ...t, unread: 0 } : t)),
+        );
+        return;
+      }
       setChats((prev) =>
         prev.map((c) =>
           c.id === threadId && (c.unread ?? 0) > 0 ? { ...c, unread: 0 } : c,
         ),
       );
     },
-    [setChats],
+    [phase2Backend, remoteThreads, setChatLastRead, setChats],
+  );
+
+  const setChatOfferStatus = useCallback(
+    async (
+      messageId: string,
+      status: "accepted" | "declined",
+    ): Promise<void> => {
+      if (phase2Backend) {
+        await phase2Backend.chats.setOfferStatus(messageId, status);
+        await refreshChats();
+      }
+    },
+    [phase2Backend, refreshChats],
   );
 
   const addAddress = useCallback(
@@ -1115,7 +1416,45 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   );
 
   const addPaymentMethod = useCallback(
-    (method: Omit<PaymentMethod, "id">) => {
+    async (method: Omit<PaymentMethod, "id">): Promise<void> => {
+      if (phase2Backend) {
+        if (method.isDefault) {
+          // Clear current defaults first so the new card becomes the unique default.
+          const current = await phase2Backend.paymentMethods.listMine();
+          for (const m of current) {
+            if (m.isDefault) {
+              await phase2Backend.paymentMethods.update(m.id, { isDefault: false });
+            }
+          }
+        }
+        await phase2Backend.paymentMethods.create({
+          labelEn: method.labelEn,
+          labelAr: method.labelAr,
+          brandEn: method.brandEn,
+          brandAr: method.brandAr,
+          last4: method.last4,
+          holderEn: method.holderEn,
+          holderAr: method.holderAr,
+          expiry: method.expiry,
+          isDefault: method.isDefault,
+        });
+        const next = await phase2Backend.paymentMethods.listMine();
+        setRemotePaymentMethods(
+          next.map((r) => ({
+            id: r.id,
+            labelEn: r.labelEn,
+            labelAr: r.labelAr,
+            brandEn: r.brandEn,
+            brandAr: r.brandAr,
+            last4: r.last4,
+            holderEn: r.holderEn,
+            holderAr: r.holderAr,
+            expiry: r.expiry,
+            isDefault: r.isDefault,
+          })),
+        );
+        return;
+      }
       const id = `pm-${Date.now()}`;
       setPaymentMethods((prev) => {
         const next: PaymentMethod[] = [...prev, { ...method, id }];
@@ -1128,11 +1467,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
         return next;
       });
     },
-    [setPaymentMethods],
+    [phase2Backend, setPaymentMethods],
   );
 
   const removePaymentMethod = useCallback(
-    (id: string) => {
+    async (id: string): Promise<void> => {
+      if (phase2Backend) {
+        await phase2Backend.paymentMethods.remove(id);
+        setRemotePaymentMethods((prev) => prev.filter((m) => m.id !== id));
+        return;
+      }
       setPaymentMethods((prev) => {
         const filtered = prev.filter((m) => m.id !== id);
         if (filtered.length === 0) return filtered;
@@ -1141,27 +1485,67 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
         return filtered;
       });
     },
-    [setPaymentMethods],
+    [phase2Backend, setPaymentMethods],
   );
 
   const setDefaultPaymentMethod = useCallback(
-    (id: string) => {
+    async (id: string): Promise<void> => {
+      if (phase2Backend) {
+        await phase2Backend.paymentMethods.setDefault(id);
+        setRemotePaymentMethods((prev) =>
+          prev.map((m) => ({ ...m, isDefault: m.id === id })),
+        );
+        return;
+      }
       setPaymentMethods((prev) =>
         prev.map((m) => ({ ...m, isDefault: m.id === id })),
       );
     },
-    [setPaymentMethods],
+    [phase2Backend, setPaymentMethods],
   );
 
   const recordOrder = useCallback(
-    (order: Order) => {
+    async (order: Order): Promise<string | null> => {
+      if (phase2Backend) {
+        // Resolve sellerId from the first line item (single-seller
+        // checkout — Phase 1 cart never mixes sellers). Phase 3 will
+        // support multi-seller orders by splitting the cart per seller.
+        const sellerId = order.lineItems[0]?.product.sellerId;
+        if (!sellerId) {
+          throw new Error(
+            "Cannot record order without a seller id on the line item.",
+          );
+        }
+        const input = buildCreateOrderInput({ order, sellerId });
+        const created = await phase2Backend.orders.create(input);
+        await refreshOrders();
+        return created.id;
+      }
       setOrders((prev) => [order, ...prev]);
+      return order.id;
     },
-    [setOrders],
+    [phase2Backend, refreshOrders, setOrders],
   );
 
   const updateOrderStatus = useCallback(
-    (id: string, status: Order["status"]) => {
+    async (id: string, status: Order["status"]): Promise<void> => {
+      if (phase2Backend) {
+        if (status === "shipped") {
+          await phase2Backend.orders.markShipped(id, {
+            nameEn: "Aramex",
+            nameAr: "أرامكس",
+            tracking: `ARMX-${String(id).slice(-7).toUpperCase()}`,
+          });
+        } else if (status === "delivered") {
+          await phase2Backend.orders.markDelivered(id);
+        } else if (status === "cancelled") {
+          await phase2Backend.orders.cancel(id);
+        } else if (status === "returned") {
+          await phase2Backend.orders.requestReturn(id);
+        }
+        await refreshOrders();
+        return;
+      }
       setOrders((prev) =>
         prev.map((o) => {
           if (o.id !== id) return o;
@@ -1202,21 +1586,35 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
         }),
       );
     },
-    [setOrders],
+    [phase2Backend, refreshOrders, setOrders],
   );
 
   const markNotificationRead = useCallback(
-    (notifId: string) => {
+    async (notifId: string): Promise<void> => {
+      if (phase2Backend) {
+        await phase2Backend.notifications.markRead(notifId);
+        setRemoteNotifications((prev) =>
+          prev.map((n) => (n.id === notifId ? { ...n, isUnread: false } : n)),
+        );
+        return;
+      }
       setNotifications((prev) =>
         prev.map((n) => (n.id === notifId ? { ...n, isUnread: false } : n)),
       );
     },
-    [setNotifications],
+    [phase2Backend, setNotifications],
   );
 
-  const markAllNotificationsRead = useCallback(() => {
+  const markAllNotificationsRead = useCallback(async () => {
+    if (phase2Backend) {
+      await phase2Backend.notifications.markAllRead();
+      setRemoteNotifications((prev) =>
+        prev.map((n) => ({ ...n, isUnread: false })),
+      );
+      return;
+    }
     setNotifications((prev) => prev.map((n) => ({ ...n, isUnread: false })));
-  }, [setNotifications]);
+  }, [phase2Backend, setNotifications]);
 
   const updateUserProfile = useCallback(
     (patch: Partial<UserProfile>) => {
@@ -1437,33 +1835,127 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   );
 
   const addMyReview = useCallback(
-    (review: Omit<MyReview, "id">) => {
+    async (review: Omit<MyReview, "id">): Promise<MyReview> => {
+      if (phase2Backend) {
+        // LeaveReviewView passes `product.sellerId` directly in
+        // `sellerKey`; the mock-mode fallback uses the seller display
+        // name. Either way we forward it to the backend as the
+        // `seller_id` foreign key.
+        const sellerId = review.sellerKey;
+        // Snapshot reviewer identity for the public profile surface so
+        // PublicSellerProfile can render the reviewer's name + avatar
+        // without joining against the buyer's private profile row.
+        const reviewerNameEn = remoteUserProfile.fullNameEn;
+        const reviewerNameAr = remoteUserProfile.fullNameAr;
+        const reviewerAvatar = remoteUserProfile.avatar;
+        const created = await phase2Backend.reviews.create({
+          sellerId,
+          orderId: review.orderId || null,
+          rating: review.rating,
+          bodyEn: review.title + "\n\n" + review.body,
+          bodyAr: review.title + "\n\n" + review.body,
+          tags: [],
+          imageUrl: review.photos[0] ?? null,
+          reviewerNameEn,
+          reviewerNameAr,
+          reviewerAvatar,
+        });
+        const local: MyReview = {
+          id: created.id,
+          orderId: created.orderId ?? "",
+          sellerKey: created.sellerId,
+          rating: created.rating as MyReview["rating"],
+          title: created.bodyEn.slice(0, 60),
+          body: created.bodyEn,
+          photos: created.imageUrl ? [created.imageUrl] : [],
+          date: created.createdAt,
+          isVerifiedPurchase: !!created.orderId,
+        };
+        setRemoteMyReviews((prev) => [local, ...prev]);
+        return local;
+      }
       const id = `myrev-${Date.now()}`;
-      setMyReviews((prev) => [{ id, ...review }, ...prev]);
+      const local: MyReview = { id, ...review };
+      setMyReviews((prev) => [local, ...prev]);
+      return local;
     },
-    [setMyReviews],
+    [phase2Backend, remoteUserProfile, setMyReviews],
   );
 
   const blockUser = useCallback(
-    (user: Omit<BlockedUser, "id" | "date">) => {
+    async (user: Omit<BlockedUser, "id" | "date">): Promise<void> => {
+      if (phase2Backend) {
+        // Map the view-model fields onto the service's expected shape.
+        // The blocked user's id is encoded in the avatar URL path or
+        // extracted from the name; for now we generate a stable id from
+        // the avatar URL since the UI doesn't track a separate sellerId.
+        const blockedId =
+          user.avatar.match(/\/sellers\/([^.]+)\./)?.[1] ?? user.nameEn;
+        await phase2Backend.blocks.block({
+          blockedId,
+          blockedNameEn: user.nameEn,
+          blockedNameAr: user.nameAr,
+          blockedAvatar: user.avatar,
+          reasonEn: user.reasonEn,
+          reasonAr: user.reasonAr,
+        });
+        const next = await phase2Backend.blocks.listMine();
+        setRemoteBlockedUsers(
+          next.map((r) => ({
+            id: r.id,
+            nameEn: r.blockedNameEn,
+            nameAr: r.blockedNameAr,
+            avatar: r.blockedAvatar,
+            reasonEn: r.reasonEn ?? undefined,
+            reasonAr: r.reasonAr ?? undefined,
+            date: r.createdAt,
+          })),
+        );
+        return;
+      }
       const id = `blk-${Date.now()}`;
       setBlockedUsers((prev) => [
         ...prev,
         { ...user, id, date: new Date().toISOString() },
       ]);
     },
-    [setBlockedUsers],
+    [phase2Backend, setBlockedUsers],
   );
 
   const unblockUser = useCallback(
-    (id: string) => {
+    async (id: string): Promise<void> => {
+      if (phase2Backend) {
+        await phase2Backend.blocks.unblock(id);
+        setRemoteBlockedUsers((prev) => prev.filter((u) => u.id !== id));
+        return;
+      }
       setBlockedUsers((prev) => prev.filter((u) => u.id !== id));
     },
-    [setBlockedUsers],
+    [phase2Backend, setBlockedUsers],
   );
 
   const submitReport = useCallback(
-    (input: Omit<ReportRecord, "id" | "caseNumber" | "status" | "date">) => {
+    async (
+      input: Omit<ReportRecord, "id" | "caseNumber" | "status" | "date">,
+    ): Promise<ReportRecord> => {
+      if (phase2Backend) {
+        const created = await phase2Backend.reports.create({
+          target: input.kind,
+          targetId: input.targetId,
+          reason:
+            input.reason === "inappropriate"
+              ? "offensive"
+              : input.reason === "wrong_category"
+                ? "mismatch"
+                : input.reason === "stolen"
+                  ? "other"
+                  : input.reason,
+          body: input.body,
+        });
+        const local = mapReportFromRemote(created);
+        setRemoteReports((prev) => [local, ...prev]);
+        return local;
+      }
       const caseNumber = `MOODAY-${String(
         (reports.length + 1 + 10000).toString(),
       ).padStart(5, "0")}`;
@@ -1477,11 +1969,23 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       setReports((prev) => [record, ...prev]);
       return record;
     },
-    [setReports, reports.length],
+    [phase2Backend, setReports, reports.length],
   );
 
   const openDispute = useCallback(
-    (input: Omit<Dispute, "id" | "status" | "date" | "timeline">) => {
+    async (
+      input: Omit<Dispute, "id" | "status" | "date" | "timeline">,
+    ): Promise<Dispute> => {
+      if (phase2Backend) {
+        const created = await phase2Backend.disputes.create({
+          orderId: input.orderId,
+          reason: input.reason,
+          body: input.body,
+        });
+        const local = mapDisputeFromRemote(created);
+        setRemoteDisputes((prev) => [local, ...prev]);
+        return local;
+      }
       const id = `disp-${Date.now()}`;
       const date = new Date().toISOString();
       const dispute: Dispute = {
@@ -1502,7 +2006,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       setDisputes((prev) => [dispute, ...prev]);
       return dispute;
     },
-    [setDisputes],
+    [phase2Backend, setDisputes],
   );
 
   // Resolve the active user record from the session + users list.
@@ -1527,6 +2031,39 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     return { id: match.id, email: match.email, name: match.nameEn };
   }, [phase2Backend, remoteUser, session, users]);
 
+  // Initial + on-auth-change fetch of remote data. The dependency on
+  // `remoteUser` re-runs on sign-in / sign-out so a fresh session sees
+  // the latest state immediately. Pulled out of the early render path
+  // so all refreshers below are in scope.
+  useEffect(() => {
+    if (!marketplaceMode) return;
+    let active = true;
+    void (async () => {
+      if (active) {
+        await refreshListings();
+        await refreshOrders();
+        await refreshChats();
+        await refreshNotifications();
+        await refreshMyReviews();
+        await refreshReports();
+        await refreshDisputes();
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, [
+    marketplaceMode,
+    refreshListings,
+    refreshOrders,
+    refreshChats,
+    refreshNotifications,
+    refreshMyReviews,
+    refreshReports,
+    refreshDisputes,
+    remoteUser,
+  ]);
+
   const value = useMemo(
     () => ({
       language,
@@ -1545,39 +2082,47 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       removeFromCart,
       updateQuantity,
       clearCart,
-      chats,
+      chats: activeChats,
       sendChatMessage,
       createChatThread,
       markChatRead,
+      setChatOfferStatus,
+      refreshChats,
+      chatsLoading,
       addresses,
       addAddress,
       updateAddress,
       removeAddress,
       setDefaultAddress,
-      paymentMethods,
+      paymentMethods: activePaymentMethods,
       addPaymentMethod,
       removePaymentMethod,
       setDefaultPaymentMethod,
       orders,
       recordOrder,
       updateOrderStatus,
-      notifications,
+      notifications: activeNotifications,
       markNotificationRead,
       markAllNotificationsRead,
       userProfile,
       updateUserProfile,
-      myReviews,
+      myReviews: activeMyReviews,
       addMyReview,
-      blockedUsers,
+      blockedUsers: activeBlockedUsers,
       blockUser,
       unblockUser,
-      reports,
+      reports: activeReports,
       submitReport,
-      disputes,
+      disputes: activeDisputes,
       openDispute,
+      refreshNotifications,
+      refreshMyReviews,
+      refreshReports,
+      refreshDisputes,
       currentUser,
       currentUserId,
       authMode,
+      phase2Backend,
       authReady,
       pendingAuthEmail,
       authError,
@@ -1607,39 +2152,47 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       removeFromCart,
       updateQuantity,
       clearCart,
-      chats,
+      activeChats,
       sendChatMessage,
       createChatThread,
       markChatRead,
+      setChatOfferStatus,
+      refreshChats,
+      chatsLoading,
       addresses,
       addAddress,
       updateAddress,
       removeAddress,
       setDefaultAddress,
-      paymentMethods,
+      activePaymentMethods,
       addPaymentMethod,
       removePaymentMethod,
       setDefaultPaymentMethod,
       orders,
       recordOrder,
       updateOrderStatus,
-      notifications,
+      activeNotifications,
       markNotificationRead,
       markAllNotificationsRead,
       userProfile,
       updateUserProfile,
-      myReviews,
+      activeMyReviews,
       addMyReview,
-      blockedUsers,
+      activeBlockedUsers,
       blockUser,
       unblockUser,
-      reports,
+      activeReports,
       submitReport,
-      disputes,
+      activeDisputes,
       openDispute,
+      refreshNotifications,
+      refreshMyReviews,
+      refreshReports,
+      refreshDisputes,
       currentUser,
       currentUserId,
       authMode,
+      phase2Backend,
       authReady,
       pendingAuthEmail,
       authError,

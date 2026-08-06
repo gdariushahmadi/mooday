@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { AppContext, type AppContextType } from "@/context/AppContext";
+import type { ReportRecord } from "@/data/reports";
 import { ReportView } from "@/components/ReportView";
 
 const DEFAULT_USER = {
@@ -29,7 +30,7 @@ function makeContext(overrides: Partial<AppContextType> = {}): AppContextType {
       status: "open" as const,
       date: new Date().toISOString(),
       ...input,
-    }),
+    } as ReportRecord),
   );
   return {
     language: "en",
@@ -49,6 +50,13 @@ function makeContext(overrides: Partial<AppContextType> = {}): AppContextType {
     sendChatMessage: vi.fn(),
     createChatThread: vi.fn(() => "t1"),
     markChatRead: vi.fn(),
+    setChatOfferStatus: vi.fn(),
+    refreshChats: vi.fn(async () => {}),
+    chatsLoading: false,
+    refreshNotifications: vi.fn(async () => {}),
+    refreshMyReviews: vi.fn(async () => {}),
+    refreshReports: vi.fn(async () => {}),
+    refreshDisputes: vi.fn(async () => {}),
     addresses: [],
     addAddress: vi.fn(),
     updateAddress: vi.fn(),
@@ -72,9 +80,13 @@ function makeContext(overrides: Partial<AppContextType> = {}): AppContextType {
     blockUser: vi.fn(),
     unblockUser: vi.fn(),
     reports: [],
-    submitReport,
+    submitReport: submitReport as unknown as (
+      report: Omit<ReportRecord, "id" | "caseNumber" | "status" | "date">,
+    ) => Promise<ReportRecord>,
     disputes: [],
-    openDispute: vi.fn(),
+    openDispute: vi.fn() as unknown as (
+      dispute: Omit<Dispute, "id" | "status" | "date" | "timeline">,
+    ) => Promise<Dispute>,
     currentUser: null,
     authError: null,
     signUp: vi.fn(() => "user-test"),
@@ -158,3 +170,4 @@ describe("ReportView (H-40)", () => {
     expect(screen.getByText("الإبلاغ")).toBeInTheDocument();
   });
 });
+import type { Dispute } from "@/data/disputes";

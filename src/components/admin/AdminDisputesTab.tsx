@@ -107,7 +107,7 @@ export function AdminDisputesTab({
                   <strong className="text-on-surface">{dispute.buyerEmail}</strong>
                 </p>
                 <div className="rounded-xl bg-surface-container-low p-3 text-sm text-on-surface italic">
-                  "{dispute.body}"
+                  &ldquo;{dispute.body}&rdquo;
                 </div>
               </div>
 

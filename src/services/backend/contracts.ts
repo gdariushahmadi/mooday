@@ -435,6 +435,10 @@ export interface SellerReviewRecord {
   /** Quick-tag keys: "as_described" | "fast_shipping" | "great_comms" | "loved_it". */
   tags: string[];
   imageUrl: string | null;
+  /** Reviewer display-name snapshot. */
+  reviewerNameEn: string;
+  reviewerNameAr: string;
+  reviewerAvatar: string;
   createdAt: string;
 }
 
@@ -532,7 +536,66 @@ export interface NotificationRecord {
 export interface NotificationService {
   listMine(): Promise<NotificationRecord[]>;
   markRead(id: string): Promise<void>;
+
   markAllRead(): Promise<void>;
+}
+
+// ---------- M4: payment methods ----------
+
+export interface PaymentMethodRecord {
+  id: string;
+  ownerId: string;
+  labelEn: string;
+  labelAr: string;
+  brandEn: "Visa" | "Mastercard" | "Amex" | "Apple Pay";
+  brandAr: "فيزا" | "ماستركارد" | "أمريكان إكسبريس" | "آبل باي";
+  last4: string;
+  holderEn: string;
+  holderAr: string;
+  /** "MM/YY" */
+  expiry: string;
+  isDefault: boolean;
+  createdAt: string;
+}
+
+export interface PaymentMethodService {
+  listMine(): Promise<PaymentMethodRecord[]>;
+  create(
+    input: Omit<PaymentMethodRecord, "id" | "ownerId" | "createdAt">,
+  ): Promise<PaymentMethodRecord>;
+  update(
+    id: string,
+    patch: Partial<Omit<PaymentMethodRecord, "id" | "ownerId" | "createdAt">>,
+  ): Promise<void>;
+  remove(id: string): Promise<void>;
+  setDefault(id: string): Promise<void>;
+}
+
+// ---------- M4: blocked users ----------
+
+export interface BlockedUserRecord {
+  id: string;
+  blockerId: string;
+  blockedId: string;
+  blockedNameEn: string;
+  blockedNameAr: string;
+  blockedAvatar: string;
+  reasonEn: string | null;
+  reasonAr: string | null;
+  createdAt: string;
+}
+
+export interface BlockService {
+  listMine(): Promise<BlockedUserRecord[]>;
+  block(input: {
+    blockedId: string;
+    blockedNameEn: string;
+    blockedNameAr: string;
+    blockedAvatar: string;
+    reasonEn?: string;
+    reasonAr?: string;
+  }): Promise<BlockedUserRecord>;
+  unblock(id: string): Promise<void>;
 }
 
 export interface Phase2Backend {
@@ -550,4 +613,6 @@ export interface Phase2Backend {
   reports: ReportService;
   disputes: DisputeService;
   notifications: NotificationService;
+  paymentMethods: PaymentMethodService;
+  blocks: BlockService;
 }

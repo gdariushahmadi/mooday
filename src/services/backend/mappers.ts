@@ -196,3 +196,22 @@ export function mapProductToUpdatePatch(
 export function isPublicImageUrl(path: string): boolean {
   return path.startsWith("/") || /^https?:\/\//i.test(path);
 }
+
+// ---------- re-exports for split mapper files ----------
+// These live in dedicated modules (mappers-orders.ts, mappers-social.ts)
+// but callers import from this single barrel for ergonomic consistency.
+export {
+  mapOrderFromRemote,
+  buildCreateOrderInput,
+  hydrateOrderProduct,
+  type MapOrderInput,
+  type BuildCreateOrderInputArgs,
+} from "./mappers-orders";
+export {
+  mapThreadFromRemote,
+  mapMessageFromRemote,
+  mapNotificationFromRemote,
+  mapReviewFromRemote,
+  mapReportFromRemote,
+  mapDisputeFromRemote,
+} from "./mappers-social";

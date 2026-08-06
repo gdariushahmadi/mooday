@@ -9,7 +9,7 @@ import type {
 } from "./actions";
 
 // In-memory mock databases for offline/demo mode
-let mockUsers: AdminProfileSummary[] = [
+const mockUsers: AdminProfileSummary[] = [
   {
     id: "usr-1",
     email: "sarah.m@example.com",
@@ -112,7 +112,7 @@ let mockPendingListings: AdminListingSummary[] = [
   },
 ];
 
-let mockOrders: AdminOrderSummary[] = [
+const mockOrders: AdminOrderSummary[] = [
   {
     id: "ord-8801",
     buyerId: "usr-1",
@@ -137,7 +137,7 @@ let mockOrders: AdminOrderSummary[] = [
   },
 ];
 
-let mockDisputes: AdminDisputeSummary[] = [
+const mockDisputes: AdminDisputeSummary[] = [
   {
     id: "disp-101",
     orderId: "ord-8802",
@@ -151,7 +151,7 @@ let mockDisputes: AdminDisputeSummary[] = [
   },
 ];
 
-let mockReports: AdminReportSummary[] = [
+const mockReports: AdminReportSummary[] = [
   {
     id: "rep-501",
     caseNumber: "REP-2026-001",
@@ -176,7 +176,7 @@ let mockReports: AdminReportSummary[] = [
   },
 ];
 
-let mockAuditLogs: AdminAuditLogEntry[] = [
+const mockAuditLogs: AdminAuditLogEntry[] = [
   {
     id: 1,
     actorEmail: "sarah.m@example.com",

@@ -1,0 +1,3 @@
+module.exports=[90075,a=>{"use strict";function b(a){return new Intl.NumberFormat("en-AE",{maximumFractionDigits:0}).format(a)}a.s(["formatAED",0,b,"formatAEDLabel",0,function(a){return`AED ${b(a)}`}])},6697,a=>{"use strict";var b=a.i(87924),c=a.i(63319),d=a.i(36585),e=a.i(58524);a.s(["default",0,function(){(0,c.useForcedMobile)();let a=(0,d.useAppNavigation)();return(0,b.jsx)("div",{className:"min-h-dvh flex flex-col bg-background text-on-background antialiased",children:(0,b.jsx)("main",{className:"w-full max-w-container-max mx-auto px-margin-mobile md:px-lg mt-md flex-grow flex flex-col",children:(0,b.jsx)(e.AppContent,{nav:a})})})}])}];
+
+//# sourceMappingURL=src_1j0vnt1._.js.map

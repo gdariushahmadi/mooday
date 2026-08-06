@@ -100,7 +100,7 @@ export function AdminBroadcastTab({
               <button
                 key={item.id}
                 type="button"
-                onClick={() => setKind(item.id as any)}
+                onClick={() => setKind(item.id as "system" | "order" | "price_drop")}
                 className={`flex items-center justify-center gap-2 rounded-xl py-3 px-2 text-xs font-bold border transition ${
                   kind === item.id
                     ? "bg-primary text-on-primary border-primary shadow-sm"

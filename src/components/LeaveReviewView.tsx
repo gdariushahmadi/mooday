@@ -137,11 +137,16 @@ export const LeaveReviewView: React.FC<LeaveReviewViewProps> = ({
       return;
     }
     setFormError("");
-    const productSeller =
-      first ? first.product.sellerNameEn : "Unknown";
+    // `sellerKey` doubles as the seller's stable id when running in
+    // supabase mode (the local mock data still uses seller display
+    // names like "sarah"; the adapter treats it as opaque either way).
+    // Prefer the listing's actual seller id when the order line item
+    // carries it so the backend doesn't need to round-trip back to
+    // the order to discover it.
+    const productSellerId = first?.product.sellerId;
     addMyReview({
       orderId: order.id,
-      sellerKey: productSeller,
+      sellerKey: productSellerId ?? first?.product.sellerNameEn ?? "Unknown",
       rating,
       title: title.trim(),
       body: body.trim(),

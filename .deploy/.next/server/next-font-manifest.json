@@ -1,0 +1,43 @@
+{
+  "app": {
+    "[project]/src/app/_not-found/page": [
+      "static/media/c47649aa31f9e140-s.p.3lxpqujs87tck.woff2",
+      "static/media/52b5d5098cb87ddd-s.p.3r2y_bth_sjsm.woff2",
+      "static/media/3fd1b3eda9c5392f-s.p.28efgb-r-zxeb.woff2",
+      "static/media/bdbeee9d91ec0c78-s.p.10yd3ypge-a6n.woff2"
+    ],
+    "[project]/src/app/admin/page": [
+      "static/media/c47649aa31f9e140-s.p.3lxpqujs87tck.woff2",
+      "static/media/52b5d5098cb87ddd-s.p.3r2y_bth_sjsm.woff2",
+      "static/media/3fd1b3eda9c5392f-s.p.28efgb-r-zxeb.woff2",
+      "static/media/bdbeee9d91ec0c78-s.p.10yd3ypge-a6n.woff2"
+    ],
+    "[project]/src/app/app/page": [
+      "static/media/c47649aa31f9e140-s.p.3lxpqujs87tck.woff2",
+      "static/media/52b5d5098cb87ddd-s.p.3r2y_bth_sjsm.woff2",
+      "static/media/3fd1b3eda9c5392f-s.p.28efgb-r-zxeb.woff2",
+      "static/media/bdbeee9d91ec0c78-s.p.10yd3ypge-a6n.woff2"
+    ],
+    "[project]/src/app/auth/callback/page": [
+      "static/media/c47649aa31f9e140-s.p.3lxpqujs87tck.woff2",
+      "static/media/52b5d5098cb87ddd-s.p.3r2y_bth_sjsm.woff2",
+      "static/media/3fd1b3eda9c5392f-s.p.28efgb-r-zxeb.woff2",
+      "static/media/bdbeee9d91ec0c78-s.p.10yd3ypge-a6n.woff2"
+    ],
+    "[project]/src/app/page": [
+      "static/media/c47649aa31f9e140-s.p.3lxpqujs87tck.woff2",
+      "static/media/52b5d5098cb87ddd-s.p.3r2y_bth_sjsm.woff2",
+      "static/media/3fd1b3eda9c5392f-s.p.28efgb-r-zxeb.woff2",
+      "static/media/bdbeee9d91ec0c78-s.p.10yd3ypge-a6n.woff2"
+    ],
+    "[project]/src/app/preview/page": [
+      "static/media/c47649aa31f9e140-s.p.3lxpqujs87tck.woff2",
+      "static/media/52b5d5098cb87ddd-s.p.3r2y_bth_sjsm.woff2",
+      "static/media/3fd1b3eda9c5392f-s.p.28efgb-r-zxeb.woff2",
+      "static/media/bdbeee9d91ec0c78-s.p.10yd3ypge-a6n.woff2"
+    ]
+  },
+  "appUsingSizeAdjust": true,
+  "pages": {},
+  "pagesUsingSizeAdjust": false
+}

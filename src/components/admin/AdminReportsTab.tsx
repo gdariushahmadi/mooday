@@ -136,7 +136,9 @@ export function AdminReportsTab({
                       onClick={() => {
                         setSelectedReport(report);
                         setTriageStatus(
-                          report.status === "open" ? "investigating" : (report.status as any)
+                          report.status === "open"
+                            ? "investigating"
+                            : (report.status as "investigating" | "resolved" | "dismissed")
                         );
                       }}
                       className="rounded-lg bg-primary/10 px-3 py-1.5 text-xs font-bold text-primary hover:bg-primary/20 transition disabled:opacity-50"
@@ -169,7 +171,7 @@ export function AdminReportsTab({
                 </label>
                 <select
                   value={triageStatus}
-                  onChange={(e) => setTriageStatus(e.target.value as any)}
+                  onChange={(e) => setTriageStatus(e.target.value as "investigating" | "resolved" | "dismissed")}
                   className="w-full rounded-xl border border-surface-container-high bg-surface-container-low p-2.5 text-sm"
                 >
                   <option value="investigating">

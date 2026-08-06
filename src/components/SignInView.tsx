@@ -88,10 +88,13 @@ export const SignInView: React.FC<SignInViewProps> = ({
   const [remember, setRemember] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
+  // Restore "remember me" email from storage on first paint.
   useEffect(() => {
     const saved = readRememberedEmail();
     if (saved) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setEmail(saved);
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setRemember(true);
     }
   }, []);

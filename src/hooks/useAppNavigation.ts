@@ -206,6 +206,7 @@ export function useAppNavigation(): AppNavigation {
     if (listings.length === 0) return;
     const productId = readUrlParam("product");
     if (productId) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setSelectedProduct((prev) => {
         if (prev) return prev;
         return listings.find((p) => p.id === productId) ?? null;
@@ -235,8 +236,10 @@ export function useAppNavigation(): AppNavigation {
 
   const startChat = useCallback(
     (product: Product) => {
-      const threadId = createChatThread(product);
-      setActiveChatThreadId(threadId);
+      const result = createChatThread(product);
+      Promise.resolve(result).then((threadId) =>
+        setActiveChatThreadId(threadId),
+      );
     },
     [createChatThread],
   );
@@ -254,9 +257,10 @@ export function useAppNavigation(): AppNavigation {
         ) ?? null;
 
       if (match) {
-        const threadId = createChatThread(match);
-        setSelectedProduct(null);
-        setActiveChatThreadId(threadId);
+        Promise.resolve(createChatThread(match)).then((threadId) => {
+          setSelectedProduct(null);
+          setActiveChatThreadId(threadId);
+        });
         return;
       }
 
@@ -283,8 +287,10 @@ export function useAppNavigation(): AppNavigation {
         sellerId,
       };
       const threadId = createChatThread(synthetic);
-      setSelectedProduct(null);
-      setActiveChatThreadId(threadId);
+      Promise.resolve(threadId).then((id) => {
+        setSelectedProduct(null);
+        setActiveChatThreadId(id);
+      });
     },
     [createChatThread, listings],
   );
