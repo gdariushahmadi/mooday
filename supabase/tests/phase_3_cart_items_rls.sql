@@ -80,31 +80,30 @@ select is(
   'a second increment accumulates to quantity 2'
 );
 
+select lives_ok(
+  $$select public.cart_items_increment(
+    '33333333-1111-4111-8111-111111111111'::uuid, 98
+  )$$,
+  'cart_items_increment clamps overflow at the 99 ceiling'
+);
+
+select is(
+  (
+    select quantity from public.cart_items
+    where user_id = '11111111-1111-4111-8111-111111111111'
+      and listing_id = '33333333-1111-4111-8111-111111111111'
+  ),
+  99,
+  'clamp lands exactly on the 99 ceiling (no check violation)'
+);
+
 select throws_ok(
-  select lives_ok(
-    $$select public.cart_items_increment(
-      '33333333-1111-4111-8111-111111111111'::uuid, 98
-    )$$,
-    'cart_items_increment clamps overflow at the 99 ceiling'
-  );
-
-  select is(
-    (
-      select quantity from public.cart_items
-      where user_id = '11111111-1111-4111-8111-111111111111'
-        and listing_id = '33333333-1111-4111-8111-111111111111'
-    ),
-    99,
-    'clamp lands exactly on the 99 ceiling (no check violation)'
-  );
-
-  select throws_ok(
-    $$select public.cart_items_increment(
-      '44444444-1111-4111-8111-111111111111'::uuid, 200
-    )$$,
-    '23514', null,
-    'cart_items_increment fresh-row insert rejects quantity > 99 at the schema check'
-  );
+  $$select public.cart_items_increment(
+    '44444444-1111-4111-8111-111111111111'::uuid, 200
+  )$$,
+  '23514', null,
+  'cart_items_increment fresh-row insert rejects quantity > 99 at the schema check'
+);
 
 reset role;
 set local role authenticated;

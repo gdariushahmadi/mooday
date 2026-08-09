@@ -16,9 +16,6 @@ const eslintConfig = defineConfig([
     // are not part of the application source.
     "scripts/**",
     "public/sw.js",
-    // Test scripts and artifacts
-    "test-oauth.mjs",
-    ".deploy/**",
     // Vitest config is not application source.
     "vitest.config.mjs",
     "vitest.config.mts",

@@ -157,10 +157,10 @@ select is(
   'bystander cannot read another user''s orders'
 );
 
-select throws_ok(
+select is_empty(
   $$update public.orders set status = 'cancelled'
-    where id = 'bbbbbbbb-1111-4111-9111-111111111111'$$,
-  '42501', null,
+    where id = 'bbbbbbbb-1111-4111-9111-111111111111'
+    returning 1$$,
   'bystander cannot mutate an order they do not own'
 );
 
