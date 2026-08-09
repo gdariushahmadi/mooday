@@ -65,11 +65,10 @@ describe("useWelcomeGuard", () => {
   });
 
   it("survives a localStorage quota error when writing", () => {
-    const setItemSpy = vi
-      .spyOn(Storage.prototype, "setItem")
-      .mockImplementation(() => {
-        throw new Error("QuotaExceededError");
-      });
+    const original = localStorage.setItem;
+    localStorage.setItem = vi.fn(() => {
+      throw new Error("QuotaExceededError");
+    });
 
     const { result } = renderHook(() => useWelcomeGuard());
 
@@ -80,6 +79,6 @@ describe("useWelcomeGuard", () => {
 
     expect(result.current.shouldShow).toBe(false);
 
-    setItemSpy.mockRestore();
+    localStorage.setItem = original;
   });
 });

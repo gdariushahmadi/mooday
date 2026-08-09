@@ -48,7 +48,8 @@ export function useWelcomeGuard(): WelcomeGuard {
   const [, forceRender] = useState(0);
   const bump = useCallback(() => forceRender((v) => v + 1), []);
 
-  const hasSeen = hydrated && readHasSeenWelcome();
+  const [hasSeenFallback, setHasSeenFallback] = useState(false);
+  const hasSeen = hydrated && (readHasSeenWelcome() || hasSeenFallback);
 
   // Subscribe to cross-tab storage events so reset() in one tab is
   // visible in another. Same-tab updates are handled by bump().
@@ -60,6 +61,7 @@ export function useWelcomeGuard(): WelcomeGuard {
     } catch {
       // Ignore quota / private-mode errors.
     }
+    setHasSeenFallback(true);
     bump();
   }, [bump]);
 
@@ -69,6 +71,7 @@ export function useWelcomeGuard(): WelcomeGuard {
     } catch {
       // Ignore.
     }
+    setHasSeenFallback(false);
     bump();
   }, [bump]);
 

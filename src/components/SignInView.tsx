@@ -92,7 +92,7 @@ export const SignInView: React.FC<SignInViewProps> = ({
     if (saved) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setEmail(saved);
-      // eslint-disable-next-line react-hooks/set-state-in-effect
+
       setRemember(true);
     }
   }, []);
