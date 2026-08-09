@@ -55,14 +55,12 @@ a `NEXT_PUBLIC_*` variable or commit it to Git.
   placement, Arabic rendering, and delivery failure handling.
 - [ ] Configure bounce/complaint monitoring and provider rate alerts.
 
-## 3. Google and Apple sign-in
+## 3. Google sign-in
 
 - [ ] Create separate Google OAuth credentials for staging and production.
 - [ ] Add the exact Supabase callback URL and Mooday web origins in Google
-  Cloud, then store the client secret in Supabase.
-- [ ] Configure the Apple developer App ID, Services ID, key, team ID, and
-  verified return URL; store the private key only in the secret manager.
-- [ ] Enable both providers in Supabase and test new-user, returning-user,
+Cloud, then store the client secret in Supabase.
+- [ ] Enable the Google provider in Supabase and test new-user, returning-user,
   cancelled-consent, duplicate-email, and callback-error paths.
 - [ ] Review the consent-screen/app-verification requirements before launch.
 

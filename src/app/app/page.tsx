@@ -1,38 +1,24 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useApp } from "@/context/AppContext";
 import { useForcedMobile } from "@/hooks/useForcedMobile";
 import { useAppNavigation } from "@/hooks/useAppNavigation";
 import { useWelcomeGuard } from "@/hooks/useWelcomeGuard";
+import { useIdleLock } from "@/hooks/useIdleLock";
 import { AppContent } from "@/components/AppContent";
 import { WelcomeView } from "@/components/WelcomeView";
 import { InstallPrompt } from "@/components/InstallPrompt";
 import { AuthSheet } from "@/components/AuthSheet";
+import { LockScreen } from "@/components/LockScreen";
 import { readUrlParam } from "@/types/navigation";
 
-/** Views that own their own full-page header — hide shell chrome. */
-const HIDE_CHROME_VIEWS = new Set([
-  "checkout",
-  "bag",
-  "signup",
-  "signin",
-  "otp",
-  "forgot-password",
-  "social-login",
-  "settings",
-  "edit-profile",
-  "addresses",
-  "payment-methods",
-  "help",
-  "blocked-users",
-  "leave-review",
-  "my-reviews",
-  "report",
-  "return-request",
-  "payouts",
-  "dispute",
-  "disputes-list",
+/** Views that are the app's primary destinations and use shared shell chrome. */
+const PRIMARY_SHELL_VIEWS = new Set([
+  "home",
+  "search",
+  "activity",
+  "profile",
 ]);
 
 /** True when the URL carries an intentional deep-link destination. */
@@ -50,7 +36,17 @@ function hasIntentionalDeepLink(): boolean {
 }
 
 export default function Home() {
-  const { language, cart, currentUser } = useApp();
+  const {
+    language,
+    cart,
+    currentUser,
+    isLocked,
+    lockEnabled,
+    hasPin,
+    hasBiometric,
+    lockTimeoutMs,
+    lockNow,
+  } = useApp();
   const isAr = language === "ar";
   // When `?mobile=1` is in the URL, the app re-renders at a fixed mobile
   // width (no extra wrapper, no visual frame) so it can be embedded cleanly
@@ -59,6 +55,23 @@ export default function Home() {
 
   const nav = useAppNavigation();
   const welcome = useWelcomeGuard();
+  // Auto-lock timer: only ticks when the feature is on AND we have at
+  // least one unlock factor registered. We deliberately keep the rest
+  // of the shell mounted so any pending user interaction is preserved
+  // under the overlay.
+  const idle = useIdleLock({
+    timeoutMs: lockTimeoutMs ?? 5 * 60_000,
+    enabled: Boolean(
+      lockEnabled && currentUser && (hasPin || hasBiometric) && !isLocked,
+    ),
+  });
+
+  useEffect(() => {
+    if (idle.expired) {
+      lockNow?.();
+    }
+  }, [idle.expired, lockNow]);
+
   const {
     activeTab,
     currentView,
@@ -93,17 +106,18 @@ export default function Home() {
     );
   }
 
-  // Hide chrome (header + bottom nav) when a full-page overlay is active.
+  // Keep shared chrome on the primary destinations only. Detail screens and
+  // task flows own their page header and should not compete with this shell.
   const showChrome =
     !selectedProduct &&
     !activeChatThreadId &&
-    !HIDE_CHROME_VIEWS.has(currentView);
+    PRIMARY_SHELL_VIEWS.has(currentView);
   const showHeader = showChrome;
   const showBottomNav = showChrome;
 
   return (
     <div
-      className={`min-h-dvh flex flex-col bg-background text-on-background antialiased selection:bg-primary-fixed selection:text-on-primary-fixed ${
+      className={`app-shell-surface min-h-dvh flex flex-col bg-background text-on-background antialiased selection:bg-primary-fixed selection:text-on-primary-fixed ${
         showBottomNav ? "app-shell-with-nav" : ""
       }`}
     >
@@ -243,7 +257,11 @@ export default function Home() {
       {/* Main Content View Switcher */}
       <main
         id="main-content"
-        className="w-full max-w-container-max mx-auto px-margin-mobile md:px-lg mt-md flex-grow flex flex-col"
+        className={[
+          "w-full max-w-container-max mx-auto px-margin-mobile md:px-lg",
+          showChrome ? "mt-md" : "mt-0",
+          "flex-grow flex flex-col",
+        ].join(" ")}
       >
         <AppContent nav={nav} />
       </main>
@@ -253,7 +271,7 @@ export default function Home() {
         <nav
           data-testid="bottom-navigation"
           aria-label={isAr ? "التنقل الرئيسي" : "Primary navigation"}
-          className="app-bottom-nav fixed inset-x-0 bottom-0 z-40 grid grid-cols-5 items-center border-t border-surface-container-high bg-surface/95 px-sm shadow-lg backdrop-blur-md"
+          className="app-bottom-nav fixed bottom-0 z-40 grid grid-cols-5 items-center border-t border-surface-container-high bg-surface/95 px-sm shadow-lg backdrop-blur-md"
         >
           <BottomNavButton
             tab="home"
@@ -308,6 +326,8 @@ export default function Home() {
       )}
 
       <InstallPrompt />
+
+      {isLocked && <LockScreen />}
     </div>
   );
 }

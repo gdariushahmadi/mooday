@@ -136,7 +136,7 @@ export const PayoutsView: React.FC<PayoutsViewProps> = ({ onBack }) => {
       dir={isAr ? "rtl" : "ltr"}
       className="w-full max-w-[800px] mx-auto flex flex-col gap-md pb-10"
     >
-      <div className="flex items-center justify-between -mt-2">
+      <div className="app-page-header flex items-center justify-between -mt-2">
         <button
           type="button"
           onClick={onBack}

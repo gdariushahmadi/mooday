@@ -7,8 +7,11 @@ extra_search_path = ["public", "extensions"]
 
 [auth]
 enabled = true
-site_url = "http://localhost:3000"
-additional_redirect_urls = ["http://localhost:3000/auth/callback"]
+site_url = "https://app.daneg.ae"
+additional_redirect_urls = [
+  "https://app.daneg.ae/auth/callback",
+  "http://localhost:3000/auth/callback",
+]
 enable_signup = true
 
 [auth.email]

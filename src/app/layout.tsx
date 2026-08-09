@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Hanken_Grotesk, Bodoni_Moda, Noto_Sans_Arabic, El_Messiri } from "next/font/google";
 import { AppProvider } from "@/context/AppContext";
 import { ServiceWorkerRegistrar } from "@/components/ServiceWorkerRegistrar";
+import { ThemeSync } from "@/components/ThemeSync";
 import "./globals.css";
 
 const hankenGrotesk = Hanken_Grotesk({
@@ -89,7 +90,7 @@ export const viewport: Viewport = {
     { media: "(prefers-color-scheme: light)", color: "#512443" },
     { media: "(prefers-color-scheme: dark)", color: "#340a2a" },
   ],
-  colorScheme: "light",
+  colorScheme: "light dark",
 };
 
 export default function RootLayout({
@@ -109,6 +110,7 @@ export default function RootLayout({
         />
       </head>
       <body className="min-h-full flex flex-col">
+        <ThemeSync />
         <AppProvider>
           <ServiceWorkerRegistrar />
           {children}

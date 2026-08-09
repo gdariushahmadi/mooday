@@ -34,7 +34,7 @@ export interface AuthService {
     purpose: OtpPurpose,
   ): Promise<AuthResult<AuthenticatedUser>>;
   resetPassword(newPassword: string): Promise<AuthResult<null>>;
-  signInWithOAuth(provider: "google" | "apple"): Promise<AuthResult<null>>;
+  signInWithOAuth(provider: "google"): Promise<AuthResult<null>>;
   completeOAuth(code: string): Promise<AuthResult<AuthenticatedUser>>;
   updateName(name: string): Promise<AuthResult<null>>;
 }

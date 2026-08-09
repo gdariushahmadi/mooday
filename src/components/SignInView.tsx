@@ -42,7 +42,6 @@ const COPY = {
     createAccount: "Create an account",
     social: "Or continue with",
     google: "Google",
-    apple: "Apple",
   },
   ar: {
     title: "مرحباً بعودتك",
@@ -60,7 +59,6 @@ const COPY = {
     createAccount: "إنشاء حساب",
     social: "أو متابعة عبر",
     google: "Google",
-    apple: "Apple",
   },
 } as const;
 
@@ -137,7 +135,7 @@ export const SignInView: React.FC<SignInViewProps> = ({
       data-testid="sign-in"
       className="w-full max-w-[480px] mx-auto flex flex-col gap-lg pb-10 font-sans"
     >
-      <header className="flex items-center justify-between border-b border-outline-variant pb-4">
+      <header className="app-page-header flex items-center justify-between border-b border-outline-variant pb-4">
         <button
           type="button"
           onClick={onBack}
@@ -235,7 +233,7 @@ export const SignInView: React.FC<SignInViewProps> = ({
         <p className="text-label-sm uppercase tracking-wider text-on-surface-variant text-center">
           {t.social}
         </p>
-        <div className="grid grid-cols-2 gap-sm">
+        <div className="grid grid-cols-1 gap-sm">
           <button
             type="button"
             onClick={onSocialLogin}
@@ -245,16 +243,6 @@ export const SignInView: React.FC<SignInViewProps> = ({
               mail
             </span>
             {t.google}
-          </button>
-          <button
-            type="button"
-            onClick={onSocialLogin}
-            className="flex items-center justify-center gap-sm bg-surface-container-low hover:bg-surface-container-high border border-outline-variant rounded-xl py-3 text-label-sm font-bold uppercase tracking-wider active:scale-95 transition-transform"
-          >
-            <span className="material-symbols-outlined text-[20px]" aria-hidden="true">
-              ios
-            </span>
-            {t.apple}
           </button>
         </div>
       </div>

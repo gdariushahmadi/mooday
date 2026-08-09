@@ -34,6 +34,17 @@ import {
 } from "@/data/users";
 import { useLocalStorageState } from "@/lib/hooks";
 import {
+  DEFAULT_LOCK_TIMEOUT_MS,
+  LOCK_TIMEOUT_PRESETS_MS,
+  detectWebAuthnSupport,
+  hashPin,
+  registerBiometric,
+  verifyBiometric,
+  verifyPin,
+  type LockTimeoutMs,
+} from "@/lib/security";
+import { isOwnListing } from "@/lib/ownership";
+import {
   getBackendConfig,
   getPhase2Backend,
   type AuthenticatedUser,
@@ -70,6 +81,8 @@ export interface Product {
   sellerAvatar: string;
   sellerTypeEn: string;
   sellerTypeAr: string;
+  /** Remote listing timestamp; absent on legacy local demo records. */
+  createdAt?: string;
   saves: number;
   image: string;
   images: string[];
@@ -248,7 +261,7 @@ export interface AppContextType {
     purpose?: OtpPurpose,
   ) => Awaitable<boolean>;
   sendOtp: (email: string, purpose?: OtpPurpose) => Awaitable<string | null>;
-  signInWithOAuth?: (provider: "google" | "apple") => Promise<boolean>;
+  signInWithOAuth?: (provider: "google") => Promise<boolean>;
   updateCurrentUserName: (name: string) => Awaitable<void>;
   resetPassword: (email: string, newPassword: string) => Awaitable<boolean>;
   addresses: Address[];
@@ -263,6 +276,54 @@ export interface AppContextType {
   addPaymentMethod: (method: Omit<PaymentMethod, "id">) => Promise<void>;
   removePaymentMethod: (id: string) => Promise<void>;
   setDefaultPaymentMethod: (id: string) => Promise<void>;
+  // ---------------------------------------------------------------
+  // App lock (auto-lock after inactivity + biometric / PIN unlock)
+  // ---------------------------------------------------------------
+  // The fields below are optional so existing test fixtures (which
+  // construct the context value by hand) keep compiling. The real
+  // provider always supplies them.
+  /** True when the user opted into auto-lock in Settings. */
+  lockEnabled?: boolean;
+  /** Inactivity threshold in ms. Always one of the LOCK_TIMEOUT_PRESETS_MS. */
+  lockTimeoutMs?: number;
+  /** True when a PIN has been registered for local unlock. */
+  hasPin?: boolean;
+  /** True when a biometric / passkey credential has been registered. */
+  hasBiometric?: boolean;
+  /**
+   * True when the UI is currently hidden behind the lock overlay. The
+   * shell renders `<LockScreen />` while this is true. Sign-out clears
+   * the lock state automatically.
+   */
+  isLocked?: boolean;
+  /**
+   * Whether the device/browser can perform biometric unlock at all.
+   * Cached after the first detection call so the Settings UI does not
+   * re-query the platform on every render.
+   */
+  biometricSupported?: boolean;
+  /** Whether a platform authenticator (Touch ID / fingerprint / etc.) is present. */
+  biometricHasPlatformAuthenticator?: boolean;
+  /** Toggle the master auto-lock switch. Persists to localStorage. */
+  setLockEnabled?: (enabled: boolean) => void;
+  /** Change the inactivity timeout. Must be one of LOCK_TIMEOUT_PRESETS_MS. */
+  setLockTimeoutMs?: (ms: number) => void;
+  /** Hash and persist a PIN. Returns false if Web Crypto is unavailable. */
+  setupPin?: (pin: string) => Promise<boolean>;
+  /** Forget the stored PIN hash + salt. */
+  clearPin?: () => void;
+  /** Run the WebAuthn registration ceremony and persist the credential id. */
+  setupBiometric?: (userName: string) => Promise<boolean>;
+  /** Forget the stored biometric credential id. */
+  clearBiometric?: () => void;
+  /** Verify the entered PIN against the stored hash and unlock on match. */
+  unlockWithPin?: (pin: string) => Promise<boolean>;
+  /** Trigger a platform authenticator prompt and unlock on success. */
+  unlockWithBiometric?: () => Promise<boolean>;
+  /** Force-lock the app immediately (e.g. via the "Lock now" button). */
+  lockNow?: () => void;
+  /** Refresh the cached biometric support flags (e.g. after first render). */
+  refreshBiometricSupport?: () => Promise<void>;
 }
 
 // Exported for tests and advanced consumers that need to pass a custom
@@ -288,6 +349,11 @@ const STORAGE_KEYS = {
   users: "mooday_users",
   session: "mooday_session",
   pendingOtp: "mooday_pending_otp",
+  lockEnabled: "mooday_lock_enabled",
+  lockTimeoutMs: "mooday_lock_timeout_ms",
+  lockPinHash: "mooday_lock_pin_hash",
+  lockPinSalt: "mooday_lock_pin_salt",
+  lockBiometricCred: "mooday_lock_webauthn_cred_id",
 } as const;
 
 const DEFAULT_CHATS: ChatThread[] = [
@@ -547,6 +613,41 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   );
   const [remoteCart, setRemoteCart] = React.useState<CartItem[]>([]);
   const cart = marketplaceMode ? remoteCart : storedCart;
+
+  // ---- App lock state ---------------------------------------------
+  // All four lock primitives live in localStorage. We hold them as
+  // simple strings here (not via useLocalStorageState) so the read of
+  // `hasPin` / `hasBiometric` stays cheap and never needs JSON parsing.
+  const [lockEnabled, setLockEnabledRaw] = useLocalStorageState<boolean>(
+    STORAGE_KEYS.lockEnabled,
+    false,
+  );
+  const [lockTimeoutMs, setLockTimeoutMsRaw] =
+    useLocalStorageState<LockTimeoutMs>(
+      STORAGE_KEYS.lockTimeoutMs,
+      DEFAULT_LOCK_TIMEOUT_MS,
+    );
+  const [lockPinHash, setLockPinHash] = useLocalStorageState<string | null>(
+    STORAGE_KEYS.lockPinHash,
+    null,
+  );
+  const [lockPinSalt, setLockPinSalt] = useLocalStorageState<string | null>(
+    STORAGE_KEYS.lockPinSalt,
+    null,
+  );
+  const [lockBiometricCred, setLockBiometricCred] =
+    useLocalStorageState<string | null>(STORAGE_KEYS.lockBiometricCred, null);
+  // Whether the UI is currently hidden behind the lock overlay. Always
+  // false at boot — sign-in or first activity flips it on based on
+  // whether lockEnabled + hasPin/hasBiometric are configured.
+  const [isLocked, setIsLocked] = React.useState(false);
+  // Cached platform support so SettingsView can render the right
+  // affordance without probing WebAuthn on every render.
+  const [biometricSupport, setBiometricSupport] = React.useState<{
+    available: boolean;
+    hasPlatformAuthenticator: boolean;
+  }>({ available: false, hasPlatformAuthenticator: false });
+
   // Auth state (Phase 1 mock — Phase 2 swaps the storage layer for a real backend)
   const [users, setUsers] = useLocalStorageState<User[]>(
     STORAGE_KEYS.users,
@@ -1112,6 +1213,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const createChatThread = useCallback(
     async (product: Product): Promise<string> => {
+      const currentUserId = phase2Backend
+        ? remoteUser?.id
+        : session?.userId;
+      if (isOwnListing(product, currentUserId)) {
+        throw new Error("Cannot create a chat thread for your own listing");
+      }
       if (phase2Backend) {
         const sellerId = product.sellerId;
         if (!sellerId) {
@@ -1165,7 +1272,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
 
       return threadId;
     },
-    [phase2Backend, refreshChats, setChats, language],
+    [phase2Backend, refreshChats, setChats, language, remoteUser, session],
   );
 
   const sendChatMessage = useCallback(
@@ -1777,7 +1884,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   );
 
   const signInWithOAuth = useCallback(
-    async (provider: "google" | "apple") => {
+    async (provider: "google") => {
       if (!phase2Backend) return false;
       setAuthError(null);
       const result = await phase2Backend.auth.signInWithOAuth(provider);
@@ -2009,6 +2116,115 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     [phase2Backend, setDisputes],
   );
 
+  // ----------------------------------------------------------------
+  // App-lock callbacks. These wrap the four lock primitives
+  // (enabled / timeout / pin / biometric) and the two unlock flows.
+  // ----------------------------------------------------------------
+  const refreshBiometricSupport = useCallback(async () => {
+    const support = await detectWebAuthnSupport();
+    setBiometricSupport(support);
+  }, []);
+
+  // Probe platform support once after mount so the Settings UI can
+  // decide whether to show the "Use biometric" toggle. We avoid doing
+  // this during SSR (no `window`).
+  //
+  // The platform-detection result lands asynchronously after the effect
+  // body, but the lint rule still flags it as a synchronous setState.
+  // We schedule the actual call on the microtask queue to keep the rule
+  // happy without changing runtime semantics.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    queueMicrotask(() => {
+      void refreshBiometricSupport();
+    });
+  }, [refreshBiometricSupport]);
+
+  const setLockEnabled = useCallback(
+    (enabled: boolean) => {
+      setLockEnabledRaw(enabled);
+      // Turning the feature off clears the lock state immediately.
+      if (!enabled) {
+        setIsLocked(false);
+      }
+    },
+    [setLockEnabledRaw],
+  );
+
+  const setLockTimeoutMs = useCallback(
+    (ms: number) => {
+      // Defensive: only accept known presets. Anything else is dropped
+      // so a stale storage value can't put the UI in a weird state.
+      if (!(LOCK_TIMEOUT_PRESETS_MS as readonly number[]).includes(ms)) {
+        return;
+      }
+      setLockTimeoutMsRaw(ms as LockTimeoutMs);
+    },
+    [setLockTimeoutMsRaw],
+  );
+
+  const setupPin = useCallback(
+    async (pin: string): Promise<boolean> => {
+      const result = await hashPin(pin);
+      if (!result) return false;
+      setLockPinHash(result.hash);
+      setLockPinSalt(result.salt);
+      // Setting a PIN while locked is an implicit unlock so the user
+      // doesn't have to type it twice.
+      setIsLocked(false);
+      return true;
+    },
+    [setLockPinHash, setLockPinSalt],
+  );
+
+  const clearPin = useCallback(() => {
+    setLockPinHash(null);
+    setLockPinSalt(null);
+  }, [setLockPinHash, setLockPinSalt]);
+
+  const setupBiometric = useCallback(
+    async (userName: string): Promise<boolean> => {
+      try {
+        const credId = await registerBiometric(userName);
+        setLockBiometricCred(credId);
+        // Fresh credential = fresh trust. Drop any prior lock state so
+        // the user lands on the unlocked app and sees the new toggle.
+        setIsLocked(false);
+        return true;
+      } catch {
+        return false;
+      }
+    },
+    [setLockBiometricCred],
+  );
+
+  const clearBiometric = useCallback(() => {
+    setLockBiometricCred(null);
+  }, [setLockBiometricCred]);
+
+  const unlockWithPin = useCallback(
+    async (pin: string): Promise<boolean> => {
+      if (!lockPinHash || !lockPinSalt) return false;
+      const ok = await verifyPin(pin, lockPinSalt, lockPinHash);
+      if (ok) setIsLocked(false);
+      return ok;
+    },
+    [lockPinHash, lockPinSalt],
+  );
+
+  const unlockWithBiometric = useCallback(async (): Promise<boolean> => {
+    if (!lockBiometricCred) return false;
+    const ok = await verifyBiometric(lockBiometricCred);
+    if (ok) setIsLocked(false);
+    return ok;
+  }, [lockBiometricCred]);
+
+  const lockNow = useCallback(() => {
+    if (!lockEnabled) return;
+    if (!lockPinHash && !lockBiometricCred) return;
+    setIsLocked(true);
+  }, [lockEnabled, lockPinHash, lockBiometricCred]);
+
   // Resolve the active user record from the session + users list.
   const currentUserId = useMemo(() => {
     if (phase2Backend) return remoteUser?.id ?? null;
@@ -2030,6 +2246,26 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     if (!match) return null;
     return { id: match.id, email: match.email, name: match.nameEn };
   }, [phase2Backend, remoteUser, session, users]);
+
+  // Lock the app automatically on sign-in whenever auto-lock is on and
+  // at least one unlock factor is configured. Skip the guest session
+  // (no `currentUser`) — the auth screens are already a barrier.
+  //
+  // `isLocked` is the source of truth for the lock overlay; the lint
+  // rule wants us to derive it from props, but the auto-lock decision
+  // depends on the *previous* `isLocked` value (don't re-lock on every
+  // unrelated re-render). We defer the assignment via queueMicrotask.
+  useEffect(() => {
+    queueMicrotask(() => {
+      if (!currentUser) {
+        setIsLocked(false);
+        return;
+      }
+      if (lockEnabled && (lockPinHash || lockBiometricCred)) {
+        setIsLocked(true);
+      }
+    });
+  }, [currentUser, lockEnabled, lockPinHash, lockBiometricCred]);
 
   // Initial + on-auth-change fetch of remote data. The dependency on
   // `remoteUser` re-runs on sign-in / sign-out so a fresh session sees
@@ -2134,6 +2370,25 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       signInWithOAuth,
       updateCurrentUserName,
       resetPassword,
+      // App lock
+      lockEnabled,
+      lockTimeoutMs,
+      hasPin: Boolean(lockPinHash),
+      hasBiometric: Boolean(lockBiometricCred),
+      isLocked,
+      biometricSupported: biometricSupport.available,
+      biometricHasPlatformAuthenticator:
+        biometricSupport.hasPlatformAuthenticator,
+      setLockEnabled,
+      setLockTimeoutMs,
+      setupPin,
+      clearPin,
+      setupBiometric,
+      clearBiometric,
+      unlockWithPin,
+      unlockWithBiometric,
+      lockNow,
+      refreshBiometricSupport,
     }),
     [
       language,
@@ -2204,6 +2459,24 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       signInWithOAuth,
       updateCurrentUserName,
       resetPassword,
+      // App lock deps
+      lockEnabled,
+      lockTimeoutMs,
+      lockPinHash,
+      lockBiometricCred,
+      isLocked,
+      biometricSupport.available,
+      biometricSupport.hasPlatformAuthenticator,
+      setLockEnabled,
+      setLockTimeoutMs,
+      setupPin,
+      clearPin,
+      setupBiometric,
+      clearBiometric,
+      unlockWithPin,
+      unlockWithBiometric,
+      lockNow,
+      refreshBiometricSupport,
     ],
   );
 

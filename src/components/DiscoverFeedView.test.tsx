@@ -125,12 +125,21 @@ function makeContext(language: "en" | "ar" = "en"): AppContextType {
 }
 
 function renderDiscover(
-  overrides: { language?: "en" | "ar"; initialUrl?: string } = {},
+  overrides: {
+    language?: "en" | "ar";
+    initialUrl?: string;
+    listings?: Product[];
+    listingsLoading?: boolean;
+  } = {},
 ) {
   if (overrides.initialUrl) {
     window.history.pushState({}, "", overrides.initialUrl);
   }
   const context = makeContext(overrides.language);
+  if (overrides.listings) context.listings = overrides.listings;
+  if (overrides.listingsLoading !== undefined) {
+    context.listingsLoading = overrides.listingsLoading;
+  }
   const onSelectProduct = vi.fn();
   const onSelectCategory = vi.fn();
   const utils = render(
@@ -218,6 +227,34 @@ describe("DiscoverFeedView — tabs", () => {
     expect(floralIdx).toBeGreaterThanOrEqual(0);
     expect(floralIdx).toBeLessThan(handbagIdx);
     expect(heelsIdx).toBeLessThan(handbagIdx);
+  });
+
+  it("Clicking New In uses remote listing timestamps", async () => {
+    const user = userEvent.setup();
+    renderDiscover({
+      listings: [
+        { ...HAND, id: "remote-older", createdAt: "2026-07-01T00:00:00Z" },
+        {
+          ...SHOES,
+          id: "remote-newer",
+          createdAt: "2026-08-01T00:00:00Z",
+        },
+      ],
+    });
+
+    await user.click(screen.getByRole("tab", { name: /new in/i }));
+
+    expect(visibleProductTitles()[0]).toContain("Red Sole Heels");
+  });
+
+  it("shows a loading state while remote listings are arriving", () => {
+    renderDiscover({ listings: [], listingsLoading: true });
+
+    expect(screen.getByRole("region", { name: /loading listings/i })).toHaveAttribute(
+      "aria-busy",
+      "true",
+    );
+    expect(screen.queryByText("No items in this category yet.")).not.toBeInTheDocument();
   });
 
   it("Clicking Designers groups listings under seller headings", async () => {

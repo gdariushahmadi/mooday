@@ -11,6 +11,7 @@
     "start": "next start",
     "start:standalone": "node .next/standalone/server.js",
     "deploy:cpanel": "bash scripts/build-standalone.sh",
+    "seed:demo": "node scripts/seed-demo-catalog.mjs",
     "lint": "eslint",
     "test": "vitest",
     "test:ci": "vitest run",

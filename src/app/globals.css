@@ -1,5 +1,9 @@
 @import "tailwindcss";
 
+/* Tailwind 4's dark variant defaults to the OS preference. Mooday exposes a
+ * manual preference, so the variant must follow the class we control. */
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
   --app-safe-area-top: env(safe-area-inset-top, 0px);
   --app-safe-area-bottom: env(safe-area-inset-bottom, 0px);
@@ -48,6 +52,7 @@
   --color-secondary: #71585b;
   --color-primary-fixed-dim: #f4b3db;
   --color-on-background: #1b1c1b;
+  --color-on-surface-variant: #51464f;
   --color-inverse-surface: #30302f;
   --color-secondary-fixed-dim: #debfc2;
   --color-on-tertiary-container: #4f3e00;
@@ -94,9 +99,72 @@
   --spacing-xl: 40px;
   --spacing-container-max: 1200px;
   --spacing-margin-mobile: 20px;
+
+}
+
+/* Manual dark palette. These semantic tokens power the app's bg-*, text-* and
+ * border-* utilities, so every existing view follows the same preference. */
+:root.dark {
+  color-scheme: dark;
+
+  --color-surface-bright: #302a2e;
+  --color-tertiary-container: #6a5200;
+  --color-on-tertiary-fixed-variant: #574500;
+  --color-error-container: #93000a;
+  --color-surface-container-high: #302a2e;
+  --color-on-primary-container: #ffd8ed;
+  --color-secondary-container: #5a4144;
+  --color-on-primary-fixed: #340a2a;
+  --color-surface-dim: #161316;
+  --color-secondary: #e4bfc3;
+  --color-primary-fixed-dim: #e2a3c9;
+  --color-on-background: #f2eaf0;
+  --color-inverse-surface: #e8e0e5;
+  --color-secondary-fixed-dim: #d9b8bb;
+  --color-on-tertiary-container: #ffe088;
+  --color-on-primary: #340a2a;
+  --color-error: #ffb4ab;
+  --color-surface-tint: #f4b3db;
+  --color-on-secondary-fixed-variant: #584144;
+  --color-tertiary-fixed-dim: #e9c349;
+  --color-on-tertiary: #3c2f00;
+  --color-primary-container: #6b3a5b;
+  --color-inverse-primary: #814e70;
+  --color-primary: #f4b3db;
+  --color-outline: #aea0aa;
+  --color-on-error-container: #ffdad6;
+  --color-on-surface: #f2eaf0;
+  --color-on-surface-variant: #d6c3d0;
+  --color-outline-variant: #51464f;
+  --color-on-secondary-container: #f9d8db;
+  --color-secondary-fixed: #fcdbde;
+  --color-surface: #1b191b;
+  --color-surface-variant: #4a4248;
+  --color-surface-container-lowest: #121013;
+  --color-tertiary-fixed: #ffe088;
+  --color-on-tertiary-fixed: #241a00;
+  --color-surface-container: #252125;
+  --color-surface-container-highest: #3a3338;
+  --color-surface-container-low: #211e21;
+  --color-on-secondary-fixed: #281719;
+  --color-primary-fixed: #ffd8ed;
+  --color-on-secondary: #402d31;
+  --color-tertiary: #e9c349;
+  --color-on-error: #690005;
+  --color-background: #1b191b;
+  --color-inverse-on-surface: #342f33;
+  --color-on-primary-fixed-variant: #673657;
 }
 
 /* Custom Styles */
+/* Tailwind 4 resolves these aliases through the app's spacing tokens when
+ * matching names exist. Keep max-width semantics on their standard container
+ * scale so copy and empty states do not collapse to 4/8/16/24px. */
+.max-w-xs { max-width: 20rem; }
+.max-w-sm { max-width: 24rem; }
+.max-w-md { max-width: 28rem; }
+.max-w-lg { max-width: 32rem; }
+
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
@@ -195,6 +263,29 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+/* Keep every state of the PWA inside the same centered app surface on wider
+ * viewports. Full-page views can still use narrower inner content rails. */
+.app-shell-surface {
+  width: 100%;
+  max-width: var(--spacing-container-max);
+  margin-inline: auto;
+}
+
+/* Page-owned top bars use the same outer rail as the shared shell, while the
+ * page content below can remain intentionally narrow (for example, 480px
+ * auth forms or 800px settings screens). */
+.app-page-header {
+  position: relative;
+  left: 50%;
+  width: min(100vw, var(--spacing-container-max));
+  margin-inline: 0;
+  margin-top: 0;
+  padding-inline: var(--spacing-margin-mobile);
+  padding-top: max(16px, var(--app-safe-area-top));
+  box-sizing: border-box;
+  transform: translateX(-50%);
+}
+
 input:focus-visible,
 textarea:focus-visible,
 select:focus-visible,
@@ -218,6 +309,10 @@ a:focus-visible {
   height: calc(
     var(--app-bottom-nav-height) + var(--app-safe-area-bottom)
   );
+  left: 50%;
+  right: auto;
+  width: min(100%, var(--spacing-container-max));
+  transform: translateX(-50%);
   padding-bottom: var(--app-safe-area-bottom);
 }
 

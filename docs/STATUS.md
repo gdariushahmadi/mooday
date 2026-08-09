@@ -29,6 +29,10 @@
   blocks, RLS isolation). 23 passed, 0 failed.
 - **Mock mode**: unchanged. `NEXT_PUBLIC_DATA_SOURCE=mock` keeps
   the Phase 1 demo running with no backend.
+- **Real showcase catalog**: ✅ 33 listings, 12 seller cards, and 34 public
+  image references are seeded in the hosted Supabase project. The deployed
+  `/app` surface renders these rows through the marketplace backend; it does
+  not fall back to local mock data.
 
 This session shipped:
 - Wired 8 backend domains (orders/chats/notifications/reviews/reports/

@@ -119,7 +119,7 @@ export const ActivityView: React.FC<ActivityViewProps> = ({
       className="w-full max-w-[800px] mx-auto flex flex-col gap-md pb-10"
     >
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-outline-variant pb-4">
+      <div className="app-page-header flex items-center justify-between border-b border-outline-variant pb-4">
         <button
           type="button"
           onClick={onBack}

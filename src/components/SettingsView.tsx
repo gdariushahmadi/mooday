@@ -2,9 +2,13 @@
 
 import React, { useEffect, useState } from "react";
 import { useApp } from "@/context/AppContext";
+import {
+  applyDarkMode,
+  persistDarkModePreference,
+  readDarkModePreference,
+} from "@/components/ThemeSync";
 
 const PREF_PUSH_KEY = "mooday-pref-push";
-const PREF_DARK_KEY = "mooday-pref-dark";
 
 function readPref(key: string, fallback: boolean): boolean {
   if (typeof window === "undefined") return fallback;
@@ -21,6 +25,7 @@ interface SettingsViewProps {
   onOpenHelp?: () => void;
   onOpenPayouts?: () => void;
   onOpenBlockedUsers?: () => void;
+  onOpenSecuritySetup?: () => void;
   onSignOut?: () => void;
   onSignIn?: () => void;
 }
@@ -53,6 +58,9 @@ interface SettingsCopy {
   account: string;
   preferences: string;
   privacySafety: string;
+  security: string;
+  appLock: string;
+  appLockValue: string;
   about: string;
   blockedUsers: string;
   blockedUsersValue: string;
@@ -73,6 +81,9 @@ const COPY: Record<"en" | "ar", SettingsCopy> = {
     account: "Account",
     preferences: "Preferences",
     privacySafety: "Privacy & Safety",
+    security: "Security",
+    appLock: "App lock",
+    appLockValue: "Auto-lock with biometric or PIN",
     about: "About",
     blockedUsers: "Blocked users",
     blockedUsersValue: "Manage the people you've blocked",
@@ -91,6 +102,9 @@ const COPY: Record<"en" | "ar", SettingsCopy> = {
     account: "الحساب",
     preferences: "التفضيلات",
     privacySafety: "الخصوصية والأمان",
+    security: "الأمان",
+    appLock: "قفل برنامه",
+    appLockValue: "قفل خودکار با رمز یا اثر انگشت",
     about: "حول",
     blockedUsers: "المحظورون",
     blockedUsersValue: "إدارة من حظرتهم",
@@ -120,6 +134,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   onOpenHelp,
   onOpenPayouts,
   onOpenBlockedUsers,
+  onOpenSecuritySetup,
   onSignOut,
   onSignIn,
 }) => {
@@ -131,14 +146,14 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     readPref(PREF_PUSH_KEY, true),
   );
   const [darkMode, setDarkMode] = useState(() =>
-    readPref(PREF_DARK_KEY, false),
+    readDarkModePreference(),
   );
   const [cacheStatus, setCacheStatus] = useState<"idle" | "cleared" | "busy">(
     "idle",
   );
 
   useEffect(() => {
-    document.documentElement.classList.toggle("dark", darkMode);
+    applyDarkMode(darkMode);
   }, [darkMode]);
 
   const handleLanguageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -152,7 +167,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
   const handleDarkToggle = (v: boolean) => {
     setDarkMode(v);
-    window.localStorage.setItem(PREF_DARK_KEY, v ? "1" : "0");
+    persistDarkModePreference(v);
   };
 
   const handleClearCache = async () => {
@@ -228,6 +243,20 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           isToggle: true,
           toggleValue: darkMode,
           onToggle: handleDarkToggle,
+        },
+      ],
+    },
+    {
+      titleEn: t.security,
+      titleAr: t.security,
+      items: [
+        {
+          labelEn: t.appLock,
+          labelAr: t.appLock,
+          icon: "lock",
+          valueEn: t.appLockValue,
+          valueAr: t.appLockValue,
+          onNavigate: onOpenSecuritySetup,
         },
       ],
     },
@@ -312,7 +341,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       className="w-full max-w-[800px] mx-auto flex flex-col gap-lg pb-10"
     >
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-outline-variant pb-4">
+      <div className="app-page-header flex items-center justify-between border-b border-outline-variant pb-4">
         <button
           type="button"
           onClick={onBack}

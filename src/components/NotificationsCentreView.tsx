@@ -102,7 +102,7 @@ export const NotificationsCentreView: React.FC<
       className="w-full max-w-[800px] mx-auto flex flex-col gap-md pb-10"
     >
       {/* Header */}
-      <div className="flex items-center justify-between -mt-2">
+      <div className="app-page-header flex items-center justify-between -mt-2">
         <button
           type="button"
           onClick={onBack}
@@ -193,7 +193,7 @@ export const NotificationsCentreView: React.FC<
           <h2 className="font-serif text-headline-sm text-on-surface">
             {t.emptyTitle}
           </h2>
-          <p className="text-label-sm text-on-surface-variant max-w-xs">
+          <p className="w-full max-w-xs text-label-sm leading-relaxed text-on-surface-variant">
             {t.emptyBody}
           </p>
         </div>

@@ -133,6 +133,14 @@ describe("app shell", () => {
   it.each([
     ["bag", null, null],
     ["checkout", null, null],
+    ["notifications", null, null],
+    ["chats", null, null],
+    ["closet", null, null],
+    ["sell-picker", null, null],
+    ["seller", null, null],
+    ["category", null, null],
+    ["purchases", null, null],
+    ["order", null, null],
     ["home", { id: "product" }, null],
     ["home", null, "chat-thread"],
   ])(

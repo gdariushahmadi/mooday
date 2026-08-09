@@ -141,7 +141,7 @@ export const SignUpView: React.FC<SignUpViewProps> = ({
       data-testid="sign-up"
       className="w-full max-w-[480px] mx-auto flex flex-col gap-lg pb-10 font-sans"
     >
-      <header className="flex items-center justify-between border-b border-outline-variant pb-4">
+      <header className="app-page-header flex items-center justify-between border-b border-outline-variant pb-4">
         <button
           type="button"
           onClick={onBack}

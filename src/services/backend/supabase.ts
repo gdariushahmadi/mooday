@@ -138,7 +138,10 @@ class SupabaseAuthService implements AuthService {
     const { data, error } = await this.client.auth.signUp({
       email: input.email,
       password: input.password,
-      options: { data: { full_name: input.name, phone: input.phone } },
+      options: {
+        data: { full_name: input.name, phone: input.phone },
+        emailRedirectTo: `${this.siteUrl}/auth/callback`,
+      },
     });
     if (error) return failure(error.message);
     if (!data.user) return failure("Invalid credentials");
@@ -167,9 +170,15 @@ class SupabaseAuthService implements AuthService {
     const result =
       purpose === "recovery"
         ? await this.client.auth.resetPasswordForEmail(email, {
-            redirectTo: `${this.siteUrl}/auth/callback?next=/`,
+            redirectTo: `${this.siteUrl}/auth/callback`,
           })
-        : await this.client.auth.resend({ type: "signup", email });
+        : await this.client.auth.resend({
+            type: "signup",
+            email,
+            options: {
+              emailRedirectTo: `${this.siteUrl}/auth/callback`,
+            },
+          });
     return result.error
       ? failure(result.error.message)
       : { ok: true, value: null };
@@ -198,14 +207,13 @@ class SupabaseAuthService implements AuthService {
   }
 
   async signInWithOAuth(
-    provider: "google" | "apple",
+    provider: "google",
   ): Promise<AuthResult<null>> {
     const { error } = await this.client.auth.signInWithOAuth({
       provider,
       options: {
-        redirectTo: `${this.siteUrl}/auth/callback?next=/`,
-        queryParams:
-          provider === "google" ? { access_type: "offline" } : undefined,
+        redirectTo: `${this.siteUrl}/auth/callback`,
+        queryParams: { access_type: "offline" },
       },
     });
     return error ? failure(error.message) : { ok: true, value: null };

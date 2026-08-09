@@ -151,5 +151,8 @@ describe("NotificationsCentreView (F-31)", () => {
       </AppContext.Provider>,
     );
     expect(screen.getByText(/No notifications/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/You're all caught up/i),
+    ).toHaveClass("w-full", "max-w-xs");
   });
 });

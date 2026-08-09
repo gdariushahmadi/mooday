@@ -42,7 +42,8 @@ export type ViewState =
   | "otp"
   | "signin"
   | "forgot-password"
-  | "social-login";
+  | "social-login"
+  | "security-setup";
 
 /** Views that can be deep-linked via ?view=. */
 export const VALID_VIEWS: readonly ViewState[] = [
@@ -82,6 +83,7 @@ export const VALID_VIEWS: readonly ViewState[] = [
   "signin",
   "forgot-password",
   "social-login",
+  "security-setup",
 ] as const;
 
 /**

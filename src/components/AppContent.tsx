@@ -40,6 +40,7 @@ import { OtpView } from "./OtpView";
 import { SignInView } from "./SignInView";
 import { ForgotPasswordView } from "./ForgotPasswordView";
 import { SocialLoginView } from "./SocialLoginView";
+import { SecuritySetupView } from "./SecuritySetupView";
 
 interface AppContentProps {
   nav: AppNavigation;
@@ -126,6 +127,8 @@ export const AppContent: React.FC<AppContentProps> = ({ nav }) => {
     closePayouts,
     openBlockedUsers,
     closeBlockedUsers,
+    openSecuritySetup,
+    closeSecuritySetup,
     openDispute,
     closeDispute,
     openDisputesList,
@@ -150,6 +153,7 @@ export const AppContent: React.FC<AppContentProps> = ({ nav }) => {
         onNavigateToCart={navigateToCart}
         onStartChat={startChat}
         onCheckoutProduct={checkoutProductDirect}
+        onEditListing={openEditListing}
         onOpenSeller={openSeller}
         onReportListing={(productId) => {
           openReport({ targetId: productId });
@@ -323,6 +327,8 @@ export const AppContent: React.FC<AppContentProps> = ({ nav }) => {
       return <PayoutsView onBack={closePayouts} />;
     case "blocked-users":
       return <BlockedUsersView onBack={closeBlockedUsers} />;
+    case "security-setup":
+      return <SecuritySetupView onBack={closeSecuritySetup} />;
     case "dispute": {
       const order = nav.activeOrderId
         ? (orders.find((o) => o.id === nav.activeOrderId) ?? null)
@@ -463,6 +469,7 @@ export const AppContent: React.FC<AppContentProps> = ({ nav }) => {
           onOpenHelp={openHelp}
           onOpenPayouts={openPayouts}
           onOpenBlockedUsers={openBlockedUsers}
+          onOpenSecuritySetup={openSecuritySetup}
           onSignOut={() => {
             void Promise.resolve(signOut()).then(() => {
               changeTab("home");

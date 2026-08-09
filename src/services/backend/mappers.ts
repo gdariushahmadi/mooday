@@ -65,6 +65,7 @@ export function hydrateProductsFromRemote({
       sellerAvatar: seller?.avatarUrl ?? "",
       sellerTypeEn: seller?.typeEn ?? "",
       sellerTypeAr: seller?.typeAr ?? "",
+      createdAt: listing.createdAt,
       // Active-listing volume is the closest proxy we have to a popularity
       // signal in Phase 3; the original `saves` field belongs to the
       // likes slice. Zero is fine until that slice lands.

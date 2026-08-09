@@ -10,7 +10,7 @@
  * (component tree, route layout, etc.) to force clients to refetch.
  */
 
-const CACHE_VERSION = "mooday-v2";
+const CACHE_VERSION = "mooday-v4";
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 const IMAGE_CACHE = `${CACHE_VERSION}-images`;

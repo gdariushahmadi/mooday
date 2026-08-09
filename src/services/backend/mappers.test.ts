@@ -93,6 +93,7 @@ describe("hydrateProductsFromRemote", () => {
     });
     expect(product.price).toBeCloseTo(123.45, 2);
     expect(product.originalPrice).toBeCloseTo(200, 2);
+    expect(product.createdAt).toBe("2026-07-18T00:00:00.000Z");
   });
 
   it("falls back to priceMinor when originalPriceMinor is null", () => {

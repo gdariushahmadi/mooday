@@ -222,6 +222,19 @@ describe("AppContext", () => {
       expect(newThread!.messages[0].sender).toBe("seller");
     });
 
+    it("rejects chat thread creation for the current user's listing", async () => {
+      const { result } = renderHook(() => useApp(), { wrapper });
+      const ownListing = { ...TEST_PRODUCT, id: "custom-own-listing" };
+
+      await act(async () => {
+        await expect(result.current.createChatThread(ownListing)).rejects.toThrow(
+          /your own listing/i,
+        );
+      });
+
+      expect(result.current.chats).toHaveLength(1);
+    });
+
     it("returns existing thread id without creating a duplicate", async () => {
       const { result } = renderHook(() => useApp(), { wrapper });
 

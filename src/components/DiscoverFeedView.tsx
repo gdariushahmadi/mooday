@@ -63,10 +63,31 @@ function readTabFromUrl(): FeedTab {
   return "foryou";
 }
 
+function createdAtMs(product: Product): number | null {
+  if (!product.createdAt) return null;
+  const value = Date.parse(product.createdAt);
+  return Number.isNaN(value) ? null : value;
+}
+
 function isNewerBatch(id: string): boolean {
-  // Phase-1 mock: ids prefixed `batch2-` are considered newer than
-  // base-product ids. Phase 3 will use a real `createdAt` timestamp.
+  // Legacy Phase-1 mock records do not have timestamps, so preserve their
+  // original batch convention as a compatibility fallback.
   return id.startsWith("batch2-") || id.startsWith("custom-");
+}
+
+function compareNewness(a: Product, b: Product): number {
+  const aCreated = createdAtMs(a);
+  const bCreated = createdAtMs(b);
+  if (aCreated !== null || bCreated !== null) {
+    if (aCreated === null) return 1;
+    if (bCreated === null) return -1;
+    if (aCreated !== bCreated) return bCreated - aCreated;
+  }
+
+  const aNew = isNewerBatch(a.id) ? 1 : 0;
+  const bNew = isNewerBatch(b.id) ? 1 : 0;
+  if (aNew !== bNew) return bNew - aNew;
+  return b.saves - a.saves;
 }
 
 export const DiscoverFeedView: React.FC<DiscoverFeedViewProps> = ({
@@ -126,12 +147,7 @@ export const DiscoverFeedView: React.FC<DiscoverFeedViewProps> = ({
       return [...filteredListings].sort((a, b) => b.saves - a.saves);
     }
     if (tab === "newin") {
-      return [...filteredListings].sort((a, b) => {
-        const aNew = isNewerBatch(a.id) ? 1 : 0;
-        const bNew = isNewerBatch(b.id) ? 1 : 0;
-        if (aNew !== bNew) return bNew - aNew;
-        return b.saves - a.saves;
-      });
+      return [...filteredListings].sort(compareNewness);
     }
     return filteredListings;
   })();
@@ -345,7 +361,9 @@ export const DiscoverFeedView: React.FC<DiscoverFeedViewProps> = ({
         role="tabpanel"
         aria-label={isAr ? "نتائج الاكتشاف" : "Discover feed"}
       >
-        {tab === "designers" ? (
+        {listingsLoading && listings.length === 0 ? (
+          <LoadingFeed isAr={isAr} />
+        ) : tab === "designers" ? (
           <DesignersTab
             sections={designerSections}
             likes={likes}
@@ -409,6 +427,31 @@ export const DiscoverFeedView: React.FC<DiscoverFeedViewProps> = ({
 };
 
 // ---------- Sub-components ----------
+
+const LoadingFeed: React.FC<{ isAr: boolean }> = ({ isAr }) => (
+  <section
+    aria-busy="true"
+    aria-label={isAr ? "جارٍ تحميل المنتجات" : "Loading listings"}
+    className="grid grid-cols-2 gap-md md:grid-cols-3 lg:grid-cols-4"
+  >
+    <span className="sr-only">
+      {isAr ? "جارٍ تحميل المنتجات…" : "Loading listings…"}
+    </span>
+    {Array.from({ length: 8 }, (_, index) => (
+      <div
+        key={index}
+        aria-hidden="true"
+        className="overflow-hidden rounded-xl border border-surface-container-high bg-surface-container-lowest"
+      >
+        <div className="aspect-[4/5] animate-pulse bg-surface-container-high" />
+        <div className="space-y-2 p-md">
+          <div className="h-3 w-4/5 animate-pulse rounded-full bg-surface-container-high" />
+          <div className="h-3 w-2/5 animate-pulse rounded-full bg-surface-container-high" />
+        </div>
+      </div>
+    ))}
+  </section>
+);
 
 const CompactProductCard: React.FC<{
   product: Product;

@@ -4,12 +4,17 @@
 // free of client-only state so the SEO / share preview is solid.
 
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 import { Landing } from "@/components/landing/Landing";
 import { COPY, type Lang } from "@/components/landing/copy";
 import { DocumentDirSync } from "@/components/landing/DocumentDirSync";
 
 interface PageProps {
-  searchParams: Promise<{ lang?: string | string[] }>;
+  searchParams: Promise<{
+    lang?: string | string[];
+    code?: string | string[];
+    next?: string | string[];
+  }>;
 }
 
 function coerceLang(raw: string | string[] | undefined): Lang {
@@ -64,6 +69,15 @@ export async function generateMetadata({
 
 export default async function Page({ searchParams }: PageProps) {
   const params = await searchParams;
+  const code = typeof params.code === "string" ? params.code : params.code?.[0];
+  if (code) {
+    const next = typeof params.next === "string" ? params.next : params.next?.[0];
+    const query = new URLSearchParams({ code });
+    if (next?.startsWith("/") && !next.startsWith("//")) {
+      query.set("next", next);
+    }
+    redirect(`/auth/callback?${query.toString()}`);
+  }
   const lang = coerceLang(params.lang);
   return (
     <>

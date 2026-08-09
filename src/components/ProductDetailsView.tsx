@@ -6,6 +6,7 @@ import { SELLERS } from "@/data/sellers";
 import { CATEGORIES_AR } from "@/data/categories";
 import { deriveSubCategory } from "@/data/sub-categories";
 import { formatAED } from "@/lib/format";
+import { isOwnListing } from "@/lib/ownership";
 
 interface ProductDetailsViewProps {
   product: Product;
@@ -13,6 +14,8 @@ interface ProductDetailsViewProps {
   onNavigateToCart: () => void;
   onStartChat: (product: Product) => void;
   onCheckoutProduct: (product: Product) => void;
+  /** Optional handler for editing a listing owned by the current user. */
+  onEditListing?: (productId: string) => void;
   /**
    * Optional handler invoked when the user taps the seller card.
    * Receives the seller key (e.g. "sarah"). When omitted, the seller
@@ -29,6 +32,7 @@ interface ProductDetailsViewProps {
 interface ProductDetailsCopy {
   back: string;
   overflow: string;
+  edit: string;
   report: string;
   home: string;
   retail: string;
@@ -57,6 +61,7 @@ const COPY: Record<"en" | "ar", ProductDetailsCopy> = {
   en: {
     back: "Back",
     overflow: "More actions",
+    edit: "Edit listing",
     report: "Report this listing",
     home: "Home",
     retail: "Retail Price:",
@@ -86,6 +91,7 @@ const COPY: Record<"en" | "ar", ProductDetailsCopy> = {
   ar: {
     back: "رجوع",
     overflow: "إجراءات إضافية",
+    edit: "تعديل المنتج",
     report: "إبلاغ عن هذه القطعة",
     home: "الرئيسية",
     retail: "سعر التجزئة الأصلي:",
@@ -120,10 +126,11 @@ export const ProductDetailsView: React.FC<ProductDetailsViewProps> = ({
   onNavigateToCart,
   onStartChat,
   onCheckoutProduct,
+  onEditListing,
   onOpenSeller,
   onReportListing,
 }) => {
-  const { language, toggleLike, likes, addToCart } = useApp();
+  const { language, toggleLike, likes, addToCart, currentUserId } = useApp();
   const [activeImageIdx, setActiveImageIdx] = useState(0);
   const [addedAlert, setAddedAlert] = useState(false);
   const [showZoom, setShowZoom] = useState(false);
@@ -134,6 +141,8 @@ export const ProductDetailsView: React.FC<ProductDetailsViewProps> = ({
   const t = isAr ? COPY.ar : COPY.en;
   const isLiked = likes.includes(product.id);
   const productTitle = isAr ? product.titleAr : product.titleEn;
+  const isOwner = isOwnListing(product, currentUserId);
+  const canChat = !isOwner;
 
   // Sub-category for the breadcrumb.
   const subCategory = deriveSubCategory(
@@ -176,7 +185,7 @@ export const ProductDetailsView: React.FC<ProductDetailsViewProps> = ({
   return (
     <div className="w-full max-w-[1200px] mx-auto flex flex-col gap-lg pb-32 md:pb-10">
       {/* Header: back · title · overflow menu */}
-      <div className="flex items-center justify-between border-b border-outline-variant pb-4 gap-md">
+      <div className="app-page-header flex items-center justify-between border-b border-outline-variant pb-4 gap-md">
         <button
           onClick={onBack}
           aria-label={t.back}
@@ -189,47 +198,62 @@ export const ProductDetailsView: React.FC<ProductDetailsViewProps> = ({
         <div className="font-serif text-headline-sm text-primary tracking-widest uppercase text-center flex-grow">
           {isAr ? "تفاصيل المنتج" : "Product Details"}
         </div>
-        <div className="relative">
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              setShowOverflow((v) => !v);
-            }}
-            aria-label={t.overflow}
-            aria-haspopup="menu"
-            aria-expanded={showOverflow}
-            className="text-on-surface hover:bg-surface-container-low rounded-full p-2 active:scale-95 transition-all"
-          >
-            <span className="material-symbols-outlined" aria-hidden="true">
-              more_horiz
-            </span>
-          </button>
-          {showOverflow && (
-            <div
-              role="menu"
-              className="absolute end-0 mt-1 w-max bg-surface border border-surface-container-high rounded-lg shadow-lg overflow-hidden z-20"
+        <div className="flex items-center gap-1">
+          {isOwner && onEditListing && (
+            <button
+              type="button"
+              onClick={() => onEditListing(product.id)}
+              aria-label={t.edit}
+              title={t.edit}
+              className="text-primary hover:bg-primary/10 rounded-full p-2 active:scale-95 transition-all"
             >
-              <button
-                role="menuitem"
-                onClick={() => {
-                  setShowOverflow(false);
-                  onReportListing?.(product.id);
-                }}
-                disabled={!onReportListing}
-                className="block w-full text-start px-md py-sm text-label-sm text-error hover:bg-surface-container-low disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <span className="flex items-center gap-sm">
-                  <span
-                    className="material-symbols-outlined text-[18px]"
-                    aria-hidden="true"
-                  >
-                    flag
-                  </span>
-                  {t.report}
-                </span>
-              </button>
-            </div>
+              <span className="material-symbols-outlined" aria-hidden="true">
+                edit
+              </span>
+            </button>
           )}
+          <div className="relative">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowOverflow((v) => !v);
+              }}
+              aria-label={t.overflow}
+              aria-haspopup="menu"
+              aria-expanded={showOverflow}
+              className="text-on-surface hover:bg-surface-container-low rounded-full p-2 active:scale-95 transition-all"
+            >
+              <span className="material-symbols-outlined" aria-hidden="true">
+                more_horiz
+              </span>
+            </button>
+            {showOverflow && (
+              <div
+                role="menu"
+                className="absolute end-0 mt-1 w-max bg-surface border border-surface-container-high rounded-lg shadow-lg overflow-hidden z-20"
+              >
+                <button
+                  role="menuitem"
+                  onClick={() => {
+                    setShowOverflow(false);
+                    onReportListing?.(product.id);
+                  }}
+                  disabled={!onReportListing}
+                  className="block w-full text-start px-md py-sm text-label-sm text-error hover:bg-surface-container-low disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <span className="flex items-center gap-sm">
+                    <span
+                      className="material-symbols-outlined text-[18px]"
+                      aria-hidden="true"
+                    >
+                      flag
+                    </span>
+                    {t.report}
+                  </span>
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -477,12 +501,12 @@ export const ProductDetailsView: React.FC<ProductDetailsViewProps> = ({
           <SellerCard
             product={product}
             isAr={isAr}
-            onStartChat={() => onStartChat(product)}
+            onStartChat={canChat ? () => onStartChat(product) : undefined}
             onOpenSeller={onOpenSeller}
           />
 
           {/* CTA */}
-          <div className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-[1fr_auto_auto] gap-sm border-t border-surface-container-high bg-surface/95 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-[0_-8px_24px_rgba(62,29,49,0.12)] backdrop-blur-md md:static md:z-auto md:flex md:flex-col md:border-0 md:bg-transparent md:p-0 md:shadow-none md:backdrop-blur-none mt-4">
+          <div className={`fixed inset-x-0 bottom-0 z-40 grid gap-sm border-t border-surface-container-high bg-surface/95 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-[0_-8px_24px_rgba(62,29,49,0.12)] backdrop-blur-md md:static md:z-auto md:flex md:flex-col md:border-0 md:bg-transparent md:p-0 md:shadow-none md:backdrop-blur-none mt-4 ${canChat ? "grid-cols-[1fr_auto_auto]" : "grid-cols-[1fr_auto]"}`}>
             <button
               onClick={() => onCheckoutProduct(product)}
               className="btn-primary min-h-12 w-full px-4 py-3 rounded-xl text-label-md uppercase tracking-wider md:tracking-widest font-bold shadow-lg btn-tactile text-center active:scale-[0.98] transition-transform"
@@ -501,16 +525,18 @@ export const ProductDetailsView: React.FC<ProductDetailsViewProps> = ({
               <span className="hidden md:inline">{t.addToBag}</span>
               <span className="md:hidden">{t.addToBagShort}</span>
             </button>
-            <button
-              onClick={() => onStartChat(product)}
-              aria-label={isAr ? "محادثة مع البائع" : "Chat with Seller"}
-              className="min-h-12 min-w-14 md:w-full px-3 py-3 border border-outline-variant text-on-surface hover:bg-surface-container-low active:scale-[0.98] transition-all rounded-xl text-label-sm md:text-label-md uppercase tracking-wider md:tracking-widest font-bold text-center flex items-center justify-center gap-1"
-            >
-              <span className="material-symbols-outlined text-[20px]" aria-hidden="true">
-                chat
-              </span>
-              <span>{t.chat}</span>
-            </button>
+            {canChat && (
+              <button
+                onClick={() => onStartChat(product)}
+                aria-label={isAr ? "محادثة مع البائع" : "Chat with Seller"}
+                className="min-h-12 min-w-14 md:w-full px-3 py-3 border border-outline-variant text-on-surface hover:bg-surface-container-low active:scale-[0.98] transition-all rounded-xl text-label-sm md:text-label-md uppercase tracking-wider md:tracking-widest font-bold text-center flex items-center justify-center gap-1"
+              >
+                <span className="material-symbols-outlined text-[20px]" aria-hidden="true">
+                  chat
+                </span>
+                <span>{t.chat}</span>
+              </button>
+            )}
           </div>
         </section>
       </main>
@@ -640,7 +666,7 @@ const ImageZoomModal: React.FC<{
 /**
  * Inline seller card. Clicking the seller info opens the public
  * profile (when `onOpenSeller` is provided). The Chat button is
- * always wired to `onStartChat`.
+ * rendered only when the listing belongs to someone else.
  */
 function SellerCard({
   product,
@@ -650,7 +676,7 @@ function SellerCard({
 }: {
   product: Product;
   isAr: boolean;
-  onStartChat: () => void;
+  onStartChat?: () => void;
   onOpenSeller?: (sellerKey: string) => void;
 }) {
   const sellerKey = Object.keys(SELLERS).find(
@@ -694,18 +720,25 @@ function SellerCard({
         <div className="flex-1 min-w-0">{sellerInfo}</div>
       )}
 
-      <button
-        onClick={onStartChat}
-        className="text-primary hover:bg-primary-fixed/20 active:scale-95 transition-all text-label-sm border border-primary px-4 py-2 rounded-full font-bold flex items-center gap-1.5 flex-shrink-0"
-      >
-        <span
-          className="material-symbols-outlined text-[18px]"
-          aria-hidden="true"
+      {onStartChat ? (
+        <button
+          type="button"
+          onClick={onStartChat}
+          className="text-primary hover:bg-primary-fixed/20 active:scale-95 transition-all text-label-sm border border-primary px-4 py-2 rounded-full font-bold flex items-center gap-1.5 flex-shrink-0"
         >
-          chat
+          <span
+            className="material-symbols-outlined text-[18px]"
+            aria-hidden="true"
+          >
+            chat
+          </span>
+          {isAr ? "تحدث مع البائع" : "Chat with Seller"}
+        </button>
+      ) : (
+        <span className="flex-shrink-0 text-label-sm text-on-surface-variant font-bold">
+          {isAr ? "هذا منتجك" : "Your listing"}
         </span>
-        {isAr ? "تحدث مع البائع" : "Chat with Seller"}
-      </button>
+      )}
     </div>
   );
 }

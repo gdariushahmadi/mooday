@@ -47,6 +47,7 @@ describe("navigation types", () => {
         "signin",
         "forgot-password",
         "social-login",
+        "security-setup",
       ]);
     });
   });

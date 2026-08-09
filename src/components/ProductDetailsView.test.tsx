@@ -44,7 +44,10 @@ const DRESS: Product = {
 
 const ALL: Product[] = [HAND, DRESS];
 
-function makeContext(language: "en" | "ar" = "en"): AppContextType {
+function makeContext(
+  language: "en" | "ar" = "en",
+  overrides: Partial<AppContextType> = {},
+): AppContextType {
   return {
     language,
     setLanguage: vi.fn(),
@@ -97,6 +100,7 @@ function makeContext(language: "en" | "ar" = "en"): AppContextType {
     removeListing: vi.fn(),
     updateOrderStatus: vi.fn(),
     currentUser: null,
+    currentUserId: null,
     authError: null,
     signUp: vi.fn(() => "user-test"),
     signIn: vi.fn(() => true),
@@ -105,14 +109,16 @@ function makeContext(language: "en" | "ar" = "en"): AppContextType {
     sendOtp: vi.fn(() => "000000"),
     updateCurrentUserName: vi.fn(),
     resetPassword: vi.fn(() => true),
+    ...overrides,
   };
 }
 
 function renderView(
   product: Product = HAND,
   overrides: Partial<React.ComponentProps<typeof ProductDetailsView>> = {},
+  contextOverrides: Partial<AppContextType> = {},
 ) {
-  const context = makeContext();
+  const context = makeContext("en", contextOverrides);
   const onBack = vi.fn();
   const onNavigateToCart = vi.fn();
   const onStartChat = vi.fn();
@@ -268,6 +274,23 @@ describe("ProductDetailsView — depth", () => {
 
     await user.click(reportBtn);
     expect(onReportListing).toHaveBeenCalledWith("handbag-tan");
+  });
+
+  it("shows edit and removes chat actions for the listing owner", async () => {
+    const user = userEvent.setup();
+    const onEditListing = vi.fn();
+    const owned = { ...HAND, id: "owned-listing", sellerId: "user-1" };
+
+    renderView(owned, { onEditListing }, { currentUserId: "user-1" });
+
+    const editButton = screen.getByRole("button", { name: /edit listing/i });
+    expect(editButton).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /chat with seller/i }),
+    ).not.toBeInTheDocument();
+
+    await user.click(editButton);
+    expect(onEditListing).toHaveBeenCalledWith("owned-listing");
   });
 
   it("buy now calls onCheckoutProduct", async () => {

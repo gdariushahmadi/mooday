@@ -23,7 +23,7 @@ const COPY = {
     body: "Sign in to access your wardrobe, conversations and active listings on any device.",
     signIn: "Sign in",
     create: "Create account",
-    social: "Continue with Google or Apple",
+    social: "Continue with Google",
     dismiss: "Not now",
   },
   ar: {
@@ -31,7 +31,7 @@ const COPY = {
     body: "سجّلي دخولكِ للوصول إلى خزانتكِ ومحادثاتكِ وإعلاناتكِ النشطة على أي جهاز.",
     signIn: "تسجيل الدخول",
     create: "إنشاء حساب",
-    social: "المتابعة عبر Google أو Apple",
+    social: "المتابعة عبر Google",
     dismiss: "ليس الآن",
   },
 } as const;

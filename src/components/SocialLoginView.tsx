@@ -3,10 +3,10 @@
 /**
  * Social Login — A-06.
  *
- * Phase 1 mock: tapping Google/Apple creates a derived user (email like
- * `layla@google.mooday`) if it doesn't exist, then auto-signs them in.
+ * Phase 1 mock: tapping Google creates a derived user (email like
+ * `user.google@mooday.app`) if it doesn't exist, then auto-signs them in.
  *
- * Phase 2 swaps for real Google/Apple OIDC. UI stays the same.
+ * Phase 2 swaps for real Google OIDC. UI stays the same.
  */
 
 import React, { useState } from "react";
@@ -23,23 +23,21 @@ const COPY = {
     title: "One-tap sign in",
     sub: "Use the account you already use every day.",
     google: "Continue with Google",
-    apple: "Continue with Apple",
     skipping: "Just signing you in…",
     back: "Back",
     noAccount: "Use email instead",
     providersNote:
-      "Phase 1 preview — we won't ask your real Google or Apple password.",
+      "Phase 1 preview — we won't ask your real Google password.",
   },
   ar: {
     title: "تسجيل دخول بنقرة واحدة",
     sub: "استخدمي الحساب الذي تستخدمينه يومياً.",
     google: "المتابعة عبر Google",
-    apple: "المتابعة عبر Apple",
     skipping: "جارٍ تسجيل دخولك…",
     back: "رجوع",
     noAccount: "استخدام البريد بدلاً من ذلك",
     providersNote:
-      "معاينة المرحلة الأولى — لن نطلب كلمة مرور حسابك الفعلية.",
+      "معاينة المرحلة الأولى — لن نطلب كلمة مرور حساب Google الفعلي.",
   },
 } as const;
 
@@ -48,26 +46,25 @@ export const SocialLoginView: React.FC<SocialLoginViewProps> = ({
   onSignIn,
   onSuccess,
 }) => {
-  const { language, signIn, signUp, signInWithOAuth, authMode } = useApp();
+  const { language, signIn, signUp, signInWithOAuth, authMode, authError } =
+    useApp();
   const isAr = language === "ar";
   const t = isAr ? COPY.ar : COPY.en;
-  const [busy, setBusy] = useState<"google" | "apple" | null>(null);
+  const isSupabase = authMode === "supabase";
+  const [busy, setBusy] = useState<"google" | null>(null);
 
-  const handleProvider = async (provider: "google" | "apple") => {
-    setBusy(provider);
+  const handleProvider = async () => {
+    setBusy("google");
     if (authMode === "supabase" && signInWithOAuth) {
       try {
-        await signInWithOAuth(provider);
+        await signInWithOAuth("google");
       } finally {
         setBusy(null);
       }
       return;
     }
-    const email =
-      provider === "google"
-        ? "user.google@mooday.app"
-        : "user.apple@mooday.app";
-    const name = provider === "google" ? "Google User" : "Apple User";
+    const email = "user.google@mooday.app";
+    const name = "Google User";
     // Ensure the social user exists, then sign them in.
     const id = await Promise.resolve(signUp({
       name,
@@ -90,7 +87,7 @@ export const SocialLoginView: React.FC<SocialLoginViewProps> = ({
       data-testid="social-login"
       className="w-full max-w-[480px] mx-auto flex flex-col gap-lg pb-10 font-sans"
     >
-      <header className="flex items-center justify-between border-b border-outline-variant pb-4">
+      <header className="app-page-header flex items-center justify-between border-b border-outline-variant pb-4">
         <button
           type="button"
           onClick={onBack}
@@ -117,27 +114,30 @@ export const SocialLoginView: React.FC<SocialLoginViewProps> = ({
       <div className="flex flex-col gap-md mt-sm">
         <button
           type="button"
-          onClick={() => handleProvider("google")}
+          onClick={() => handleProvider()}
           disabled={busy !== null}
           className="flex items-center justify-center gap-md bg-white text-[#1f1f1f] border border-outline-variant rounded-xl py-4 px-md text-body-lg font-bold hover:bg-surface-container-lowest active:scale-[0.98] transition-transform disabled:opacity-60 disabled:cursor-not-allowed shadow-md"
         >
           <GoogleIcon />
           <span>{busy === "google" ? t.skipping : t.google}</span>
         </button>
-        <button
-          type="button"
-          onClick={() => handleProvider("apple")}
-          disabled={busy !== null}
-          className="flex items-center justify-center gap-md bg-[#1f1f1f] text-white border border-[#1f1f1f] rounded-xl py-4 px-md text-body-lg font-bold hover:opacity-90 active:scale-[0.98] transition-transform disabled:opacity-60 disabled:cursor-not-allowed shadow-md"
-        >
-          <AppleIcon />
-          <span>{busy === "apple" ? t.skipping : t.apple}</span>
-        </button>
       </div>
 
-      <p className="text-label-sm text-on-surface-variant text-center mt-md">
-        {t.providersNote}
-      </p>
+      {!isSupabase && (
+        <p className="text-label-sm text-on-surface-variant text-center mt-md">
+          {t.providersNote}
+        </p>
+      )}
+
+      {isSupabase && authError && (
+        <p
+          role="alert"
+          className="text-label-sm text-error text-center mt-sm"
+          data-testid="social-login-error"
+        >
+          {authError}
+        </p>
+      )}
 
       <button
         type="button"
@@ -174,18 +174,5 @@ const GoogleIcon: React.FC = () => (
       fill="#1976D2"
       d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.3 4.2-4.3 5.6l6 5c4.1-3.7 6.5-9.2 6.5-14.6 0-1.2-.1-2.4-.3-3.5z"
     />
-  </svg>
-);
-
-const AppleIcon: React.FC = () => (
-  <svg
-    width="20"
-    height="20"
-    viewBox="0 0 24 24"
-    fill="currentColor"
-    aria-hidden="true"
-    className="flex-shrink-0"
-  >
-    <path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.53 4.08zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z" />
   </svg>
 );

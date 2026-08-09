@@ -9,7 +9,7 @@ local until Phase 3.
 - Explicit `mock | supabase` data-source flag with fail-fast validation.
 - Replaceable auth, profile, and address service contracts.
 - Email/password registration and sign-in, email confirmation OTP, password
-  recovery, Google OAuth, Apple OAuth, session restoration, and sign-out.
+ recovery, Google OAuth, session restoration, and sign-out.
 - PostgreSQL migration for private profiles and shipping addresses.
 - Owner-only Row Level Security policies and an atomic default-address RPC.
 - One-way removal of the legacy plaintext `mooday_users` and cosmetic

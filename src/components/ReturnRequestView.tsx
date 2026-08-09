@@ -168,7 +168,7 @@ export const ReturnRequestView: React.FC<ReturnRequestViewProps> = ({
       dir={isAr ? "rtl" : "ltr"}
       className="w-full max-w-[800px] mx-auto flex flex-col gap-md pb-10"
     >
-      <div className="flex items-center justify-between border-b border-outline-variant pb-4">
+      <div className="app-page-header flex items-center justify-between border-b border-outline-variant pb-4">
         <button
           type="button"
           onClick={onBack}

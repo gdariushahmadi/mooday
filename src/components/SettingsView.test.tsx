@@ -95,6 +95,7 @@ function renderSettings(
   const onOpenHelp = vi.fn();
   const onOpenPayouts = vi.fn();
   const onOpenBlockedUsers = vi.fn();
+ const onOpenSecuritySetup = vi.fn();
   const onSignOut = vi.fn();
   const onSignIn = vi.fn();
   const utils = render(
@@ -107,6 +108,7 @@ function renderSettings(
         onOpenHelp={onOpenHelp}
         onOpenPayouts={onOpenPayouts}
         onOpenBlockedUsers={onOpenBlockedUsers}
+        onOpenSecuritySetup={onOpenSecuritySetup}
         onSignOut={onSignOut}
         onSignIn={onSignIn}
       />
@@ -117,12 +119,14 @@ function renderSettings(
     onBack,
     onSignOut,
     onSignIn,
+    onOpenSecuritySetup,
     ctx,
   };
 }
 
 beforeEach(() => {
   localStorage.clear();
+  document.documentElement.classList.remove("dark");
 });
 
 describe("SettingsView (G-37) — auth affordances", () => {
@@ -168,4 +172,44 @@ describe("SettingsView (G-37) — auth affordances", () => {
       screen.getByRole("heading", { name: /الإعدادات والحساب/i }),
     ).toBeInTheDocument();
   });
+
+ it("renders the Security section with an App lock link", () => {
+ renderSettings();
+ // Section heading
+ expect(
+ screen.getByRole("heading", { name: /^Security$/i }),
+ ).toBeInTheDocument();
+ // App lock row
+ const lockLink = screen.getByRole("button", { name: /app lock/i });
+ expect(lockLink).toBeInTheDocument();
+ });
+
+ it("calls onOpenSecuritySetup when the App lock row is tapped", async () => {
+ const user = userEvent.setup();
+ const { onOpenSecuritySetup } = renderSettings();
+ await user.click(screen.getByRole("button", { name: /app lock/i }));
+ expect(onOpenSecuritySetup).toHaveBeenCalledTimes(1);
+ });
+
+ it("renders the Arabic Security section when language=ar", () => {
+ renderSettings({ language: "ar" });
+ expect(
+ screen.getByRole("heading", { name: /^الأمان$/ }),
+ ).toBeInTheDocument();
+ });
+
+ it("applies and persists the dark mode preference", async () => {
+ const user = userEvent.setup();
+ renderSettings();
+
+ const darkModeToggle = screen.getByRole("button", { name: /^dark mode$/i });
+ await user.click(darkModeToggle);
+
+ expect(document.documentElement).toHaveClass("dark");
+ expect(localStorage.getItem("mooday-pref-dark")).toBe("1");
+
+ await user.click(darkModeToggle);
+ expect(document.documentElement).not.toHaveClass("dark");
+ expect(localStorage.getItem("mooday-pref-dark")).toBe("0");
+ });
 });

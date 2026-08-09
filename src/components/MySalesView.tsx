@@ -172,7 +172,7 @@ export const MySalesView: React.FC<MySalesViewProps> = ({
   return (
     <div dir={isAr ? "rtl" : "ltr"} className="w-full flex flex-col gap-md">
       {/* Header */}
-      <div className="flex items-center justify-between -mt-2">
+      <div className="app-page-header flex items-center justify-between -mt-2">
         <button
           type="button"
           onClick={onBack}

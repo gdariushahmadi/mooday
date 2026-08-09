@@ -155,27 +155,40 @@ describe("SocialLoginView (A-06)", () => {
     expect(onSuccess).toHaveBeenCalledTimes(1);
   });
 
-  it("creates an Apple-flavored mock user and signs in on tap", async () => {
-    const user = userEvent.setup();
-    const { ctx, onSuccess } = renderSocial();
-    await user.click(screen.getByRole("button", { name: /apple/i }));
-    expect(ctx.signUp).toHaveBeenCalledWith({
-      name: "Apple User",
-      email: "user.apple@mooday.app",
-      phone: "",
-      password: "social-1234",
-    });
-    expect(ctx.signIn).toHaveBeenCalledWith({
-      email: "user.apple@mooday.app",
-      password: "social-1234",
-    });
-    expect(onSuccess).toHaveBeenCalledTimes(1);
-  });
-
   it("doesn't navigate when signIn fails", async () => {
     const user = userEvent.setup();
     const { onSuccess } = renderSocial({ signIn: vi.fn(() => false) });
     await user.click(screen.getByRole("button", { name: /google/i }));
     expect(onSuccess).not.toHaveBeenCalled();
+  });
+
+  it("hides the Phase 1 preview note when authMode is supabase", () => {
+    renderSocial({ authMode: "supabase" });
+    expect(
+      screen.queryByText(/phase 1 preview/i),
+    ).not.toBeInTheDocument();
+  });
+
+  it("calls signInWithOAuth('google') and skips mock sign-in when authMode is supabase", async () => {
+    const user = userEvent.setup();
+    const signInWithOAuth = vi.fn(async () => true);
+    const { ctx } = renderSocial({
+      authMode: "supabase",
+      signInWithOAuth,
+    });
+    await user.click(screen.getByRole("button", { name: /google/i }));
+    expect(signInWithOAuth).toHaveBeenCalledWith("google");
+    expect(ctx.signUp).not.toHaveBeenCalled();
+    expect(ctx.signIn).not.toHaveBeenCalled();
+  });
+
+  it("renders authError as an alert in supabase mode", () => {
+    renderSocial({
+      authMode: "supabase",
+      authError: "network_error",
+    });
+    expect(screen.getByTestId("social-login-error")).toHaveTextContent(
+      /network/i,
+    );
   });
 });

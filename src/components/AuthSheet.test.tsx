@@ -157,7 +157,7 @@ describe("AuthSheet", () => {
     const user = userEvent.setup();
     const { onSocial } = renderSheet();
     await user.click(
-      screen.getByRole("button", { name: /continue with google or apple/i }),
+      screen.getByRole("button", { name: /continue with google/i }),
     );
     expect(onSocial).toHaveBeenCalledTimes(1);
   });

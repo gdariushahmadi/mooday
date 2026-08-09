@@ -166,13 +166,6 @@ describe("SignInView (A-04)", () => {
     expect(onSocialLogin).toHaveBeenCalledTimes(1);
   });
 
-  it("calls onSocialLogin when the Apple button is clicked", async () => {
-    const user = userEvent.setup();
-    const { onSocialLogin } = renderSignIn();
-    await user.click(screen.getByRole("button", { name: /apple/i }));
-    expect(onSocialLogin).toHaveBeenCalledTimes(1);
-  });
-
   it("calls signIn and onSuccess when the form is submitted", async () => {
     const user = userEvent.setup();
     const { ctx, onSuccess } = renderSignIn();

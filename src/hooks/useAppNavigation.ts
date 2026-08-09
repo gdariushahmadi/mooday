@@ -12,6 +12,7 @@ import {
 } from "@/types/navigation";
 import { CATEGORIES } from "@/data/categories";
 import { getSellerProfile } from "@/data/seller-profile";
+import { isOwnListing } from "@/lib/ownership";
 
 export type CategorySort = "newest" | "price-asc" | "price-desc" | "saves";
 
@@ -103,6 +104,8 @@ export interface AppNavigation {
   closePayouts: () => void;
   openBlockedUsers: () => void;
   closeBlockedUsers: () => void;
+  openSecuritySetup: () => void;
+  closeSecuritySetup: () => void;
   openDispute: (orderId?: string) => void;
   closeDispute: () => void;
   openDisputesList: () => void;
@@ -149,7 +152,7 @@ function resolveInitialView(): ViewState {
  * bottom-nav tabs and the view state.
  */
 export function useAppNavigation(): AppNavigation {
-  const { createChatThread, listings } = useApp();
+  const { createChatThread, listings, currentUserId } = useApp();
 
   const [activeTab, setActiveTab] = useState<TabId>(() =>
     tabFromView(readUrlParam("view") ?? resolveInitialView()),
@@ -236,16 +239,25 @@ export function useAppNavigation(): AppNavigation {
 
   const startChat = useCallback(
     (product: Product) => {
+      if (isOwnListing(product, currentUserId)) return;
+      // Product details takes precedence over the chat overlay in AppContent,
+      // so close it before waiting for a remote thread to be created.
+      setSelectedProduct(null);
       const result = createChatThread(product);
-      Promise.resolve(result).then((threadId) =>
-        setActiveChatThreadId(threadId),
-      );
+      Promise.resolve(result)
+        .then((threadId) => {
+          setActiveChatThreadId(threadId);
+        })
+        .catch(() => {
+          // Keep the product detail open if chat creation is rejected.
+        });
     },
-    [createChatThread],
+    [createChatThread, currentUserId],
   );
 
   const startChatWithSeller = useCallback(
     (sellerId: string) => {
+      if (sellerId === currentUserId) return;
       const seller = getSellerProfile(sellerId);
       const match =
         listings.find(
@@ -257,10 +269,15 @@ export function useAppNavigation(): AppNavigation {
         ) ?? null;
 
       if (match) {
-        Promise.resolve(createChatThread(match)).then((threadId) => {
-          setSelectedProduct(null);
-          setActiveChatThreadId(threadId);
-        });
+        if (isOwnListing(match, currentUserId)) return;
+        Promise.resolve(createChatThread(match))
+          .then((threadId) => {
+            setSelectedProduct(null);
+            setActiveChatThreadId(threadId);
+          })
+          .catch(() => {
+            // Ignore rejected chat creation and keep the current view open.
+          });
         return;
       }
 
@@ -287,12 +304,16 @@ export function useAppNavigation(): AppNavigation {
         sellerId,
       };
       const threadId = createChatThread(synthetic);
-      Promise.resolve(threadId).then((id) => {
-        setSelectedProduct(null);
-        setActiveChatThreadId(id);
-      });
+      Promise.resolve(threadId)
+        .then((id) => {
+          setSelectedProduct(null);
+          setActiveChatThreadId(id);
+        })
+        .catch(() => {
+          // Ignore rejected chat creation and keep the current view open.
+        });
     },
-    [createChatThread, listings],
+    [createChatThread, currentUserId, listings],
   );
 
   const closeChat = useCallback(() => {
@@ -543,6 +564,14 @@ export function useAppNavigation(): AppNavigation {
     setCurrentView("blocked-users");
   }, []);
 
+  const openSecuritySetup = useCallback(() => {
+    setCurrentView("security-setup");
+  }, []);
+
+  const closeSecuritySetup = useCallback(() => {
+    setCurrentView("settings");
+  }, []);
+
   const closeBlockedUsers = useCallback(() => {
     setCurrentView("settings");
   }, []);
@@ -715,6 +744,8 @@ export function useAppNavigation(): AppNavigation {
     closePayouts,
     openBlockedUsers,
     closeBlockedUsers,
+    openSecuritySetup,
+    closeSecuritySetup,
     openDispute,
     closeDispute,
     openDisputesList,

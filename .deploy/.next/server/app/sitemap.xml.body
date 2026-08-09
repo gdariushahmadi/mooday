@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
 <url>
-<loc>http://localhost:3000/</loc>
-<xhtml:link rel="alternate" hreflang="en" href="http://localhost:3000/" />
-<xhtml:link rel="alternate" hreflang="ar" href="http://localhost:3000/?lang=ar" />
-<xhtml:link rel="alternate" hreflang="x-default" href="http://localhost:3000/" />
-<lastmod>2026-08-02T03:00:09.499Z</lastmod>
+<loc>https://app.daneg.ae/</loc>
+<xhtml:link rel="alternate" hreflang="en" href="https://app.daneg.ae/" />
+<xhtml:link rel="alternate" hreflang="ar" href="https://app.daneg.ae/?lang=ar" />
+<xhtml:link rel="alternate" hreflang="x-default" href="https://app.daneg.ae/" />
+<lastmod>2026-08-09T01:19:45.500Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>1</priority>
 </url>

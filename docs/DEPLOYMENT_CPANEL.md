@@ -91,6 +91,15 @@ deployment. The generated server must still have `public/` and
 Set production values in cPanel's Node.js environment-variable section or in
 the Passenger environment configuration. Never commit their values here.
 
+On the current Namecheap/LiteSpeed setup, keep the same values in
+`/home/danesoyk/mooday/.env.production` as a runtime fallback. Next.js loads
+this file when Passenger starts, including server-only values used by admin
+actions. Restrict it to the cPanel account owner:
+
+```bash
+chmod 600 /home/danesoyk/mooday/.env.production
+```
+
 Required site settings:
 
 ```text
@@ -107,6 +116,72 @@ The service-role key is server-only and must never be prefixed with
 `127.0.0.1:54321`; those values do not work as production Supabase settings.
 
 After changing environment variables, rebuild and restart Passenger.
+
+## Supabase Auth Configuration
+
+The application uses a six-digit email OTP. The hosted Supabase project must
+use the production site URL and the repository's confirmation template; the
+default Supabase template sends a confirmation link instead of the code that
+the Mooday UI asks for.
+
+In Supabase Dashboard > Authentication > URL Configuration, set:
+
+```text
+Site URL: https://app.daneg.ae
+Redirect URL: https://app.daneg.ae/auth/callback
+```
+
+Keep `http://localhost:3000/auth/callback` as an additional redirect only for
+local development. In Authentication > Email Templates > Confirm signup, use
+`supabase/templates/confirmation.html`. It must contain `{{ .Token }}`. The
+recovery template in the same directory also uses a one-time code.
+
+The same settings can be pushed from the repository after a Supabase personal
+access token has been configured for the CLI. Never commit the token:
+
+```bash
+export SUPABASE_ACCESS_TOKEN='<token from Supabase dashboard>'
+npx supabase@2.109.1 config push --project-ref duchuarevedwqbmxctfx
+# DB migrations (use --linked for an already-linked project)
+npx supabase@2.109.1 link --project-ref duchuarevedwqbmxctfx
+npx supabase@2.109.1 db push --linked
+unset SUPABASE_ACCESS_TOKEN
+```
+
+`config push` was last run for this project and applied:
+
+```text
+site_url = "https://app.daneg.ae"
+additional_redirect_urls = ["https://app.daneg.ae/auth/callback", "http://localhost:3000/auth/callback"]
+otp_length = 6
+max_frequency = "1s"
+mfa.totp enroll_enabled = false
+mfa.totp verify_enabled = false
+[auth.email.template.confirmation] subject = "{{ .Token }} — Confirm your Mooday account"
+[auth.email.template.recovery]   subject = "{{ .Token }} — Reset your Mooday password"
+```
+
+The HTML `content` of the templates was rejected with HTTP 400 because the
+free tier only allows editing the `subject` while using the default email
+provider. To send the six-digit code template (and any custom branding) via
+Supabase Auth, configure a custom SMTP provider:
+
+1. In the Supabase Dashboard go to **Authentication > Sign In/Up > SMTP
+   Settings** and choose **Custom SMTP**.
+2. Enter credentials for a transactional provider such as Resend, Postmark,
+   SendGrid, or AWS SES. The connection must support TLS and be reachable
+   from Supabase's outbound mailers.
+3. After saving, rerun `npx supabase@2.109.1 config push --project-ref
+   duchuarevedwqbmxctfx` so the template HTML in
+   `supabase/templates/confirmation.html` and `recovery.html` is uploaded.
+4. Verify by signing up a new test user; the email should contain a
+   six-digit code and a link back to `https://app.daneg.ae/auth/callback`.
+
+Until custom SMTP is enabled, sign-up emails still go out under the
+provider's default template (a confirmation link, not the six-digit code).
+The application-side redirect handling in
+`src/services/backend/supabase.ts` is already wired so the link, if
+clicked, still lands on the production site.
 
 ## Verification
 
@@ -179,10 +254,13 @@ standalone Passenger process at runtime.
 
 ## Deployment Status
 
-Last verified: 2026-08-03.
+Last verified: 2026-08-07.
 
 - `https://app.daneg.ae/`: HTTP `200`
 - `https://app.daneg.ae/app`: HTTP `200`
 - `https://app.daneg.ae/admin`: HTTP `200`
 - `https://app.daneg.ae/manifest.json`: HTTP `200`
-- Production Supabase configuration: still required
+- Production Supabase configuration: active
+- Supabase Auth, public REST access, and server-side service-role access:
+  runtime verified; Auth URL/OTP push applied; email template needs custom SMTP
+- Rollback copy: `/home/danesoyk/mooday-backups/mooday-kUeSB4679SxelAWDmvnAa-20260806-210848`
