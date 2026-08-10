@@ -1,6 +1,5 @@
 "use client";
 
-import React from "react";
 import type { AdminOrderSummary } from "@/services/admin/actions";
 import { formatAEDLabel } from "@/lib/format";
 
