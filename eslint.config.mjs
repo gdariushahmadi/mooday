@@ -11,7 +11,6 @@ const eslintConfig = defineConfig([
     ".next/**",
     "out/**",
     "build/**",
-    ".deploy/**",
     "next-env.d.ts",
     // Project-specific ignores: build scripts and the PWA service worker
     // are not part of the application source.

@@ -62,7 +62,7 @@ export default function AuthCallbackPage() {
         {error ? (
           <>
             <p className="mt-3 text-body-md text-on-surface-variant" role="alert">
-              We couldn&apos;t complete sign in. Please return and try again.
+              We couldn't complete sign in. Please return and try again.
             </p>
             <p
               className="mt-2 text-label-sm text-error break-words"

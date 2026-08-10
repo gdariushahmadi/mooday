@@ -42,9 +42,7 @@ import {
   mockAdminTriageReport,
   mockAdminBroadcastNotification,
 } from "@/services/admin/mockAdminService";
-import { type AdminTab } from "@/components/admin/AdminTypes";
-import { AdminSidebar } from "@/components/admin/AdminSidebar";
-import { AdminTopbar } from "@/components/admin/AdminTopbar";
+import { AdminHeader, type AdminTab } from "@/components/admin/AdminHeader";
 import { AdminOverviewTab } from "@/components/admin/AdminOverviewTab";
 import { AdminListingsTab } from "@/components/admin/AdminListingsTab";
 import { AdminOrdersTab } from "@/components/admin/AdminOrdersTab";
@@ -285,15 +283,18 @@ export default function AdminPage() {
 
   return (
     <div
-      className={`min-h-screen bg-background text-on-background selection:bg-primary-fixed selection:text-on-primary-fixed antialiased flex ${
+      className={`min-h-screen bg-background text-on-background selection:bg-primary-fixed selection:text-on-primary-fixed antialiased ${
         lang === "ar" ? "font-arabic" : ""
       }`}
       dir={lang === "ar" ? "rtl" : "ltr"}
     >
-      <AdminSidebar
+      <AdminHeader
         activeTab={activeTab}
         onSelectTab={setActiveTab}
         lang={lang}
+        onToggleLang={toggleLang}
+        isLiveMode={isLiveMode}
+        isDemoMode={isDemoMode}
         pendingListingsCount={pendingListings.length}
         openDisputesCount={disputes.filter((d) => d.status === "open").length}
         openReportsCount={reports.filter(
@@ -301,15 +302,7 @@ export default function AdminPage() {
         ).length}
       />
 
-      <div className="flex-1 flex flex-col min-w-0">
-        <AdminTopbar
-          lang={lang}
-          onToggleLang={toggleLang}
-          isLiveMode={isLiveMode}
-          isDemoMode={isDemoMode}
-        />
-
-        <main className="flex-1 overflow-y-auto px-4 py-8 sm:px-6 lg:px-8">
+      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
         {isDemoMode && !loading && !error && (
           <div
             role="status"
@@ -421,8 +414,7 @@ export default function AdminPage() {
             )}
           </>
         )}
-        </main>
-      </div>
+      </main>
     </div>
   );
 }
