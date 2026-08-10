@@ -3,6 +3,7 @@
 import React, { useState, useMemo } from "react";
 import { useApp, type Product, type CartItem } from "@/context/AppContext";
 import { formatAEDLabel } from "@/lib/format";
+import { PHONE_PLACEHOLDER } from "@/lib/constants";
 import type { Address } from "@/data/addresses";
 import type { PaymentMethod } from "@/data/paymentMethods";
 import type { Order } from "@/data/orders";
@@ -78,7 +79,7 @@ const COPY: Record<"en" | "ar", CheckoutCopy> = {
     fullName: "Full name",
     fullNamePh: "Enter your full name",
     phone: "Phone number",
-    phonePh: "+971 5X XXX XXXX",
+    phonePh: PHONE_PLACEHOLDER,
     city: "City",
     street: "Street, building, apartment",
     streetPh: "e.g. Villa 24, Al Wasl Road",
@@ -128,7 +129,7 @@ const COPY: Record<"en" | "ar", CheckoutCopy> = {
     fullName: "الاسم الكامل",
     fullNamePh: "ادخل اسمك",
     phone: "رقم الهاتف",
-    phonePh: "+971 5X XXX XXXX",
+    phonePh: PHONE_PLACEHOLDER,
     city: "الإمارة",
     street: "الشارع، المبنى، الشقة",
     streetPh: "مثال: فيلا 24، شارع الوصل",

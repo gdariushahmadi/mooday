@@ -1,0 +1,1 @@
+export const PHONE_PLACEHOLDER = '+971 5X XXX XXXX';
