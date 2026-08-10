@@ -2,7 +2,7 @@
 
 import React from "react";
 import type { AdminDashboardStats, AdminAuditLogEntry } from "@/services/admin/actions";
-import type { AdminTab } from "./AdminHeader";
+import type { AdminTab } from "./AdminTypes";
 
 interface AdminOverviewTabProps {
   stats: AdminDashboardStats | null;
