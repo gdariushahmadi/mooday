@@ -484,13 +484,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     DEFAULT_CHATS,
   );
   const [remoteThreads, setRemoteThreads] = React.useState<ChatThread[]>([]);
-  // Tracked for future per-thread deep-dives (e.g. typing indicators
-  // that survive a thread switch); currently the chat overlay reads
-  // messages straight from the active thread object.
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [remoteMessagesByThread, setRemoteMessagesByThread] = React.useState<
-    Record<string, ChatMessage[]>
-  >({});
   const [ordersLoading, setOrdersLoading] = React.useState(false);
   const [chatsLoading, setChatsLoading] = React.useState(false);
   const [chatLastRead, setChatLastRead] = useLocalStorageState<
@@ -1119,7 +1112,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       const auth = await phase2Backend.auth.getCurrentUser();
       if (!auth) {
         setRemoteThreads([]);
-        setRemoteMessagesByThread({});
         return;
       }
       const threads = await phase2Backend.chats.listMine();
@@ -1150,7 +1142,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
         };
       });
       setRemoteThreads(mapped);
-      setRemoteMessagesByThread(messageMap);
     } catch {
       // Surface in the UI later; keep the previous snapshot.
     } finally {
