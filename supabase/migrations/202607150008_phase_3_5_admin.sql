@@ -36,6 +36,33 @@ with check (
   or (select is_admin from public.profiles p where p.id = auth.uid())
 );
 
+-- Prevent regular users from updating the new admin/moderation columns.
+-- The service role client bypasses RLS and triggers can be defined
+-- with security definer to still enforce this logic based on the user's role.
+create or replace function public.protect_admin_flags() returns trigger as $$
+begin
+  if new.is_admin is distinct from old.is_admin
+     or new.is_suspended is distinct from old.is_suspended
+     or new.suspended_reason is distinct from old.suspended_reason
+     or new.suspended_at is distinct from old.suspended_at
+  then
+    -- When called via the service-role key, current_setting('role') will be 'service_role'.
+    -- The frontend or normal authenticated API calls will be 'authenticated' or 'anon'.
+    if current_setting('role', true) != 'service_role' then
+      if auth.uid() is null or not exists (select 1 from public.profiles where id = auth.uid() and is_admin) then
+        raise exception 'insufficient_privilege' using errcode = '42501';
+      end if;
+    end if;
+  end if;
+  return new;
+end;
+$$ language plpgsql security definer;
+
+drop trigger if exists ensure_admin_flags on public.profiles;
+create trigger ensure_admin_flags
+before update on public.profiles
+for each row execute function public.protect_admin_flags();
+
 -- Listings gain `approved_at` so the moderation queue can distinguish
 -- "freshly listed, awaiting review" from "approved and visible". For
 -- backwards compatibility with existing rows, `approved_at` defaults

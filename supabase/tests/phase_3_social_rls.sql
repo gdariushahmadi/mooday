@@ -133,6 +133,14 @@ select is(
 );
 
 -- Reviews
+reset role;
+set local role authenticated;
+select set_config(
+  'request.jwt.claims',
+  '{"sub":"aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa","role":"authenticated"}',
+  true
+);
+
 insert into public.orders (
   id, buyer_id, seller_id, shipping_address,
   items_subtotal_minor, shipping_fee_minor, total_minor
