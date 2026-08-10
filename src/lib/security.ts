@@ -303,3 +303,18 @@ export async function verifyBiometric(
     return false;
   }
 }
+
+export function getLockTimeout(): LockTimeoutMs {
+  try {
+    const val = localStorage.getItem(LOCK_STORAGE_KEYS.timeoutMs);
+    if (val) {
+      const parsed = parseInt(val, 10);
+      if (!isNaN(parsed) && LOCK_TIMEOUT_PRESETS_MS.includes(parsed as LockTimeoutMs)) {
+        return parsed as LockTimeoutMs;
+      }
+    }
+  } catch {
+    // Ignore storage errors
+  }
+  return DEFAULT_LOCK_TIMEOUT_MS;
+}
