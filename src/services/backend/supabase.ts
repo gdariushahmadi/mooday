@@ -698,14 +698,48 @@ class SupabaseListingMediaService implements ListingMediaService {
     if (error) throw error;
     const grouped: Record<string, ListingImageRecord[]> = {};
     for (const id of listingIds) grouped[id] = [];
-    // Resolve URLs in parallel; the bucket lives behind Supabase so the
-    // round-trip cost is the dominant factor at scale.
-    const resolved = await Promise.all(
-      (data ?? []).map(async (row) => {
-        const r = await this.resolveUrl(String(row.storage_path));
-        return listingImageFromRow(row, r.url, r.expiresAt);
-      }),
-    );
+
+    const rows = data ?? [];
+    const privatePaths = Array.from(new Set(
+      rows
+        .map((row) => String(row.storage_path))
+        .filter((path) => !isPublicImageUrl(path))
+    ));
+
+    const signedUrlMap = new Map<string, string>();
+    const expiresIn = 60 * 60; // 1 hour
+    let expiresAt: number | undefined;
+
+    if (privatePaths.length > 0) {
+      const { data: signedUrlsData, error: signedUrlsError } =
+        await this.client.storage
+          .from("listing-media")
+          .createSignedUrls(privatePaths, expiresIn);
+
+      if (signedUrlsError) {
+        throw (
+          signedUrlsError ??
+          new Error(`Unable to resolve signed URLs for listings`)
+        );
+      }
+
+      expiresAt = Date.now() + expiresIn * 1000;
+      for (const item of signedUrlsData ?? []) {
+        if (item.signedUrl && item.path) {
+          signedUrlMap.set(item.path as string, item.signedUrl as string);
+        }
+      }
+    }
+
+    const resolved = rows.map((row) => {
+      const path = String(row.storage_path);
+      if (isPublicImageUrl(path)) {
+        return listingImageFromRow(row, path);
+      }
+      const url = signedUrlMap.get(path) ?? path;
+      return listingImageFromRow(row, url, expiresAt);
+    });
+
     for (const record of resolved) {
       const bucket = grouped[record.listingId];
       if (bucket) bucket.push(record);
