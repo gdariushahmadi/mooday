@@ -9,6 +9,7 @@ import {
 import type { Address } from "@/data/addresses";
 import type { PaymentMethod } from "@/data/paymentMethods";
 import { CheckoutFlowView } from "@/components/CheckoutFlowView";
+import { PHONE_PLACEHOLDER } from "@/lib/constants";
 
 const PRODUCT: Product = {
   id: "p1",
@@ -225,7 +226,7 @@ describe("CheckoutFlowView — address step (C-13)", () => {
       screen.getByPlaceholderText(/Enter your full name/i),
     ).toBeInTheDocument();
     expect(
-      screen.getByPlaceholderText(/\+971 5X XXX XXXX/i),
+      screen.getByPlaceholderText(PHONE_PLACEHOLDER),
     ).toBeInTheDocument();
   });
 

@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { useApp } from "@/context/AppContext";
+import { PHONE_PLACEHOLDER } from "@/lib/constants";
 import type { Address } from "@/data/addresses";
 import { ClickableCard } from "./ClickableCard";
 
@@ -63,7 +64,7 @@ const COPY: Record<"en" | "ar", AddressesCopy> = {
     fullName: "Full name",
     fullNamePh: "Enter your full name",
     phone: "Phone number",
-    phonePh: "+971 5X XXX XXXX",
+    phonePh: PHONE_PLACEHOLDER,
     city: "Emirate",
     districtLabel: "District / area",
     districtPh: "e.g. Jumeirah",
@@ -97,7 +98,7 @@ const COPY: Record<"en" | "ar", AddressesCopy> = {
     fullName: "الاسم الكامل",
     fullNamePh: "ادخلي اسمك",
     phone: "رقم الهاتف",
-    phonePh: "+971 5X XXX XXXX",
+    phonePh: PHONE_PLACEHOLDER,
     city: "الإمارة",
     districtLabel: "المنطقة",
     districtPh: "مثال: جميرا",
