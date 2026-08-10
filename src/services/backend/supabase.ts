@@ -725,8 +725,8 @@ class SupabaseListingMediaService implements ListingMediaService {
 
       expiresAt = Date.now() + expiresIn * 1000;
       for (const item of signedUrlsData ?? []) {
-        if (item.signedUrl) {
-          signedUrlMap.set(item.path, item.signedUrl);
+        if (item.signedUrl && item.path) {
+          signedUrlMap.set(item.path as string, item.signedUrl as string);
         }
       }
     }
