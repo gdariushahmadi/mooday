@@ -153,7 +153,7 @@ describe("OtpView (A-03)", () => {
     const { ctx, onSuccess } = renderOtp();
     await typeCode(user, MOCK_OTP_CODE);
     await user.click(screen.getByRole("button", { name: /^verify$/i }));
-    expect(ctx.verifyOtp).toHaveBeenCalledWith("", "000000");
+    expect(ctx.verifyOtp).toHaveBeenCalledWith("", MOCK_OTP_CODE);
     expect(onSuccess).toHaveBeenCalledTimes(1);
   });
 
