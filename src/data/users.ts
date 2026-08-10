@@ -44,14 +44,11 @@ export const DEFAULT_USERS: User[] = [
 export const MOCK_OTP_CODE = "000000";
 
 /**
- * Generate a 32-char session token from a user id + timestamp.
- * Cryptographically meaningless in Phase 1 — Phase 2 will swap for
- * a real JWT signed by the auth server.
+ * Generate a cryptographically secure session token.
+ * Phase 2 will swap for a real JWT signed by the auth server.
  */
 export function generateSessionToken(userId: string): string {
-  return `${userId}.${Date.now().toString(36)}${Math.random()
-    .toString(36)
-    .slice(2, 10)}`;
+  return `${userId}.${crypto.randomUUID()}`;
 }
 
 export interface Session {
