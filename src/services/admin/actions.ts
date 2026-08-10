@@ -689,14 +689,18 @@ async function fetchUserEmails(
   userIds: string[],
 ): Promise<Map<string, string>> {
   if (userIds.length === 0) return new Map();
-  const { data, error } = await client.auth.admin.listUsers();
+
+  const uniqueIds = Array.from(new Set(userIds));
+  const { data, error } = await client.rpc("admin_get_user_emails", {
+    user_ids: uniqueIds,
+  });
+
   if (error) return new Map();
-  const wanted = new Set(userIds);
+
   const result = new Map<string, string>();
-  for (const user of data.users) {
-    if (wanted.has(user.id)) {
-      result.set(user.id, user.email ?? "");
-    }
+  for (const user of data ?? []) {
+    result.set(user.id, user.email ?? "");
   }
+
   return result;
 }
