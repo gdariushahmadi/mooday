@@ -18,8 +18,8 @@ export interface User {
   nameAr: string;
   email: string;
   phone: string;
-  /** Stored plaintext in Phase 1. Phase 2 swaps for a real hash. */
-  password: string;
+  passwordHash: string;
+  passwordSalt: string;
   createdAt: string;
 }
 
@@ -31,7 +31,8 @@ export const DEFAULT_USERS: User[] = [
     nameAr: "ليلى منصور",
     email: "layla@mooday.app",
     phone: "+971 50 123 4567",
-    password: "mooday123",
+    passwordSalt: "kvwLdmVXRJ49DenbaXAUWw==",
+    passwordHash: "MOxNswaHQgpYfBe6VXzK9dYytNWSYMWOsFYHovuiLtI=",
     createdAt: new Date().toISOString(),
   },
 ];
