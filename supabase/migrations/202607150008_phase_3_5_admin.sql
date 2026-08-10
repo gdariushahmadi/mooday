@@ -28,18 +28,12 @@ drop policy if exists "profiles_update_own" on public.profiles;
 create policy "profiles_update_own_or_admin" on public.profiles
 for update to authenticated
 using (
-  (select auth.uid()) = id
-  or exists (
-    select 1 from public.profiles p
-    where p.id = (select auth.uid()) and p.is_admin
-  )
+  auth.uid() = id
+  or (select is_admin from public.profiles p where p.id = auth.uid())
 )
 with check (
-  (select auth.uid()) = id
-  or exists (
-    select 1 from public.profiles p
-    where p.id = (select auth.uid()) and p.is_admin
-  )
+  auth.uid() = id
+  or (select is_admin from public.profiles p where p.id = auth.uid())
 );
 
 -- Listings gain `approved_at` so the moderation queue can distinguish

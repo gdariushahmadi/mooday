@@ -93,10 +93,11 @@ describe("useLocalStorageState", () => {
   });
 
   it("does not crash when localStorage throws (private mode)", () => {
-    const original = localStorage.setItem;
-    localStorage.setItem = vi.fn(() => {
-      throw new Error("QuotaExceededError");
-    });
+    const setItemSpy = vi
+      .spyOn(Storage.prototype, "setItem")
+      .mockImplementation(() => {
+        throw new Error("QuotaExceededError");
+      });
 
     const { result } = renderHook(() =>
       useLocalStorageState("test_key", "default"),
@@ -109,7 +110,7 @@ describe("useLocalStorageState", () => {
 
     expect(result.current[0]).toBe("default");
 
-    localStorage.setItem = original;
+    setItemSpy.mockRestore();
   });
 });
 
