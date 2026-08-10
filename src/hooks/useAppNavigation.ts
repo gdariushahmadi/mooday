@@ -15,6 +15,7 @@ import { getSellerProfile } from "@/data/seller-profile";
 import { isOwnListing } from "@/lib/ownership";
 
 export type CategorySort = "newest" | "price-asc" | "price-desc" | "saves";
+type Awaitable<T> = T | Promise<T>;
 
 export const VALID_CATEGORY_SORTS: readonly CategorySort[] = [
   "newest",
@@ -151,7 +152,630 @@ function resolveInitialView(): ViewState {
  * overlay state (product details, chat), and the mapping between the
  * bottom-nav tabs and the view state.
  */
+
+export function useProductNav(
+  setCurrentView: React.Dispatch<React.SetStateAction<ViewState>>,
+  setSelectedProduct: React.Dispatch<React.SetStateAction<Product | null>>,
+  setCheckoutProduct: React.Dispatch<React.SetStateAction<Product | null>>,
+  setActiveChatThreadId: React.Dispatch<React.SetStateAction<string | null>>,
+  setActiveSellerId: React.Dispatch<React.SetStateAction<string | null>>,
+  setActiveCategory: React.Dispatch<React.SetStateAction<string | null>>,
+  setActiveOrderId: React.Dispatch<React.SetStateAction<string | null>>,
+  setActiveListingId: React.Dispatch<React.SetStateAction<string | null>>,
+  listings: Product[],
+  changeTab: (tab: TabId) => void,
+  goHome: () => void,
+) {
+  const selectProduct = useCallback((product: Product) => {
+    setSelectedProduct(product);
+  }, [setSelectedProduct]);
+
+  const closeProduct = useCallback(() => {
+    setSelectedProduct(null);
+  }, [setSelectedProduct]);
+
+  const navigateToCart = useCallback(() => {
+    setSelectedProduct(null);
+    setCurrentView("bag");
+  }, [setSelectedProduct, setCurrentView]);
+
+  const openSellPicker = useCallback(() => {
+    setSelectedProduct(null);
+    setActiveChatThreadId(null);
+    setActiveSellerId(null);
+    setActiveCategory(null);
+    setActiveOrderId(null);
+    setActiveListingId(null);
+    setCurrentView("sell");
+  }, [
+    setSelectedProduct,
+    setActiveChatThreadId,
+    setActiveSellerId,
+    setActiveCategory,
+    setActiveOrderId,
+    setActiveListingId,
+    setCurrentView,
+  ]);
+
+  const closeSellPicker = useCallback(() => {
+    changeTab("home");
+  }, [changeTab]);
+
+  const openEditListing = useCallback(
+    (productId: string) => {
+      setSelectedProduct(null);
+      setActiveChatThreadId(null);
+      setActiveSellerId(null);
+      setActiveCategory(null);
+      setActiveOrderId(null);
+      setActiveListingId(productId);
+      setCurrentView("edit-listing");
+    },
+    [
+      setSelectedProduct,
+      setActiveChatThreadId,
+      setActiveSellerId,
+      setActiveCategory,
+      setActiveOrderId,
+      setActiveListingId,
+      setCurrentView,
+    ],
+  );
+
+  const closeEditListing = useCallback(() => {
+    setActiveListingId(null);
+    setCurrentView("closet");
+  }, [setActiveListingId, setCurrentView]);
+
+  const checkoutProductDirect = useCallback(
+    (product: Product) => {
+      setCheckoutProduct(product);
+      setCurrentView("checkout");
+    },
+    [setCheckoutProduct, setCurrentView],
+  );
+
+  const checkoutFromActiveChat = useCallback(() => {
+    setActiveChatThreadId((threadId) => {
+      if (!threadId) return null;
+      const productId = threadId.replace(/^chat-/, "");
+      const product = listings.find((p) => p.id === productId);
+      if (product) {
+        setCheckoutProduct(product);
+        setCurrentView("checkout");
+      } else {
+        setCurrentView("bag");
+      }
+      return null;
+    });
+  }, [listings, setActiveChatThreadId, setCheckoutProduct, setCurrentView]);
+
+  const checkoutBack = useCallback(() => {
+    setCheckoutProduct((product) => {
+      setCurrentView(product ? "home" : "bag");
+      return null;
+    });
+  }, [setCheckoutProduct, setCurrentView]);
+
+  const checkoutSuccess = useCallback(() => {
+    setCheckoutProduct(null);
+    goHome();
+  }, [setCheckoutProduct, goHome]);
+
+  return {
+    selectProduct,
+    closeProduct,
+    navigateToCart,
+    openSellPicker,
+    closeSellPicker,
+    openEditListing,
+    closeEditListing,
+    checkoutProductDirect,
+    checkoutFromActiveChat,
+    checkoutBack,
+    checkoutSuccess,
+  };
+}
+
+export function useAuthNav(
+  setCurrentView: React.Dispatch<React.SetStateAction<ViewState>>,
+) {
+  const openSignUp = useCallback(() => {
+    setCurrentView("signup");
+  }, [setCurrentView]);
+
+  const closeSignUp = useCallback(() => {
+    setCurrentView("home");
+  }, [setCurrentView]);
+
+  const openOtp = useCallback(() => {
+    setCurrentView("otp");
+  }, [setCurrentView]);
+
+  const closeOtp = useCallback(() => {
+    setCurrentView("signin");
+  }, [setCurrentView]);
+
+  const openSignIn = useCallback(() => {
+    setCurrentView("signin");
+  }, [setCurrentView]);
+
+  const closeSignIn = useCallback(() => {
+    setCurrentView("home");
+  }, [setCurrentView]);
+
+  const openForgotPassword = useCallback(() => {
+    setCurrentView("forgot-password");
+  }, [setCurrentView]);
+
+  const closeForgotPassword = useCallback(() => {
+    setCurrentView("signin");
+  }, [setCurrentView]);
+
+  const openSocialLogin = useCallback(() => {
+    setCurrentView("social-login");
+  }, [setCurrentView]);
+
+  const closeSocialLogin = useCallback(() => {
+    setCurrentView("home");
+  }, [setCurrentView]);
+
+  return {
+    openSignUp,
+    closeSignUp,
+    openOtp,
+    closeOtp,
+    openSignIn,
+    closeSignIn,
+    openForgotPassword,
+    closeForgotPassword,
+    openSocialLogin,
+    closeSocialLogin,
+  };
+}
+
+export function useOrderNav(
+  setCurrentView: React.Dispatch<React.SetStateAction<ViewState>>,
+  setActiveTab: React.Dispatch<React.SetStateAction<TabId>>,
+  setSelectedProduct: React.Dispatch<React.SetStateAction<Product | null>>,
+  setActiveChatThreadId: React.Dispatch<React.SetStateAction<string | null>>,
+  setActiveSellerId: React.Dispatch<React.SetStateAction<string | null>>,
+  setActiveCategory: React.Dispatch<React.SetStateAction<string | null>>,
+  setActiveOrderId: React.Dispatch<React.SetStateAction<string | null>>,
+) {
+  const openOrder = useCallback(
+    (orderId: string) => {
+      setSelectedProduct(null);
+      setActiveChatThreadId(null);
+      setActiveSellerId(null);
+      setActiveCategory(null);
+      setActiveOrderId(orderId);
+      setCurrentView("order");
+    },
+    [
+      setSelectedProduct,
+      setActiveChatThreadId,
+      setActiveSellerId,
+      setActiveCategory,
+      setActiveOrderId,
+      setCurrentView,
+    ],
+  );
+
+  const closeOrder = useCallback(() => {
+    setActiveOrderId(null);
+    setCurrentView("purchases");
+    setActiveTab("profile");
+  }, [setActiveOrderId, setCurrentView, setActiveTab]);
+
+  const openLeaveReview = useCallback(
+    (orderId?: string) => {
+      if (orderId) setActiveOrderId(orderId);
+      setSelectedProduct(null);
+      setCurrentView("leave-review");
+    },
+    [setActiveOrderId, setSelectedProduct, setCurrentView],
+  );
+
+  const closeLeaveReview = useCallback(() => {
+    setCurrentView("order");
+  }, [setCurrentView]);
+
+  const openReturnRequest = useCallback(
+    (orderId?: string) => {
+      if (orderId) setActiveOrderId(orderId);
+      setSelectedProduct(null);
+      setCurrentView("return-request");
+    },
+    [setActiveOrderId, setSelectedProduct, setCurrentView],
+  );
+
+  const closeReturnRequest = useCallback(() => {
+    setCurrentView("order");
+  }, [setCurrentView]);
+
+  const openDispute = useCallback(
+    (orderId?: string) => {
+      if (orderId) setActiveOrderId(orderId);
+      setSelectedProduct(null);
+      setCurrentView("dispute");
+    },
+    [setActiveOrderId, setSelectedProduct, setCurrentView],
+  );
+
+  const closeDispute = useCallback(() => {
+    setCurrentView("order");
+  }, [setCurrentView]);
+
+  return {
+    openOrder,
+    closeOrder,
+    openLeaveReview,
+    closeLeaveReview,
+    openReturnRequest,
+    closeReturnRequest,
+    openDispute,
+    closeDispute,
+  };
+}
+
+export function useProfileNav(
+  setCurrentView: React.Dispatch<React.SetStateAction<ViewState>>,
+  setActiveTab: React.Dispatch<React.SetStateAction<TabId>>,
+  setSelectedProduct: React.Dispatch<React.SetStateAction<Product | null>>,
+  setActiveChatThreadId: React.Dispatch<React.SetStateAction<string | null>>,
+  setActiveSellerId: React.Dispatch<React.SetStateAction<string | null>>,
+  setActiveCategory: React.Dispatch<React.SetStateAction<string | null>>,
+  setActiveOrderId: React.Dispatch<React.SetStateAction<string | null>>,
+  setActiveListingId: React.Dispatch<React.SetStateAction<string | null>>,
+) {
+  const openCloset = useCallback(() => {
+    setSelectedProduct(null);
+    setActiveChatThreadId(null);
+    setActiveSellerId(null);
+    setActiveCategory(null);
+    setActiveOrderId(null);
+    setActiveListingId(null);
+    setCurrentView("closet");
+  }, [
+    setSelectedProduct,
+    setActiveChatThreadId,
+    setActiveSellerId,
+    setActiveCategory,
+    setActiveOrderId,
+    setActiveListingId,
+    setCurrentView,
+  ]);
+
+  const closeCloset = useCallback(() => {
+    setCurrentView("home");
+    setActiveTab("home");
+  }, [setCurrentView, setActiveTab]);
+
+  const openSales = useCallback(() => {
+    setSelectedProduct(null);
+    setActiveChatThreadId(null);
+    setActiveSellerId(null);
+    setActiveCategory(null);
+    setActiveOrderId(null);
+    setActiveListingId(null);
+    setCurrentView("sales");
+  }, [
+    setSelectedProduct,
+    setActiveChatThreadId,
+    setActiveSellerId,
+    setActiveCategory,
+    setActiveOrderId,
+    setActiveListingId,
+    setCurrentView,
+  ]);
+
+  const closeSales = useCallback(() => {
+    setCurrentView("home");
+    setActiveTab("home");
+  }, [setCurrentView, setActiveTab]);
+
+  const openNotifications = useCallback(() => {
+    setSelectedProduct(null);
+    setActiveChatThreadId(null);
+    setActiveOrderId(null);
+    setCurrentView("notifications");
+  }, [setSelectedProduct, setActiveChatThreadId, setActiveOrderId, setCurrentView]);
+
+  const closeNotifications = useCallback(() => {
+    setCurrentView("home");
+    setActiveTab("home");
+  }, [setCurrentView, setActiveTab]);
+
+  const openEditProfile = useCallback(() => {
+    setCurrentView("edit-profile");
+  }, [setCurrentView]);
+
+  const closeEditProfile = useCallback(() => {
+    setCurrentView("profile");
+    setActiveTab("profile");
+  }, [setCurrentView, setActiveTab]);
+
+  const openAddresses = useCallback(() => {
+    setCurrentView("addresses");
+  }, [setCurrentView]);
+
+  const closeAddresses = useCallback(() => {
+    setCurrentView("profile");
+    setActiveTab("profile");
+  }, [setCurrentView, setActiveTab]);
+
+  const openPaymentMethods = useCallback(() => {
+    setCurrentView("payment-methods");
+  }, [setCurrentView]);
+
+  const closePaymentMethods = useCallback(() => {
+    setCurrentView("profile");
+    setActiveTab("profile");
+  }, [setCurrentView, setActiveTab]);
+
+  const openHelp = useCallback(() => {
+    setCurrentView("help");
+  }, [setCurrentView]);
+
+  const closeHelp = useCallback(() => {
+    setCurrentView("settings");
+  }, [setCurrentView]);
+
+  const openMyReviews = useCallback(() => {
+    setCurrentView("my-reviews");
+  }, [setCurrentView]);
+
+  const closeMyReviews = useCallback(() => {
+    setCurrentView("purchases");
+  }, [setCurrentView]);
+
+  const openPayouts = useCallback(() => {
+    setSelectedProduct(null);
+    setActiveChatThreadId(null);
+    setCurrentView("payouts");
+  }, [setSelectedProduct, setActiveChatThreadId, setCurrentView]);
+
+  const closePayouts = useCallback(() => {
+    setCurrentView("home");
+    setActiveTab("profile");
+  }, [setCurrentView, setActiveTab]);
+
+  const openBlockedUsers = useCallback(() => {
+    setCurrentView("blocked-users");
+  }, [setCurrentView]);
+
+  const closeBlockedUsers = useCallback(() => {
+    setCurrentView("settings");
+  }, [setCurrentView]);
+
+  const openSecuritySetup = useCallback(() => {
+    setCurrentView("security-setup");
+  }, [setCurrentView]);
+
+  const closeSecuritySetup = useCallback(() => {
+    setCurrentView("settings");
+  }, [setCurrentView]);
+
+  const openDisputesList = useCallback(() => {
+    setCurrentView("disputes-list");
+  }, [setCurrentView]);
+
+  const closeDisputesList = useCallback(() => {
+    setCurrentView("profile");
+    setActiveTab("profile");
+  }, [setCurrentView, setActiveTab]);
+
+  return {
+    openCloset,
+    closeCloset,
+    openSales,
+    closeSales,
+    openNotifications,
+    closeNotifications,
+    openEditProfile,
+    closeEditProfile,
+    openAddresses,
+    closeAddresses,
+    openPaymentMethods,
+    closePaymentMethods,
+    openHelp,
+    closeHelp,
+    openMyReviews,
+    closeMyReviews,
+    openPayouts,
+    closePayouts,
+    openBlockedUsers,
+    closeBlockedUsers,
+    openSecuritySetup,
+    closeSecuritySetup,
+    openDisputesList,
+    closeDisputesList,
+  };
+}
+
+export function useChatNav(
+  setCurrentView: React.Dispatch<React.SetStateAction<ViewState>>,
+  setActiveTab: React.Dispatch<React.SetStateAction<TabId>>,
+  setSelectedProduct: React.Dispatch<React.SetStateAction<Product | null>>,
+  setActiveChatThreadId: React.Dispatch<React.SetStateAction<string | null>>,
+  createChatThread: (product: Product) => Awaitable<string>,
+  currentUserId: string | null | undefined,
+  listings: Product[],
+) {
+  const startChat = useCallback(
+    (product: Product) => {
+      if (isOwnListing(product, currentUserId)) return;
+      setSelectedProduct(null);
+      const result = createChatThread(product);
+      Promise.resolve(result)
+        .then((threadId) => {
+          setActiveChatThreadId(threadId);
+        })
+        .catch(() => {
+        });
+    },
+    [createChatThread, currentUserId, setSelectedProduct, setActiveChatThreadId],
+  );
+
+  const startChatWithSeller = useCallback(
+    (sellerId: string) => {
+      if (sellerId === currentUserId) return;
+      const seller = getSellerProfile(sellerId);
+      const match =
+        listings.find(
+          (l) =>
+            l.sellerId === sellerId ||
+            (seller != null &&
+              (l.sellerNameEn === seller.nameEn ||
+                l.sellerNameAr === seller.nameAr)),
+        ) ?? null;
+
+      if (match) {
+        if (isOwnListing(match, currentUserId)) return;
+        Promise.resolve(createChatThread(match))
+          .then((threadId) => {
+            setSelectedProduct(null);
+            setActiveChatThreadId(threadId);
+          })
+          .catch(() => {
+          });
+        return;
+      }
+
+      const synthetic: Product = {
+        id: `seller-${sellerId}`,
+        titleEn: seller?.nameEn ? `Chat with ${seller.nameEn}` : "Seller chat",
+        titleAr: seller?.nameAr ? `محادثة مع ${seller.nameAr}` : "محادثة البائع",
+        price: 0,
+        originalPrice: 0,
+        conditionEn: "Good",
+        conditionAr: "جيد",
+        sellerNameEn: seller?.nameEn ?? sellerId,
+        sellerNameAr: seller?.nameAr ?? sellerId,
+        sellerAvatar: seller?.avatar ?? "/sellers/sarah.jpg",
+        sellerTypeEn: seller?.typeEn ?? "Seller",
+        sellerTypeAr: seller?.typeAr ?? "بائع",
+        saves: 0,
+        image: seller?.avatar ?? "/sellers/sarah.jpg",
+        images: [seller?.avatar ?? "/sellers/sarah.jpg"],
+        descriptionEn: "",
+        descriptionAr: "",
+        category: "All",
+        sellerId,
+      };
+      const threadId = createChatThread(synthetic);
+      Promise.resolve(threadId)
+        .then((id) => {
+          setSelectedProduct(null);
+          setActiveChatThreadId(id);
+        })
+        .catch(() => {
+        });
+    },
+    [createChatThread, currentUserId, setSelectedProduct, setActiveChatThreadId, listings],
+  );
+
+  const closeChat = useCallback(() => {
+    setActiveChatThreadId(null);
+  }, [setActiveChatThreadId]);
+
+  const openChat = useCallback(
+    (threadId: string) => {
+      setActiveChatThreadId(threadId);
+    },
+    [setActiveChatThreadId],
+  );
+
+  const openChats = useCallback(() => {
+    setSelectedProduct(null);
+    setActiveChatThreadId(null);
+    setCurrentView("chats");
+  }, [setSelectedProduct, setActiveChatThreadId, setCurrentView]);
+
+  const closeChats = useCallback(() => {
+    setCurrentView("profile");
+    setActiveTab("profile");
+  }, [setCurrentView, setActiveTab]);
+
+  return {
+    startChat,
+    startChatWithSeller,
+    closeChat,
+    openChat,
+    openChats,
+    closeChats,
+  };
+}
+
+export function useSellerNav(
+  setCurrentView: React.Dispatch<React.SetStateAction<ViewState>>,
+  setActiveTab: React.Dispatch<React.SetStateAction<TabId>>,
+  setSelectedProduct: React.Dispatch<React.SetStateAction<Product | null>>,
+  setActiveChatThreadId: React.Dispatch<React.SetStateAction<string | null>>,
+  setActiveSellerId: React.Dispatch<React.SetStateAction<string | null>>,
+  setActiveOrderId: React.Dispatch<React.SetStateAction<string | null>>,
+  setActiveReportTargetId: React.Dispatch<React.SetStateAction<string | null>>,
+) {
+  const openSeller = useCallback(
+    (sellerId: string) => {
+      setSelectedProduct(null);
+      setActiveChatThreadId(null);
+      setActiveSellerId(sellerId);
+      setCurrentView("seller");
+    },
+    [setSelectedProduct, setActiveChatThreadId, setActiveSellerId, setCurrentView],
+  );
+
+  const closeSeller = useCallback(() => {
+    setActiveSellerId(null);
+    setCurrentView("home");
+    setActiveTab("home");
+  }, [setActiveSellerId, setCurrentView, setActiveTab]);
+
+  const openReport = useCallback(
+    (opts?: OpenReportOpts) => {
+      setSelectedProduct(null);
+      setActiveChatThreadId(null);
+      if (opts?.orderId) setActiveOrderId(opts.orderId);
+      setActiveReportTargetId(opts?.targetId ?? null);
+      setCurrentView("report");
+    },
+    [
+      setSelectedProduct,
+      setActiveChatThreadId,
+      setActiveOrderId,
+      setActiveReportTargetId,
+      setCurrentView,
+    ],
+  );
+
+  const closeReport = useCallback(() => {
+    setActiveReportTargetId(null);
+    setActiveOrderId((orderId) => {
+      if (orderId) {
+        setCurrentView("order");
+      } else {
+        setActiveSellerId((sellerId) => {
+          setCurrentView(sellerId ? "seller" : "home");
+          if (!sellerId) setActiveTab("home");
+          return sellerId;
+        });
+      }
+      return orderId;
+    });
+  }, [setActiveReportTargetId, setActiveOrderId, setActiveSellerId, setCurrentView, setActiveTab]);
+
+  return {
+    openSeller,
+    closeSeller,
+    openReport,
+    closeReport,
+  };
+}
+
 export function useAppNavigation(): AppNavigation {
+
   const { createChatThread, listings, currentUserId } = useApp();
 
   const [activeTab, setActiveTab] = useState<TabId>(() =>
@@ -204,6 +828,7 @@ export function useAppNavigation(): AppNavigation {
     string | null
   >(null);
 
+
   // Re-resolve deep-linked product/checkout once async/remote listings load.
   useEffect(() => {
     if (listings.length === 0) return;
@@ -224,117 +849,19 @@ export function useAppNavigation(): AppNavigation {
     }
   }, [listings]);
 
-  const selectProduct = useCallback((product: Product) => {
-    setSelectedProduct(product);
-  }, []);
-
-  const closeProduct = useCallback(() => {
+  const changeTab = useCallback((tab: TabId) => {
     setSelectedProduct(null);
-  }, []);
-
-  const navigateToCart = useCallback(() => {
-    setSelectedProduct(null);
-    setCurrentView("bag");
-  }, []);
-
-  const startChat = useCallback(
-    (product: Product) => {
-      if (isOwnListing(product, currentUserId)) return;
-      // Product details takes precedence over the chat overlay in AppContent,
-      // so close it before waiting for a remote thread to be created.
-      setSelectedProduct(null);
-      const result = createChatThread(product);
-      Promise.resolve(result)
-        .then((threadId) => {
-          setActiveChatThreadId(threadId);
-        })
-        .catch(() => {
-          // Keep the product detail open if chat creation is rejected.
-        });
-    },
-    [createChatThread, currentUserId],
-  );
-
-  const startChatWithSeller = useCallback(
-    (sellerId: string) => {
-      if (sellerId === currentUserId) return;
-      const seller = getSellerProfile(sellerId);
-      const match =
-        listings.find(
-          (l) =>
-            l.sellerId === sellerId ||
-            (seller != null &&
-              (l.sellerNameEn === seller.nameEn ||
-                l.sellerNameAr === seller.nameAr)),
-        ) ?? null;
-
-      if (match) {
-        if (isOwnListing(match, currentUserId)) return;
-        Promise.resolve(createChatThread(match))
-          .then((threadId) => {
-            setSelectedProduct(null);
-            setActiveChatThreadId(threadId);
-          })
-          .catch(() => {
-            // Ignore rejected chat creation and keep the current view open.
-          });
-        return;
-      }
-
-      // No listing yet — open a synthetic thread keyed by seller id.
-      const synthetic: Product = {
-        id: `seller-${sellerId}`,
-        titleEn: seller?.nameEn ? `Chat with ${seller.nameEn}` : "Seller chat",
-        titleAr: seller?.nameAr ? `محادثة مع ${seller.nameAr}` : "محادثة البائع",
-        price: 0,
-        originalPrice: 0,
-        conditionEn: "Good",
-        conditionAr: "جيد",
-        sellerNameEn: seller?.nameEn ?? sellerId,
-        sellerNameAr: seller?.nameAr ?? sellerId,
-        sellerAvatar: seller?.avatar ?? "/sellers/sarah.jpg",
-        sellerTypeEn: seller?.typeEn ?? "Seller",
-        sellerTypeAr: seller?.typeAr ?? "بائع",
-        saves: 0,
-        image: seller?.avatar ?? "/sellers/sarah.jpg",
-        images: [seller?.avatar ?? "/sellers/sarah.jpg"],
-        descriptionEn: "",
-        descriptionAr: "",
-        category: "All",
-        sellerId,
-      };
-      const threadId = createChatThread(synthetic);
-      Promise.resolve(threadId)
-        .then((id) => {
-          setSelectedProduct(null);
-          setActiveChatThreadId(id);
-        })
-        .catch(() => {
-          // Ignore rejected chat creation and keep the current view open.
-        });
-    },
-    [createChatThread, currentUserId, listings],
-  );
-
-  const closeChat = useCallback(() => {
-    setActiveChatThreadId(null);
-  }, []);
-
-  const openChat = useCallback((threadId: string) => {
-    setActiveChatThreadId(threadId);
-  }, []);
-
-  const openSeller = useCallback((sellerId: string) => {
-    setSelectedProduct(null);
-    setActiveChatThreadId(null);
-    setActiveSellerId(sellerId);
-    setCurrentView("seller");
-  }, []);
-
-  const closeSeller = useCallback(() => {
     setActiveSellerId(null);
-    setCurrentView("home");
-    setActiveTab("home");
+    setActiveTab(tab);
+    setCurrentView(viewFromTab(tab));
+  }, []);
+
+  const goHome = useCallback(() => {
+    changeTab("home");
+  }, [changeTab]);
+
+  const setView = useCallback((view: ViewState) => {
+    setCurrentView(view);
   }, []);
 
   const openCategory = useCallback((category: string) => {
@@ -362,326 +889,58 @@ export function useAppNavigation(): AppNavigation {
     setActiveCategorySortState(sort);
   }, []);
 
-  const openOrder = useCallback((orderId: string) => {
-    setSelectedProduct(null);
-    setActiveChatThreadId(null);
-    setActiveSellerId(null);
-    setActiveCategory(null);
-    setActiveOrderId(orderId);
-    setCurrentView("order");
-  }, []);
+  const productNav = useProductNav(
+    setCurrentView,
+    setSelectedProduct,
+    setCheckoutProduct,
+    setActiveChatThreadId,
+    setActiveSellerId,
+    setActiveCategory,
+    setActiveOrderId,
+    setActiveListingId,
+    listings,
+    changeTab,
+    goHome,
+  );
 
-  const closeOrder = useCallback(() => {
-    setActiveOrderId(null);
-    setCurrentView("purchases");
-    setActiveTab("profile");
-  }, []);
-
-  const openSellPicker = useCallback(() => {
-    setSelectedProduct(null);
-    setActiveChatThreadId(null);
-    setActiveSellerId(null);
-    setActiveCategory(null);
-    setActiveOrderId(null);
-    setActiveListingId(null);
-    // Open the actual listing form (D-19). The mode picker (D-18) is
-    // reached via the "sell" tab or via changeTab("sell").
-    setCurrentView("sell");
-  }, []);
-
-  const closeSellPicker = useCallback(() => {
-    setCurrentView("home");
-    setActiveTab("home");
-  }, []);
-
-  const openCloset = useCallback(() => {
-    setSelectedProduct(null);
-    setActiveChatThreadId(null);
-    setActiveSellerId(null);
-    setActiveCategory(null);
-    setActiveOrderId(null);
-    setActiveListingId(null);
-    setCurrentView("closet");
-  }, []);
-
-  const closeCloset = useCallback(() => {
-    setCurrentView("home");
-    setActiveTab("home");
-  }, []);
-
-  const openEditListing = useCallback((productId: string) => {
-    setSelectedProduct(null);
-    setActiveChatThreadId(null);
-    setActiveSellerId(null);
-    setActiveCategory(null);
-    setActiveOrderId(null);
-    setActiveListingId(productId);
-    setCurrentView("edit-listing");
-  }, []);
-
-  const closeEditListing = useCallback(() => {
-    setActiveListingId(null);
-    setCurrentView("closet");
-  }, []);
-
-  const openSales = useCallback(() => {
-    setSelectedProduct(null);
-    setActiveChatThreadId(null);
-    setActiveSellerId(null);
-    setActiveCategory(null);
-    setActiveOrderId(null);
-    setActiveListingId(null);
-    setCurrentView("sales");
-  }, []);
-
-  const closeSales = useCallback(() => {
-    setCurrentView("home");
-    setActiveTab("home");
-  }, []);
-
-  const openNotifications = useCallback(() => {
-    setSelectedProduct(null);
-    setActiveChatThreadId(null);
-    setActiveOrderId(null);
-    setCurrentView("notifications");
-  }, []);
-
-  const closeNotifications = useCallback(() => {
-    setCurrentView("home");
-    setActiveTab("home");
-  }, []);
-
-  const openChats = useCallback(() => {
-    setSelectedProduct(null);
-    setActiveChatThreadId(null);
-    setCurrentView("chats");
-  }, []);
-
-  const closeChats = useCallback(() => {
-    setCurrentView("profile");
-    setActiveTab("profile");
-  }, []);
-
-  const openEditProfile = useCallback(() => {
-    setCurrentView("edit-profile");
-  }, []);
-
-  const closeEditProfile = useCallback(() => {
-    setCurrentView("profile");
-    setActiveTab("profile");
-  }, []);
-
-  const openAddresses = useCallback(() => {
-    setCurrentView("addresses");
-  }, []);
-
-  const closeAddresses = useCallback(() => {
-    setCurrentView("profile");
-    setActiveTab("profile");
-  }, []);
-
-  const openPaymentMethods = useCallback(() => {
-    setCurrentView("payment-methods");
-  }, []);
-
-  const closePaymentMethods = useCallback(() => {
-    setCurrentView("profile");
-    setActiveTab("profile");
-  }, []);
-
-  const openHelp = useCallback(() => {
-    setCurrentView("help");
-  }, []);
-
-  const closeHelp = useCallback(() => {
-    setCurrentView("settings");
-  }, []);
-
-  const openLeaveReview = useCallback((orderId?: string) => {
-    if (orderId) setActiveOrderId(orderId);
-    setSelectedProduct(null);
-    setCurrentView("leave-review");
-  }, []);
-
-  const closeLeaveReview = useCallback(() => {
-    setCurrentView("order");
-  }, []);
-
-  const openMyReviews = useCallback(() => {
-    setCurrentView("my-reviews");
-  }, []);
-
-  const closeMyReviews = useCallback(() => {
-    setCurrentView("purchases");
-  }, []);
-
-  const openReport = useCallback((opts?: OpenReportOpts) => {
-    setSelectedProduct(null);
-    setActiveChatThreadId(null);
-    if (opts?.orderId) setActiveOrderId(opts.orderId);
-    setActiveReportTargetId(opts?.targetId ?? null);
-    setCurrentView("report");
-  }, []);
-
-  const closeReport = useCallback(() => {
-    setActiveReportTargetId(null);
-    setActiveOrderId((orderId) => {
-      if (orderId) {
-        setCurrentView("order");
-      } else {
-        setActiveSellerId((sellerId) => {
-          setCurrentView(sellerId ? "seller" : "home");
-          if (!sellerId) setActiveTab("home");
-          return sellerId;
-        });
-      }
-      return orderId;
-    });
-  }, []);
-
-  const openReturnRequest = useCallback((orderId?: string) => {
-    if (orderId) setActiveOrderId(orderId);
-    setSelectedProduct(null);
-    setCurrentView("return-request");
-  }, []);
-
-  const closeReturnRequest = useCallback(() => {
-    setCurrentView("order");
-  }, []);
-
-  const openPayouts = useCallback(() => {
-    setSelectedProduct(null);
-    setActiveChatThreadId(null);
-    setCurrentView("payouts");
-  }, []);
-
-  const closePayouts = useCallback(() => {
-    setCurrentView("home");
-    setActiveTab("profile");
-  }, []);
-
-  const openBlockedUsers = useCallback(() => {
-    setCurrentView("blocked-users");
-  }, []);
-
-  const openSecuritySetup = useCallback(() => {
-    setCurrentView("security-setup");
-  }, []);
-
-  const closeSecuritySetup = useCallback(() => {
-    setCurrentView("settings");
-  }, []);
-
-  const closeBlockedUsers = useCallback(() => {
-    setCurrentView("settings");
-  }, []);
-
-  const openDispute = useCallback((orderId?: string) => {
-    if (orderId) setActiveOrderId(orderId);
-    setSelectedProduct(null);
-    setCurrentView("dispute");
-  }, []);
-
-  const closeDispute = useCallback(() => {
-    setCurrentView("order");
-  }, []);
-
-  const openDisputesList = useCallback(() => {
-    setCurrentView("disputes-list");
-  }, []);
-
-  const closeDisputesList = useCallback(() => {
-    setCurrentView("profile");
-    setActiveTab("profile");
-  }, []);
-
-  const openSignUp = useCallback(() => {
-    setCurrentView("signup");
-  }, []);
-
-  const closeSignUp = useCallback(() => {
-    setCurrentView("home");
-  }, []);
-
-  const openOtp = useCallback(() => {
-    setCurrentView("otp");
-  }, []);
-
-  const closeOtp = useCallback(() => {
-    setCurrentView("signin");
-  }, []);
-
-  const openSignIn = useCallback(() => {
-    setCurrentView("signin");
-  }, []);
-
-  const closeSignIn = useCallback(() => {
-    setCurrentView("home");
-  }, []);
-
-  const openForgotPassword = useCallback(() => {
-    setCurrentView("forgot-password");
-  }, []);
-
-  const closeForgotPassword = useCallback(() => {
-    setCurrentView("signin");
-  }, []);
-
-  const openSocialLogin = useCallback(() => {
-    setCurrentView("social-login");
-  }, []);
-
-  const closeSocialLogin = useCallback(() => {
-    setCurrentView("home");
-  }, []);
-
-  const checkoutProductDirect = useCallback((product: Product) => {
-    setCheckoutProduct(product);
-    setCurrentView("checkout");
-  }, []);
-
-  const checkoutFromActiveChat = useCallback(() => {
-    setActiveChatThreadId((threadId) => {
-      if (!threadId) return null;
-      // Thread ids follow the format `chat-{productId}`.
-      const productId = threadId.replace(/^chat-/, "");
-      const product = listings.find((p) => p.id === productId);
-      if (product) {
-        setCheckoutProduct(product);
-        setCurrentView("checkout");
-      } else {
-        setCurrentView("bag");
-      }
-      return null;
-    });
-  }, [listings]);
-
-  const changeTab = useCallback((tab: TabId) => {
-    setSelectedProduct(null);
-    setActiveSellerId(null);
-    setActiveTab(tab);
-    setCurrentView(viewFromTab(tab));
-  }, []);
-
-  const setView = useCallback((view: ViewState) => {
-    setCurrentView(view);
-  }, []);
-
-  const goHome = useCallback(() => {
-    changeTab("home");
-  }, [changeTab]);
-
-  const checkoutBack = useCallback(() => {
-    setCheckoutProduct((product) => {
-      setCurrentView(product ? "home" : "bag");
-      return null;
-    });
-  }, []);
-
-  const checkoutSuccess = useCallback(() => {
-    setCheckoutProduct(null);
-    goHome();
-  }, [goHome]);
+  const authNav = useAuthNav(setCurrentView);
+  const orderNav = useOrderNav(
+    setCurrentView,
+    setActiveTab,
+    setSelectedProduct,
+    setActiveChatThreadId,
+    setActiveSellerId,
+    setActiveCategory,
+    setActiveOrderId,
+  );
+  const profileNav = useProfileNav(
+    setCurrentView,
+    setActiveTab,
+    setSelectedProduct,
+    setActiveChatThreadId,
+    setActiveSellerId,
+    setActiveCategory,
+    setActiveOrderId,
+    setActiveListingId,
+  );
+  const chatNav = useChatNav(
+    setCurrentView,
+    setActiveTab,
+    setSelectedProduct,
+    setActiveChatThreadId,
+    createChatThread,
+    currentUserId,
+    listings,
+  );
+  const sellerNav = useSellerNav(
+    setCurrentView,
+    setActiveTab,
+    setSelectedProduct,
+    setActiveChatThreadId,
+    setActiveSellerId,
+    setActiveOrderId,
+    setActiveReportTargetId,
+  );
 
   return {
     activeTab,
@@ -697,75 +956,18 @@ export function useAppNavigation(): AppNavigation {
     activeListingId,
     activeReportTargetId,
     listings,
-    selectProduct,
-    closeProduct,
-    navigateToCart,
-    startChat,
-    startChatWithSeller,
-    closeChat,
-    openChat,
-    openSeller,
-    closeSeller,
     openCategory,
     closeCategory,
     setSubCategory,
     setCategorySort,
-    openOrder,
-    closeOrder,
-    openSellPicker,
-    closeSellPicker,
-    openCloset,
-    closeCloset,
-    openEditListing,
-    closeEditListing,
-    openSales,
-    closeSales,
-    openNotifications,
-    closeNotifications,
-    openChats,
-    closeChats,
-    openEditProfile,
-    closeEditProfile,
-    openAddresses,
-    closeAddresses,
-    openPaymentMethods,
-    closePaymentMethods,
-    openHelp,
-    closeHelp,
-    openLeaveReview,
-    closeLeaveReview,
-    openMyReviews,
-    closeMyReviews,
-    openReport,
-    closeReport,
-    openReturnRequest,
-    closeReturnRequest,
-    openPayouts,
-    closePayouts,
-    openBlockedUsers,
-    closeBlockedUsers,
-    openSecuritySetup,
-    closeSecuritySetup,
-    openDispute,
-    closeDispute,
-    openDisputesList,
-    closeDisputesList,
-    openSignUp,
-    closeSignUp,
-    openOtp,
-    closeOtp,
-    openSignIn,
-    closeSignIn,
-    openForgotPassword,
-    closeForgotPassword,
-    openSocialLogin,
-    closeSocialLogin,
-    checkoutProductDirect,
-    checkoutFromActiveChat,
-    checkoutBack,
-    checkoutSuccess,
     changeTab,
     setView,
     goHome,
+    ...productNav,
+    ...authNav,
+    ...orderNav,
+    ...profileNav,
+    ...chatNav,
+    ...sellerNav,
   };
 }
