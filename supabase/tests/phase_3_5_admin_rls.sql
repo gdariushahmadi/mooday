@@ -104,6 +104,7 @@ select throws_ok(
 
 -- ---------- admin writes to the audit log ----------
 
+reset role;
 set local role authenticated;
 select set_config(
   'request.jwt.claims',
@@ -199,6 +200,13 @@ select lives_ok(
 );
 
 -- ---------- broadcast notifications ----------
+reset role;
+set local role authenticated;
+select set_config(
+  'request.jwt.claims',
+  '{"sub":"a3333333-3333-4333-9333-333333333333","role":"authenticated"}',
+  true
+);
 
 select lives_ok(
   $$insert into public.broadcast_notifications (

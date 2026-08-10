@@ -84,7 +84,7 @@ select is(
     select count(*)::bigint from public.user_listing_likes
     where user_id = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
   ),
-  1::bigint,
+  0::bigint,
   'user B reads only their own like (user A''s row is invisible)'
 );
 

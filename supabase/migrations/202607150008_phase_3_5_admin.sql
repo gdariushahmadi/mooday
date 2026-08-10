@@ -21,6 +21,10 @@ alter table public.profiles
   add column if not exists suspended_reason text,
   add column if not exists suspended_at timestamptz;
 
+-- Restrict updates so authenticated users cannot modify moderation fields
+revoke update on public.profiles from authenticated;
+grant update (full_name_en, full_name_ar, avatar_url, updated_at) on public.profiles to authenticated;
+
 -- Only the owner can already update `profiles`; allow staff accounts to
 -- flip these moderation fields on other users via the service-role
 -- client. The check `(is_admin OR id = auth.uid())` makes that explicit.
