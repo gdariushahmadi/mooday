@@ -15,6 +15,7 @@ import { getSellerProfile } from "@/data/seller-profile";
 import { isOwnListing } from "@/lib/ownership";
 
 export type CategorySort = "newest" | "price-asc" | "price-desc" | "saves";
+type Awaitable<T> = T | Promise<T>;
 
 export const VALID_CATEGORY_SORTS: readonly CategorySort[] = [
   "newest",
@@ -598,8 +599,8 @@ export function useChatNav(
   setActiveTab: React.Dispatch<React.SetStateAction<TabId>>,
   setSelectedProduct: React.Dispatch<React.SetStateAction<Product | null>>,
   setActiveChatThreadId: React.Dispatch<React.SetStateAction<string | null>>,
-  createChatThread: (product: Product) => Promise<string>,
-  currentUserId: string | null,
+  createChatThread: (product: Product) => Awaitable<string>,
+  currentUserId: string | null | undefined,
   listings: Product[],
 ) {
   const startChat = useCallback(
