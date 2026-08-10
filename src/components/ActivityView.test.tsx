@@ -84,12 +84,12 @@ function makeContext(overrides: Partial<AppContextType> = {}): AppContextType {
     currentUser: null,
     authError: null,
     signUp: vi.fn(() => "user-test"),
-    signIn: vi.fn(() => true),
+    signIn: vi.fn(async () => true),
     signOut: vi.fn(),
     verifyOtp: vi.fn(() => true),
     sendOtp: vi.fn(() => "000000"),
     updateCurrentUserName: vi.fn(),
-    resetPassword: vi.fn(() => true),
+    resetPassword: vi.fn(async () => true),
     ...overrides,
   };
 }

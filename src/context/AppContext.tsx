@@ -1737,7 +1737,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
 
   // ---------- Group A auth mutators (Phase 1 mock) ----------
   const signUp = useCallback(
-    (input: {
+    async (input: {
       name: string;
       email: string;
       phone: string;
@@ -1769,6 +1769,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
         setAuthError("user_exists");
         return null;
       }
+
+      const hashed = await hashPin(input.password);
+      if (!hashed) {
+        setAuthError("network_error");
+        return null;
+      }
+
       const id = `user-${Date.now()}`;
       const user: User = {
         id,
@@ -1776,7 +1783,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
         nameAr: input.name,
         email: input.email.trim().toLowerCase(),
         phone: input.phone,
-        password: input.password,
+        passwordHash: hashed.hash,
+        passwordSalt: hashed.salt,
         createdAt: new Date().toISOString(),
       };
       setUsers((prev) => [...prev, user]);
@@ -1794,7 +1802,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   );
 
   const signIn = useCallback(
-    (input: { email: string; password: string }) => {
+    async (input: { email: string; password: string }) => {
       setAuthError(null);
       if (phase2Backend) {
         return phase2Backend.auth.signIn(input).then((result) => {
@@ -1813,7 +1821,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
         setAuthError("user_not_found");
         return false;
       }
-      if (match.password !== input.password) {
+
+      const isValid = await verifyPin(input.password, match.passwordSalt, match.passwordHash);
+      if (!isValid) {
         setAuthError("wrong_password");
         return false;
       }
@@ -1915,7 +1925,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   );
 
   const resetPassword = useCallback(
-    (email: string, newPassword: string) => {
+    async (email: string, newPassword: string) => {
       if (phase2Backend) {
         void email;
         return phase2Backend.auth.resetPassword(newPassword).then((result) => {
@@ -1926,12 +1936,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
           return true;
         });
       }
+
+      const hashed = await hashPin(newPassword);
+      if (!hashed) return false;
+
       let success = false;
       setUsers((prev) =>
         prev.map((u) => {
           if (u.email.toLowerCase() === email.trim().toLowerCase()) {
             success = true;
-            return { ...u, password: newPassword };
+            return { ...u, passwordHash: hashed.hash, passwordSalt: hashed.salt };
           }
           return u;
         }),
