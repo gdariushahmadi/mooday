@@ -25,18 +25,18 @@ insert into auth.users (
   );
 
 -- The on_auth_user_created_public_profile trigger fires on real sign-ups.
--- Here we insert directly so the seed function runs against the test rows.
-insert into public.public_seller_profiles (
-  seller_id, display_name_en, display_name_ar, handle, type_en, type_ar
-) values
-  (
-    'a7777777-7777-4777-8777-777777777777',
-    'Card A', 'بطاقة أ', 'card-a', 'Verified Collector', 'جامع معتمد'
-  ),
-  (
-    'a8888888-8888-4888-9888-888888888888',
-    'Card B', 'بطاقة ب', 'card-b', 'Boutique', 'بوتيك'
-  );
+-- The trigger already seeded these rows, so we just update them here.
+update public.public_seller_profiles as p set
+  display_name_en = v.display_name_en,
+  display_name_ar = v.display_name_ar,
+  handle = v.handle,
+  type_en = v.type_en,
+  type_ar = v.type_ar
+from (values
+  ('a7777777-7777-4777-8777-777777777777'::uuid, 'Card A', 'بطاقة أ', 'card-a', 'Verified Collector', 'جامع معتمد'),
+  ('a8888888-8888-4888-9888-888888888888'::uuid, 'Card B', 'بطاقة ب', 'card-b', 'Boutique', 'بوتيك')
+) as v(seller_id, display_name_en, display_name_ar, handle, type_en, type_ar)
+where p.seller_id = v.seller_id;
 
 insert into public.listings (
   id, seller_id, title_en, title_ar, price_minor,
