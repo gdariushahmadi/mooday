@@ -1,7 +1,5 @@
 "use client";
 
-import React from "react";
-
 interface AdminTopbarProps {
   lang: "en" | "ar";
   onToggleLang: () => void;

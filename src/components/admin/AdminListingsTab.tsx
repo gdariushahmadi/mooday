@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import { useState } from "react";
 import type { AdminListingSummary } from "@/services/admin/actions";
 
 interface AdminListingsTabProps {
