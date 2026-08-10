@@ -553,13 +553,7 @@ const MIME_TO_EXTENSION: Record<ListingMediaMime, string> = {
  * the `storage_path` UNIQUE constraint on `listing_images`.
  */
 function randomStorageId(): string {
-  if (
-    typeof crypto !== "undefined" &&
-    typeof crypto.randomUUID === "function"
-  ) {
-    return crypto.randomUUID();
-  }
-  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+  return crypto.randomUUID();
 }
 
 function listingImageFromRow(
