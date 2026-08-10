@@ -12,27 +12,32 @@ insert into auth.users (
 ) values
   (
     '00000000-0000-0000-0000-000000000000',
-    '11111111-1111-4111-9111-111111111111',
+    'a1111111-1111-4111-9111-111111111111',
     'authenticated', 'authenticated', 'buyer@example.test', '', now(),
     '{"provider":"email","providers":["email"]}', '{}', now(), now(), '', '', '', ''
   ),
   (
     '00000000-0000-0000-0000-000000000000',
-    '22222222-2222-4222-9222-222222222222',
+    'a2222222-2222-4222-9222-222222222222',
     'authenticated', 'authenticated', 'seller@example.test', '', now(),
     '{"provider":"email","providers":["email"]}', '{}', now(), now(), '', '', '', ''
   ),
   (
     '00000000-0000-0000-0000-000000000000',
-    '33333333-3333-4333-9333-333333333333',
+    'a3333333-3333-4333-9333-333333333333',
     'authenticated', 'authenticated', 'admin@example.test', '', now(),
     '{"provider":"email","providers":["email"]}', '{}', now(), now(), '', '', '', ''
   );
 
-insert into public.profiles (id, full_name_en, is_admin) values
-  ('11111111-1111-4111-9111-111111111111', 'Buyer', false),
-  ('22222222-2222-4222-9222-222222222222', 'Seller', false),
-  ('33333333-3333-4333-9333-333333333333', 'Admin', true);
+update public.profiles as p set
+  full_name_en = v.full_name_en,
+  is_admin = v.is_admin
+from (values
+  ('a1111111-1111-4111-9111-111111111111'::uuid, 'Buyer', false),
+  ('a2222222-2222-4222-9222-222222222222'::uuid, 'Seller', false),
+  ('a3333333-3333-4333-9333-333333333333'::uuid, 'Admin', true)
+) as v(id, full_name_en, is_admin)
+where p.id = v.id;
 
 -- Two listings from the seller: one approved (default), one fresh.
 insert into public.listings (
@@ -41,13 +46,13 @@ insert into public.listings (
 ) values
   (
     'aaaaaaaa-1111-4111-9111-111111111111',
-    '22222222-2222-4222-9222-222222222222',
+    'a2222222-2222-4222-9222-222222222222',
     'Approved bag', 'موافق عليه', 5000,
     'Good', 'جيد', 'Bags', 'active', timezone('utc', now())
   ),
   (
     'bbbbbbbb-2222-4222-9222-222222222222',
-    '22222222-2222-4222-9222-222222222222',
+    'a2222222-2222-4222-9222-222222222222',
     'Pending bag', 'قيد المراجعة', 5000,
     'Good', 'جيد', 'Bags', 'active', null
   );
@@ -68,7 +73,7 @@ reset role;
 set local role authenticated;
 select set_config(
   'request.jwt.claims',
-  '{"sub":"22222222-2222-4222-9222-222222222222","role":"authenticated"}',
+  '{"sub":"a2222222-2222-4222-9222-222222222222","role":"authenticated"}',
   true
 );
 
@@ -86,13 +91,13 @@ reset role;
 set local role authenticated;
 select set_config(
   'request.jwt.claims',
-  '{"sub":"11111111-1111-4111-9111-111111111111","role":"authenticated"}',
+  '{"sub":"a1111111-1111-4111-9111-111111111111","role":"authenticated"}',
   true
 );
 
 select throws_ok(
   $$update public.profiles set is_admin = true
-    where id = '11111111-1111-4111-9111-111111111111'$$,
+    where id = 'a1111111-1111-4111-9111-111111111111'$$,
   '42501', null,
   'a non-admin user cannot flip their own is_admin flag'
 );
@@ -102,14 +107,14 @@ select throws_ok(
 set local role authenticated;
 select set_config(
   'request.jwt.claims',
-  '{"sub":"33333333-3333-4333-9333-333333333333","role":"authenticated"}',
+  '{"sub":"a3333333-3333-4333-9333-333333333333","role":"authenticated"}',
   true
 );
 
 select lives_ok(
   $$insert into public.audit_log (actor_id, action, target_kind, target_id)
     values (
-      '33333333-3333-4333-9333-333333333333',
+      'a3333333-3333-4333-9333-333333333333',
       'listing.approve',
       'listing',
       'bbbbbbbb-2222-4222-9222-222222222222'
@@ -121,14 +126,14 @@ reset role;
 set local role authenticated;
 select set_config(
   'request.jwt.claims',
-  '{"sub":"11111111-1111-4111-9111-111111111111","role":"authenticated"}',
+  '{"sub":"a1111111-1111-4111-9111-111111111111","role":"authenticated"}',
   true
 );
 
 select throws_ok(
   $$insert into public.audit_log (actor_id, action, target_kind, target_id)
     values (
-      '11111111-1111-4111-9111-111111111111',
+      'a1111111-1111-4111-9111-111111111111',
       'listing.approve',
       'listing',
       'bbbbbbbb-2222-4222-9222-222222222222'
@@ -160,7 +165,7 @@ reset role;
 set local role authenticated;
 select set_config(
   'request.jwt.claims',
-  '{"sub":"11111111-1111-4111-9111-111111111111","role":"authenticated"}',
+  '{"sub":"a1111111-1111-4111-9111-111111111111","role":"authenticated"}',
   true
 );
 
@@ -168,7 +173,7 @@ select throws_ok(
   $$insert into public.featured_listings (listing_id, curator_id, sort_order)
     values (
       'aaaaaaaa-1111-4111-9111-111111111111',
-      '11111111-1111-4111-9111-111111111111',
+      'a1111111-1111-4111-9111-111111111111',
       1
     )$$,
   '42501', null,
@@ -179,7 +184,7 @@ reset role;
 set local role authenticated;
 select set_config(
   'request.jwt.claims',
-  '{"sub":"33333333-3333-4333-9333-333333333333","role":"authenticated"}',
+  '{"sub":"a3333333-3333-4333-9333-333333333333","role":"authenticated"}',
   true
 );
 
@@ -187,7 +192,7 @@ select lives_ok(
   $$insert into public.featured_listings (listing_id, curator_id, sort_order)
     values (
       'aaaaaaaa-1111-4111-9111-111111111111',
-      '33333333-3333-4333-9333-333333333333',
+      'a3333333-3333-4333-9333-333333333333',
       1
     )$$,
   'admin can feature a listing'
@@ -199,7 +204,7 @@ select lives_ok(
   $$insert into public.broadcast_notifications (
       author_id, kind, title_en, title_ar, body_en, body_ar
     ) values (
-      '33333333-3333-4333-9333-333333333333',
+      'a3333333-3333-4333-9333-333333333333',
       'system', 'Welcome', 'مرحبا',
       'Mooday is live', 'موداي بدأ'
     )$$,

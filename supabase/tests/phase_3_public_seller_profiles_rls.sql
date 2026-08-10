@@ -11,32 +11,32 @@ insert into auth.users (
 ) values
   (
     '00000000-0000-0000-0000-000000000000',
-    '77777777-7777-4777-8777-777777777777',
+    'a7777777-7777-4777-8777-777777777777',
     'authenticated', 'authenticated', 'card-a@example.test', '', now(),
     '{"provider":"email","providers":["email"]}',
     '{"full_name":"Card A"}', now(), now(), '', '', '', ''
   ),
   (
     '00000000-0000-0000-0000-000000000000',
-    '88888888-8888-4888-9888-888888888888',
+    'a8888888-8888-4888-9888-888888888888',
     'authenticated', 'authenticated', 'card-b@example.test', '', now(),
     '{"provider":"email","providers":["email"]}',
     '{"full_name":"Card B"}', now(), now(), '', '', '', ''
   );
 
 -- The on_auth_user_created_public_profile trigger fires on real sign-ups.
--- Here we insert directly so the seed function runs against the test rows.
-insert into public.public_seller_profiles (
-  seller_id, display_name_en, display_name_ar, handle, type_en, type_ar
-) values
-  (
-    '77777777-7777-4777-8777-777777777777',
-    'Card A', 'بطاقة أ', 'card-a', 'Verified Collector', 'جامع معتمد'
-  ),
-  (
-    '88888888-8888-4888-9888-888888888888',
-    'Card B', 'بطاقة ب', 'card-b', 'Boutique', 'بوتيك'
-  );
+-- The trigger already seeded these rows, so we just update them here.
+update public.public_seller_profiles as p set
+  display_name_en = v.display_name_en,
+  display_name_ar = v.display_name_ar,
+  handle = v.handle,
+  type_en = v.type_en,
+  type_ar = v.type_ar
+from (values
+  ('a7777777-7777-4777-8777-777777777777'::uuid, 'Card A', 'بطاقة أ', 'card-a', 'Verified Collector', 'جامع معتمد'),
+  ('a8888888-8888-4888-9888-888888888888'::uuid, 'Card B', 'بطاقة ب', 'card-b', 'Boutique', 'بوتيك')
+) as v(seller_id, display_name_en, display_name_ar, handle, type_en, type_ar)
+where p.seller_id = v.seller_id;
 
 insert into public.listings (
   id, seller_id, title_en, title_ar, price_minor,
@@ -44,22 +44,22 @@ insert into public.listings (
 ) values
   (
     'cccccccc-7777-4777-8777-777777777771',
-    '77777777-7777-4777-8777-777777777777',
+    'a7777777-7777-4777-8777-777777777777',
     'A active 1', 'أ نشط ١', 1000, 'Good', 'جيد', 'Bags', 'active'
   ),
   (
     'cccccccc-7777-4777-8777-777777777772',
-    '77777777-7777-4777-8777-777777777777',
+    'a7777777-7777-4777-8777-777777777777',
     'A active 2', 'أ نشط ٢', 1000, 'Good', 'جيد', 'Bags', 'active'
   ),
   (
     'cccccccc-7777-4777-8777-777777777773',
-    '77777777-7777-4777-8777-777777777777',
+    'a7777777-7777-4777-8777-777777777777',
     'A draft', 'أ مسودة', 1000, 'Good', 'جيد', 'Bags', 'draft'
   ),
   (
     'dddddddd-8888-4888-9888-888888888881',
-    '88888888-8888-4888-9888-888888888888',
+    'a8888888-8888-4888-9888-888888888888',
     'B active', 'ب نشط', 1000, 'Good', 'جيد', 'Shoes', 'active'
   );
 
@@ -76,14 +76,14 @@ select is(
 
 select is(
   (select listings_count from public.seller_card_view
-    where seller_id = '77777777-7777-4777-8777-777777777777'),
+    where seller_id = 'a7777777-7777-4777-8777-777777777777'),
   2,
   'seller_card_view counts only active listings (drafts excluded)'
 );
 
 select is(
   (select listings_count from public.seller_card_view
-    where seller_id = '88888888-8888-4888-9888-888888888888'),
+    where seller_id = 'a8888888-8888-4888-9888-888888888888'),
   1,
   'seller_card_view counts a single active listing correctly'
 );
@@ -95,7 +95,7 @@ reset role;
 set local role authenticated;
 select set_config(
   'request.jwt.claims',
-  '{"sub":"77777777-7777-4777-8777-777777777777","role":"authenticated"}',
+  '{"sub":"a7777777-7777-4777-8777-777777777777","role":"authenticated"}',
   true
 );
 
@@ -116,7 +116,7 @@ select is(
 
 select is_empty(
   $$update public.public_seller_profiles set display_name_en = 'Hijacked'
-    where seller_id = '88888888-8888-4888-9888-888888888888'
+    where seller_id = 'a8888888-8888-4888-9888-888888888888'
     returning 1$$,
   'user A cannot edit user B public card'
 );
@@ -125,7 +125,7 @@ select throws_ok(
   $$insert into public.public_seller_profiles (
       seller_id, display_name_en, display_name_ar
     ) values (
-      '88888888-8888-4888-9888-888888888888',
+      'a8888888-8888-4888-9888-888888888888',
       'Spoofed', 'مزيف'
     )$$,
   '42501', null,
@@ -135,7 +135,7 @@ select throws_ok(
 select lives_ok(
   $$update public.public_seller_profiles
      set bio_en = 'updated by owner'
-     where seller_id = '77777777-7777-4777-8777-777777777777'$$,
+     where seller_id = 'a7777777-7777-4777-8777-777777777777'$$,
   'user A can edit their own public card'
 );
 
@@ -151,7 +151,7 @@ insert into auth.users (
 ) values
   (
     '00000000-0000-0000-0000-000000000000',
-    '99999999-9999-4999-9999-999999999999',
+    'a9999999-9999-4999-9999-999999999999',
     'authenticated', 'authenticated', 'card-seed@example.test', '', now(),
     '{"provider":"email","providers":["email"]}',
     '{"full_name":"Seeded Through Trigger"}', now(), now(), '', '', '', ''
@@ -160,7 +160,7 @@ insert into auth.users (
 select is(
   (
     select count(*)::bigint from public.public_seller_profiles
-    where seller_id = '99999999-9999-4999-9999-999999999999'
+    where seller_id = 'a9999999-9999-4999-9999-999999999999'
   ),
   1::bigint,
   'on_auth_user_created_public_profile trigger seeds a public card row'
@@ -169,7 +169,7 @@ select is(
 select is(
   (
     select display_name_en from public.public_seller_profiles
-    where seller_id = '99999999-9999-4999-9999-999999999999'
+    where seller_id = 'a9999999-9999-4999-9999-999999999999'
   ),
   'Seeded Through Trigger',
   'seeded public card copies the sign-up full_name from raw_user_meta_data'

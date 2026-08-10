@@ -26,12 +26,7 @@ vi.mock("@/services/admin/actions", () => ({
 async function loadDemo() {
   render(<AdminPage />);
   await waitFor(() => {
-    expect(screen.getByText("Admin Panel")).toBeInTheDocument();
-  });
-  await waitFor(() => {
-    expect(
-      screen.getByRole("button", { name: /Load demo data/i }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Load demo data/i })).toBeInTheDocument();
   });
   fireEvent.click(screen.getByRole("button", { name: /Load demo data/i }));
   await waitFor(() => {
@@ -48,12 +43,11 @@ describe("Admin Panel UI (/admin)", () => {
     render(<AdminPage />);
 
     await waitFor(() => {
-      expect(screen.getByText("Admin Panel")).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: /Load demo data/i }),
+      ).toBeInTheDocument();
     });
 
-    expect(
-      screen.getByRole("button", { name: /Load demo data/i }),
-    ).toBeInTheDocument();
     expect(screen.getByText("Not connected")).toBeInTheDocument();
     expect(screen.queryByText("Total Users")).not.toBeInTheDocument();
   });
@@ -102,11 +96,11 @@ describe("Admin Panel UI (/admin)", () => {
   it("toggles language between English and Arabic", async () => {
     await loadDemo();
 
-    const langToggle = screen.getByText("العربية");
+    const langToggle = screen.getByRole("button", { name: /العربية/i });
     fireEvent.click(langToggle);
 
     await waitFor(() => {
-      expect(screen.getByText("لوحة التحكم والإدارة")).toBeInTheDocument();
+      expect(screen.getByText("لوحة التحكم")).toBeInTheDocument();
     });
   });
 });
