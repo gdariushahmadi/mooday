@@ -41,7 +41,7 @@ export const DEFAULT_USERS: User[] = [
  * email/in-memory user. Phase 3 will swap to a real SMS / email
  * challenge.
  */
-export const MOCK_OTP_CODE = "000000";
+export const MOCK_OTP_CODE = process.env.MOCK_OTP_CODE || Math.floor(100000 + Math.random() * 900000).toString();
 
 /**
  * Generate a 32-char session token from a user id + timestamp.

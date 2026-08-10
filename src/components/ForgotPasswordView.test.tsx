@@ -157,7 +157,7 @@ describe("ForgotPasswordView (A-05)", () => {
     expect(
       screen.getByRole("heading", { name: /choose a new password/i }),
     ).toBeInTheDocument();
-    expect(ctx.verifyOtp).toHaveBeenCalledWith("layla@mooday.app", "000000");
+    expect(ctx.verifyOtp).toHaveBeenCalledWith("layla@mooday.app", MOCK_OTP_CODE);
   });
 
   it("blocks submission when the password is too short", async () => {
