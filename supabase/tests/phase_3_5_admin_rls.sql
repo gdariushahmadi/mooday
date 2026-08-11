@@ -1,7 +1,7 @@
 begin;
 
 create extension if not exists pgtap with schema extensions;
-select plan(10);
+select plan(11);
 
 -- Bootstrap: two regular users + one admin.
 insert into auth.users (
