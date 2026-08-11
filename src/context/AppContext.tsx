@@ -1859,7 +1859,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
             return true;
           });
       }
-      // Demo mode: any email + the universal code "000000" succeeds.
+      // Demo mode: any email + the dynamically generated random mock OTP succeeds.
       void email;
       return code === MOCK_OTP_CODE;
     },
