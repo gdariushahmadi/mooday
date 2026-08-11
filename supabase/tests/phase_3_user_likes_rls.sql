@@ -1,7 +1,7 @@
 begin;
 
 create extension if not exists pgtap with schema extensions;
-select plan(6);
+select plan(7);
 
 insert into auth.users (
   instance_id, id, aud, role, email, encrypted_password,
@@ -84,7 +84,7 @@ select is(
     select count(*)::bigint from public.user_listing_likes
     where user_id = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
   ),
-  1::bigint,
+  0::bigint,
   'user B reads only their own like (user A''s row is invisible)'
 );
 
