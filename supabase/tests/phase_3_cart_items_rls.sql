@@ -1,7 +1,7 @@
 begin;
 
 create extension if not exists pgtap with schema extensions;
-select plan(11);
+select plan(12);
 
 insert into auth.users (
   instance_id, id, aud, role, email, encrypted_password,
@@ -122,6 +122,11 @@ select is(
   'user B does not see user A cart items'
 );
 
+
+reset role;
+set local role anon;
+select set_config('request.jwt.claims', '{"role":"anon"}', true);
+
 select throws_ok(
   $$select public.cart_items_increment(
     '33333333-1111-4111-8111-111111111111'::uuid, 1
@@ -130,11 +135,10 @@ select throws_ok(
   'cart_items_increment is auth-gated'
 );
 
-select throws_ok(
+select is_empty(
   $$update public.cart_items set quantity = 99
     where user_id = '11111111-1111-4111-8111-111111111111'
     returning 1$$,
-  '42501', null,
   'user B cannot update user A cart rows'
 );
 

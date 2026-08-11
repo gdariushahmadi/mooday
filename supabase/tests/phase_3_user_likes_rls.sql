@@ -1,7 +1,7 @@
 begin;
 
 create extension if not exists pgtap with schema extensions;
-select plan(6);
+select plan(7);
 
 insert into auth.users (
   instance_id, id, aud, role, email, encrypted_password,
@@ -26,12 +26,12 @@ insert into auth.users (
 
 insert into public.listings (
   id, seller_id, title_en, title_ar, price_minor,
-  condition_en, condition_ar, category, status
+  condition_en, condition_ar, category, status, approved_at
 ) values
   (
     'cccccccc-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
     'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
-    'A likeable', 'أ تستحق', 5000, 'Good', 'جيد', 'Bags', 'active'
+    'A likeable', 'أ تستحق', 5000, 'Good', 'جيد', 'Bags', 'active', timezone('utc', now())
   );
 
 set local role authenticated;
@@ -84,7 +84,7 @@ select is(
     select count(*)::bigint from public.user_listing_likes
     where user_id = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
   ),
-  1::bigint,
+  0::bigint,
   'user B reads only their own like (user A''s row is invisible)'
 );
 
