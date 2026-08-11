@@ -3,9 +3,9 @@
 /**
  * OTP verification — A-03.
  *
- * Phase 1 mock: the universal code "000000" verifies any email. The
+ * Phase 1 mock: a dynamically generated random mock OTP verifies any email. The
  * actual delivery is wired via `useApp().sendOtp()` which is a no-op
- * that always returns the universal code.
+ * that always returns the mock code.
  *
  * Phase 2 swaps for a real SMS / email challenge.
  */

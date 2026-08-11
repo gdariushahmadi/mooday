@@ -5,7 +5,7 @@
  *
  * 3-step flow inside a single component:
  *   1) enter email  →  2) enter OTP  →  3) new password
- * Phase 1 mock: any email + `000000` passes the OTP step. The
+ * Phase 1 mock: any email + a dynamically generated random mock OTP passes the OTP step. The
  * "new password" step in Phase 1 does not re-hash the seeded user
  * (kept plaintext) — Phase 2 fixes the auth backend.
  *

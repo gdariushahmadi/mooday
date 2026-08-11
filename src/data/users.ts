@@ -37,12 +37,27 @@ export const DEFAULT_USERS: User[] = [
   },
 ];
 
+function generateSecureOTP(): string {
+  if (typeof crypto !== "undefined" && crypto.getRandomValues) {
+    const randomBuffer = new Uint32Array(1);
+    crypto.getRandomValues(randomBuffer);
+    const randomNumber = randomBuffer[0] / (0xffffffff + 1);
+    const code = Math.floor(100000 + randomNumber * 900000).toString();
+    console.log(`[OTP] Generated secure mock OTP: ${code}`);
+    return code;
+  }
+  // Fallback for environments without Web Crypto API (e.g. older node versions in tests)
+  const code = Math.floor(100000 + Math.random() * 900000).toString();
+  console.log(`[OTP] Generated insecure fallback mock OTP: ${code}`);
+  return code;
+}
+
 /**
- * Mock OTP. Phase 1 accepts the universal code "000000" for any
+ * Mock OTP. Phase 1 accepts a dynamically generated random mock OTP for any
  * email/in-memory user. Phase 3 will swap to a real SMS / email
  * challenge.
  */
-export const MOCK_OTP_CODE = process.env.MOCK_OTP_CODE || Math.floor(100000 + Math.random() * 900000).toString();
+export const MOCK_OTP_CODE = process.env.NEXT_PUBLIC_MOCK_OTP_CODE || generateSecureOTP();
 
 /**
  * Generate a cryptographically secure session token.
