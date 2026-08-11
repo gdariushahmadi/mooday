@@ -37,6 +37,15 @@ with check (
   or (select is_admin from public.profiles p where p.id = (select auth.uid()))
 );
 
+-- Prevent non-admins from updating restricted columns by revoking
+-- table-level update and granting it only on safe columns.
+revoke update on table public.profiles from authenticated;
+grant update (
+  full_name_en, full_name_ar, handle, avatar_url,
+  bio_en, bio_ar, location_en, location_ar,
+  style_tags_en, style_tags_ar, preferred_language
+) on table public.profiles to authenticated;
+
 -- Listings gain `approved_at` so the moderation queue can distinguish
 -- "freshly listed, awaiting review" from "approved and visible". For
 -- backwards compatibility with existing rows, `approved_at` defaults

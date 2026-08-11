@@ -49,6 +49,8 @@ insert into public.listings (
     'B draft', 'ب مسودة', 1000, 'Good', 'جيد', 'Bags', 'draft'
   );
 
+update public.listings set approved_at = now() where status = 'active';
+
 insert into storage.objects (bucket_id, name, owner_id) values
   (
     'listing-media',
