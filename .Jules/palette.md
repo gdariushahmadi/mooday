@@ -1,0 +1,3 @@
+## 2024-03-24 - Loading Spinner on Authentication Forms
+**Learning:** Providing clear visual feedback (like a loading spinner) during asynchronous operations such as authentication helps prevent user confusion and multiple submissions. Disabling the button without a loading indicator is often insufficient as it leaves the user wondering if the system is processing the request.
+**Action:** Always include a visual loading indicator (e.g., `progress_activity` with `animate-spin`) alongside disabled states for buttons that trigger asynchronous operations, especially in critical flows like Sign-In and Sign-Up.
