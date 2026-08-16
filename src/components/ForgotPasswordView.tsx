@@ -14,7 +14,6 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import { useApp } from "@/context/AppContext";
-import { MOCK_OTP_CODE } from "@/data/users";
 
 type Step = 1 | 2 | 3;
 
@@ -235,11 +234,7 @@ export const ForgotPasswordView: React.FC<ForgotPasswordViewProps> = ({
       {step === 2 && (
         <>
           <p className="text-body-md text-on-surface-variant text-center px-md">
-            {t.sub2}{" "}
-            <span className="font-mono font-bold text-primary">
-              {MOCK_OTP_CODE}
-            </span>{" "}
-            {t.sub2Suffix}
+            {t.sub2} {t.sub2Suffix}
           </p>
           <p className="text-label-sm text-on-surface text-center">
             {t.emailSentTo} <span className="font-bold">{email}</span>

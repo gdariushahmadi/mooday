@@ -38,13 +38,6 @@ export const DEFAULT_USERS: User[] = [
 ];
 
 /**
- * Mock OTP. Phase 1 accepts the universal code "000000" for any
- * email/in-memory user. Phase 3 will swap to a real SMS / email
- * challenge.
- */
-export const MOCK_OTP_CODE = process.env.MOCK_OTP_CODE || Math.floor(100000 + Math.random() * 900000).toString();
-
-/**
  * Generate a cryptographically secure session token.
  * Phase 2 will swap for a real JWT signed by the auth server.
  */

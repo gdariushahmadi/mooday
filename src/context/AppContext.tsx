@@ -30,7 +30,6 @@ import {
   DEFAULT_USERS,
   generateSessionToken,
   isValidEmail,
-  MOCK_OTP_CODE,
 } from "@/data/users";
 import { useLocalStorageState } from "@/lib/hooks";
 import {
@@ -50,6 +49,7 @@ import {
   type AuthenticatedUser,
   type OtpPurpose,
   type ListingRecord,
+  type Phase2Backend,
 } from "@/services/backend";
 import {
   hydrateProductsFromRemote,
@@ -469,6 +469,15 @@ function writeListings(next: Product[]) {
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
+  // R13 (production invariant): authMode is always "supabase" in production
+  // builds; mock mode is removed. In CI / local builds without env vars the
+  // backend handle is null, so the remaining `if (!phase2Backend) return;`
+  // guards in this file exist for build-time safety — they keep the auth
+  // effect, listings refresh, and chat thread fetches no-op when the
+  // Supabase client isn't configured. They are NOT mock-mode behaviour;
+  // they are a build-time safety net so `next build` can prerender without
+  // crashing on `null.auth.getCurrentUser()`. Production deploys must keep
+  // env vars configured.
   const phase2Backend = useMemo(() => getPhase2Backend(), []);
   const authMode: "mock" | "supabase" = phase2Backend ? "supabase" : "mock";
   const [language, setLang] = useLocalStorageState<"en" | "ar">(
@@ -696,7 +705,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   }, [phase2Backend]);
 
   useEffect(() => {
-    if (!phase2Backend || !remoteUser) return;
+    if (!remoteUser) return;
+    if (!phase2Backend) return;
     let active = true;
     void Promise.all([
       phase2Backend.profiles.getMine(),
@@ -797,7 +807,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
    * the cache honest.
    */
   const refreshListings = useCallback(async () => {
-    if (!marketplaceMode || !phase2Backend) return;
+    if (!marketplaceMode) return;
+    if (!phase2Backend) return;
     setListingsLoading(true);
     setListingsError(null);
     try {
@@ -1795,39 +1806,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   const signIn = useCallback(
     async (input: { email: string; password: string }) => {
       setAuthError(null);
-      if (phase2Backend) {
-        return phase2Backend.auth.signIn(input).then((result) => {
-          if (!result.ok) {
-            setAuthError(result.error);
-            return false;
-          }
-          setRemoteUser(result.value);
-          return true;
-        });
-      }
-      const match = users.find(
-        (u) => u.email.toLowerCase() === input.email.trim().toLowerCase(),
-      );
-      if (!match) {
-        setAuthError("user_not_found");
-        return false;
-      }
-
-      const isValid = await verifyPin(input.password, match.passwordSalt, match.passwordHash);
-      if (!isValid) {
-        setAuthError("wrong_password");
-        return false;
-      }
-      const token = generateSessionToken(match.id);
-      setSession({
-        userId: match.id,
-        email: match.email,
-        token,
-        createdAt: new Date().toISOString(),
+      if (!phase2Backend) return false;
+      return phase2Backend.auth.signIn(input).then((result) => {
+        if (!result.ok) {
+          setAuthError(result.error);
+          return false;
+        }
+        setRemoteUser(result.value);
+        return true;
       });
-      return true;
     },
-    [phase2Backend, setSession, users],
+    [phase2Backend, setRemoteUser],
   );
 
   const signOut = useCallback(() => {
@@ -1846,22 +1835,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const verifyOtp = useCallback(
     (email: string, code: string, purpose: OtpPurpose = "signup") => {
-      if (phase2Backend) {
-        setAuthError(null);
-        return phase2Backend.auth
-          .verifyOtp(email, code, purpose)
-          .then((result) => {
-            if (!result.ok) {
-              setAuthError(result.error);
-              return false;
-            }
-            setRemoteUser(result.value);
-            return true;
-          });
-      }
-      // Demo mode: any email + the universal code "000000" succeeds.
-      void email;
-      return code === MOCK_OTP_CODE;
+      setAuthError(null);
+      if (!phase2Backend) return false;
+      return phase2Backend.auth
+        .verifyOtp(email, code, purpose)
+        .then((result) => {
+          if (!result.ok) {
+            setAuthError(result.error);
+            return false;
+          }
+          setRemoteUser(result.value);
+          return true;
+        });
     },
     [phase2Backend],
   );
@@ -1869,25 +1854,23 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   const sendOtp = useCallback(
     (email: string, purpose: OtpPurpose = "signup") => {
       setPendingAuthEmail(email.trim().toLowerCase());
-      if (phase2Backend) {
-        setAuthError(null);
-        return phase2Backend.auth.sendOtp(email, purpose).then((result) => {
-          if (!result.ok) {
-            setAuthError(result.error);
-            return null;
-          }
+      setAuthError(null);
+      if (!phase2Backend) return null;
+      return phase2Backend.auth.sendOtp(email, purpose).then((result) => {
+        if (!result.ok) {
+          setAuthError(result.error);
           return null;
-        });
-      }
-      return MOCK_OTP_CODE;
+        }
+        return null;
+      });
     },
     [phase2Backend],
   );
 
   const signInWithOAuth = useCallback(
     async (provider: "google") => {
-      if (!phase2Backend) return false;
       setAuthError(null);
+      if (!phase2Backend) return false;
       const result = await phase2Backend.auth.signInWithOAuth(provider);
       if (!result.ok) {
         setAuthError(result.error);

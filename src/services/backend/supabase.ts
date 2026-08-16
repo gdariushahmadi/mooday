@@ -60,6 +60,7 @@ import type {
   PaymentMethodService,
   BlockedUserRecord,
   BlockService,
+  FollowService,
 } from "./contracts";
 import type { BackendConfig } from "./config";
 
@@ -116,6 +117,36 @@ class SupabaseAuthService implements AuthService {
     private readonly siteUrl: string,
   ) {}
 
+  private authCallbackUrl(): string {
+    // Always prefer the live window origin so PKCE / OAuth providers redirect
+    // back to whatever host the user actually opened the app on. Fall back to
+    // the build-time NEXT_PUBLIC_SITE_URL only when running server-side
+    // (no `window` available).
+    const baseUrl =
+      typeof window !== "undefined" && window.location.origin
+        ? window.location.origin
+        : this.siteUrl;
+    const url = `${baseUrl.replace(/\/+$/, "")}/auth/callback`;
+    // Surface unexpected origins in the browser console so a misconfigured
+    // Supabase / Google Cloud / hosting environment is visible during
+    // development. Production OAuth fails silently if the registered redirect
+    // URL does not match, so a wrong host would otherwise be invisible until
+    // the user actually clicks "Continue with Google".
+    if (typeof console !== "undefined" && typeof window !== "undefined") {
+      const isLocal = url.includes("localhost") || url.includes("127.0.0.1");
+      const isHttps = url.startsWith("https://");
+      if (isLocal || !isHttps) {
+        console.warn(
+          `[auth] OAuth callback URL is ${url}. If this is a production ` +
+            "deployment, register it under Authentication -> URL Configuration " +
+            "in the Supabase dashboard, and as an authorized redirect URI in " +
+            "the Google Cloud OAuth client.",
+        );
+      }
+    }
+    return url;
+  }
+
   async getCurrentUser(): Promise<AuthenticatedUser | null> {
     const { data, error } = await this.client.auth.getUser();
     if (error || !data.user) return null;
@@ -135,12 +166,13 @@ class SupabaseAuthService implements AuthService {
     phone: string;
     password: string;
   }): Promise<AuthResult<AuthenticatedUser>> {
+    const redirectTo = this.authCallbackUrl();
     const { data, error } = await this.client.auth.signUp({
       email: input.email,
       password: input.password,
       options: {
         data: { full_name: input.name, phone: input.phone },
-        emailRedirectTo: `${this.siteUrl}/auth/callback`,
+        emailRedirectTo: redirectTo,
       },
     });
     if (error) return failure(error.message);
@@ -167,16 +199,17 @@ class SupabaseAuthService implements AuthService {
   }
 
   async sendOtp(email: string, purpose: OtpPurpose): Promise<AuthResult<null>> {
+    const redirectTo = this.authCallbackUrl();
     const result =
       purpose === "recovery"
         ? await this.client.auth.resetPasswordForEmail(email, {
-            redirectTo: `${this.siteUrl}/auth/callback`,
+            redirectTo,
           })
         : await this.client.auth.resend({
             type: "signup",
             email,
             options: {
-              emailRedirectTo: `${this.siteUrl}/auth/callback`,
+              emailRedirectTo: redirectTo,
             },
           });
     return result.error
@@ -209,10 +242,11 @@ class SupabaseAuthService implements AuthService {
   async signInWithOAuth(
     provider: "google",
   ): Promise<AuthResult<null>> {
+    const redirectTo = this.authCallbackUrl();
     const { error } = await this.client.auth.signInWithOAuth({
       provider,
       options: {
-        redirectTo: `${this.siteUrl}/auth/callback`,
+        redirectTo,
         queryParams: { access_type: "offline" },
       },
     });
@@ -471,6 +505,33 @@ class SupabaseListingService implements ListingService {
       .select("*")
       .eq("seller_id", authData.user.id)
       .order("created_at", { ascending: false });
+    if (error) throw error;
+    return (data ?? []).map(listingFromRow);
+  }
+
+  async search(
+    query: string,
+    filters?: {
+      category?: string;
+      priceMin?: number;
+      priceMax?: number;
+      status?: string;
+      limit?: number;
+      offset?: number;
+    },
+  ): Promise<ListingRecord[]> {
+    const rpcArgs = {
+      category: filters?.category ?? null,
+      price_min: filters?.priceMin ?? null,
+      price_max: filters?.priceMax ?? null,
+      status: filters?.status ?? null,
+      limit_count: filters?.limit ?? null,
+      offset_count: filters?.offset ?? null,
+    };
+    const { data, error } = await this.client.rpc("search_listings", {
+      query,
+      filters: rpcArgs,
+    });
     if (error) throw error;
     return (data ?? []).map(listingFromRow);
   }
@@ -991,6 +1052,90 @@ function cartItemFromRow(row: Record<string, unknown>): CartItemRecord {
   };
 }
 
+class SupabaseFollowService implements FollowService {
+  constructor(private readonly client: SupabaseClient) {}
+
+  async listFollowingIds(): Promise<string[]> {
+    const { data: authData, error: authError } =
+      await this.client.auth.getUser();
+    if (authError || !authData.user) {
+      throw authError ?? new Error("Authentication required");
+    }
+    const { data, error } = await this.client
+      .from("user_follows")
+      .select("followee_id")
+      .eq("follower_id", authData.user.id)
+      .order("created_at", { ascending: false });
+    if (error) throw error;
+    return (data ?? []).map((row) => String(row.followee_id));
+  }
+
+  async listFollowerIds(userId: string): Promise<string[]> {
+    const { data, error } = await this.client
+      .from("user_follows")
+      .select("follower_id")
+      .eq("followee_id", userId)
+      .order("created_at", { ascending: false });
+    if (error) throw error;
+    return (data ?? []).map((row) => String(row.follower_id));
+  }
+
+  async follow(userId: string): Promise<void> {
+    const { data: authData, error: authError } =
+      await this.client.auth.getUser();
+    if (authError || !authData.user) {
+      throw authError ?? new Error("Authentication required");
+    }
+    if (userId === authData.user.id) {
+      throw new Error("You cannot follow yourself.");
+    }
+    const { error } = await this.client
+      .from("user_follows")
+      .upsert(
+        { follower_id: authData.user.id, followee_id: userId },
+        { onConflict: "follower_id,followee_id", ignoreDuplicates: true },
+      );
+    if (error) throw error;
+  }
+
+  async unfollow(userId: string): Promise<void> {
+    const { data: authData, error: authError } =
+      await this.client.auth.getUser();
+    if (authError || !authData.user) {
+      throw authError ?? new Error("Authentication required");
+    }
+    const { error } = await this.client
+      .from("user_follows")
+      .delete()
+      .eq("follower_id", authData.user.id)
+      .eq("followee_id", userId);
+    if (error) throw error;
+  }
+
+  async isFollowing(userId: string): Promise<boolean> {
+    const { data: authData, error: authError } =
+      await this.client.auth.getUser();
+    if (authError || !authData.user) return false;
+    const { count, error } = await this.client
+      .from("user_follows")
+      .select("follower_id", { count: "exact", head: true })
+      .eq("follower_id", authData.user.id)
+      .eq("followee_id", userId);
+    if (error) throw error;
+    return (count ?? 0) > 0;
+  }
+
+  async toggle(userId: string): Promise<{ following: boolean }> {
+    const following = await this.isFollowing(userId);
+    if (following) {
+      await this.unfollow(userId);
+      return { following: false };
+    }
+    await this.follow(userId);
+    return { following: true };
+  }
+}
+
 class SupabaseCartService implements CartService {
   constructor(private readonly client: SupabaseClient) {}
 
@@ -1273,6 +1418,50 @@ class SupabaseOrderService implements OrderService {
       .eq("id", orderId);
     if (error) throw error;
   }
+
+  async createPaymentIntent(
+    orderId: string,
+  ): Promise<{ clientSecret: string; paymentIntentId: string }> {
+    // The Stripe SDK is loaded via dynamic import so the dependency is
+    // optional at build time. Without the SDK this method throws a
+    // clear error; the UI is expected to gate on `hasStripe()`.
+    const stripeModule = (await import("stripe").catch(() => null)) as
+      | (typeof import("stripe"))
+      | null;
+    const Stripe = stripeModule?.default ?? null;
+    if (!Stripe) {
+      throw new Error(
+        "Stripe SDK is not installed. Run `npm install stripe` to enable payments.",
+      );
+    }
+    const secretKey = process.env.STRIPE_SECRET_KEY;
+    if (!secretKey) {
+      throw new Error("STRIPE_SECRET_KEY is not configured.");
+    }
+    const order = await this.getById(orderId);
+    if (!order) {
+      throw new Error(`Order ${orderId} not found.`);
+    }
+    // Omit apiVersion so the SDK uses its bundled default.
+    const stripe = new Stripe(secretKey);
+    const intent = await stripe.paymentIntents.create({
+      amount: order.totalMinor,
+      currency: order.currency.toLowerCase(),
+      metadata: {
+        order_id: orderId,
+        buyer_id: order.buyerId,
+        seller_id: order.sellerId,
+      },
+      automatic_payment_methods: { enabled: true },
+    });
+    if (!intent.client_secret) {
+      throw new Error("Stripe did not return a client_secret.");
+    }
+    return {
+      clientSecret: intent.client_secret,
+      paymentIntentId: intent.id,
+    };
+  }
 }
 
 // ---------- chat (Phase 3, slice 6) ----------
@@ -1438,6 +1627,30 @@ class SupabaseChatService implements ChatService {
       .eq("type", "offer")
       .eq("offer_status", "pending");
     if (error) throw error;
+  }
+
+  subscribeMessages(
+    threadId: string,
+    listener: (message: ChatMessageRecord) => void,
+  ): () => void {
+    const channel = this.client
+      .channel(`messages:${threadId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "chat_messages",
+          filter: `thread_id=eq.${threadId}`,
+        },
+        (payload) => {
+          listener(chatMessageFromRow(payload.new as Record<string, unknown>));
+        },
+      )
+      .subscribe();
+    return () => {
+      void this.client.removeChannel(channel);
+    };
   }
 }
 
@@ -1725,6 +1938,34 @@ class SupabaseNotificationService implements NotificationService {
       .eq("is_unread", true);
     if (error) throw error;
   }
+
+  subscribe(
+    listener: (notification: NotificationRecord) => void,
+  ): () => void {
+    let userId: string | null = null;
+    void this.client.auth.getUser().then(({ data }) => {
+      userId = data.user?.id ?? null;
+    });
+    const channel = this.client
+      .channel("notifications:user")
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "notifications",
+        },
+        (payload) => {
+          const row = payload.new as Record<string, unknown>;
+          if (userId && String(row.recipient_id) !== userId) return;
+          listener(notificationFromRow(row));
+        },
+      )
+      .subscribe();
+    return () => {
+      void this.client.removeChannel(channel);
+    };
+  }
 }
 
 // ---------- payment methods (M4) ----------
@@ -1952,6 +2193,7 @@ export function createSupabaseBackend(config: BackendConfig): Phase2Backend {
     sellerCards: new SupabaseSellerCardService(client),
     likes: new SupabaseLikeService(client),
     cart: new SupabaseCartService(client),
+    follows: new SupabaseFollowService(client),
     orders: new SupabaseOrderService(client),
     chats: new SupabaseChatService(client),
     reviews: new SupabaseSellerReviewService(client),
