@@ -658,7 +658,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   const [pendingAuthEmail, setPendingAuthEmail] = React.useState("");
 
   useEffect(() => {
-    if (!phase2Backend) return;
+    if (!phase2Backend) return; // TODO(phase-1): U2 — remove when AuthService is fully wired.
 
     // One-way security migration: never keep Phase 1 plaintext credentials or
     // cosmetic session tokens when the real backend is enabled.
@@ -696,7 +696,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   }, [phase2Backend]);
 
   useEffect(() => {
-    if (!phase2Backend || !remoteUser) return;
+    if (!phase2Backend || !remoteUser) return; // TODO(phase-1): U2 — remove when U2 lands.
     let active = true;
     void Promise.all([
       phase2Backend.profiles.getMine(),
@@ -739,7 +739,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
    * second round-trip per order.
    */
   const refreshOrders = useCallback(async () => {
-    if (!phase2Backend) return;
+    if (!phase2Backend) return; // TODO(phase-1): U3 — remove when listings read lands.
     setOrdersLoading(true);
     try {
       const [buyerRows, sellerRows] = await Promise.all([
@@ -797,7 +797,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
    * the cache honest.
    */
   const refreshListings = useCallback(async () => {
-    if (!marketplaceMode || !phase2Backend) return;
+    if (!marketplaceMode || !phase2Backend) return; // TODO(phase-1): U3 — remove when listings load lands.
     setListingsLoading(true);
     setListingsError(null);
     try {
@@ -1106,7 +1106,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
    * `chatLastRead` map so we don't need a server-side unread column.
    */
   const refreshChats = useCallback(async () => {
-    if (!phase2Backend) return;
+    if (!phase2Backend) return; // TODO(phase-1): U7 — remove when chat realtime lands.
     setChatsLoading(true);
     try {
       const auth = await phase2Backend.auth.getCurrentUser();
@@ -1151,7 +1151,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
 
 
   const refreshNotifications = useCallback(async () => {
-    if (!phase2Backend) return;
+    if (!phase2Backend) return; // TODO(phase-1): U7 — remove when chat send lands.
     try {
       const rows = await phase2Backend.notifications.listMine();
       setRemoteNotifications(rows.map(mapNotificationFromRemote));
@@ -1161,7 +1161,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   }, [phase2Backend]);
 
   const refreshMyReviews = useCallback(async () => {
-    if (!phase2Backend) return;
+    if (!phase2Backend) return; // TODO(phase-1): U10 — remove when notifications service lands.
     try {
       const rows = await phase2Backend.reviews.listMine();
       // The view model needs a seller display name + avatar; the server
@@ -1183,7 +1183,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   }, [phase2Backend]);
 
   const refreshReports = useCallback(async () => {
-    if (!phase2Backend) return;
+    if (!phase2Backend) return; // TODO(phase-1): U8 — remove when social follow lands.
     try {
       const rows = await phase2Backend.reports.listMine();
       setRemoteReports(rows.map(mapReportFromRemote));
@@ -1193,7 +1193,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   }, [phase2Backend]);
 
   const refreshDisputes = useCallback(async () => {
-    if (!phase2Backend) return;
+    if (!phase2Backend) return; // TODO(phase-1): U8 — remove when social like lands.
     try {
       const rows = await phase2Backend.disputes.listMine();
       setRemoteDisputes(rows.map(mapDisputeFromRemote));
@@ -1886,7 +1886,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const signInWithOAuth = useCallback(
     async (provider: "google") => {
-      if (!phase2Backend) return false;
+    if (!phase2Backend) return false; // TODO(phase-1): U1 — analyze and remove (see docs/audit-u1-mock-branches.md).
       setAuthError(null);
       const result = await phase2Backend.auth.signInWithOAuth(provider);
       if (!result.ok) {
