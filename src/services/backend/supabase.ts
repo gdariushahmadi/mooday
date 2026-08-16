@@ -1853,6 +1853,34 @@ class SupabaseNotificationService implements NotificationService {
       .eq("is_unread", true);
     if (error) throw error;
   }
+
+  subscribe(
+    listener: (notification: NotificationRecord) => void,
+  ): () => void {
+    let userId: string | null = null;
+    void this.client.auth.getUser().then(({ data }) => {
+      userId = data.user?.id ?? null;
+    });
+    const channel = this.client
+      .channel("notifications:user")
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "notifications",
+        },
+        (payload) => {
+          const row = payload.new as Record<string, unknown>;
+          if (userId && String(row.recipient_id) !== userId) return;
+          listener(notificationFromRow(row));
+        },
+      )
+      .subscribe();
+    return () => {
+      void this.client.removeChannel(channel);
+    };
+  }
 }
 
 // ---------- payment methods (M4) ----------

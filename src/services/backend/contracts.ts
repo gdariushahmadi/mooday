@@ -573,6 +573,14 @@ export interface NotificationService {
   markRead(id: string): Promise<void>;
 
   markAllRead(): Promise<void>;
+  /**
+   * Subscribe to new notifications for the current user via Supabase
+   * Realtime. The listener is called with each new NotificationRecord.
+   * Returns an unsubscribe function.
+   */
+  subscribe(
+    listener: (notification: NotificationRecord) => void,
+  ): () => void;
 }
 
 // ---------- M4: payment methods ----------
