@@ -447,6 +447,16 @@ export interface ChatService {
     messageId: string,
     status: "accepted" | "declined",
   ): Promise<void>;
+  /**
+   * Subscribe to new messages on a thread via Supabase Realtime.
+   * Returns an unsubscribe function. The listener is called with the
+   * new ChatMessageRecord whenever a row is added to chat_messages for
+   * this thread. RLS ensures only thread participants can subscribe.
+   */
+  subscribeMessages(
+    threadId: string,
+    listener: (message: ChatMessageRecord) => void,
+  ): () => void;
 }
 
 export interface SellerReviewRecord {

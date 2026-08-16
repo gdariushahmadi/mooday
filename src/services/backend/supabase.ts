@@ -1543,6 +1543,30 @@ class SupabaseChatService implements ChatService {
       .eq("offer_status", "pending");
     if (error) throw error;
   }
+
+  subscribeMessages(
+    threadId: string,
+    listener: (message: ChatMessageRecord) => void,
+  ): () => void {
+    const channel = this.client
+      .channel(`messages:${threadId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "chat_messages",
+          filter: `thread_id=eq.${threadId}`,
+        },
+        (payload) => {
+          listener(chatMessageFromRow(payload.new as Record<string, unknown>));
+        },
+      )
+      .subscribe();
+    return () => {
+      void this.client.removeChannel(channel);
+    };
+  }
 }
 
 // ---------- reviews ----------
