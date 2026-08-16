@@ -373,6 +373,15 @@ export interface OrderService {
   markDelivered(orderId: string): Promise<void>;
   cancel(orderId: string): Promise<void>;
   requestReturn(orderId: string): Promise<void>;
+  /**
+   * Create a Stripe PaymentIntent for the order. The client uses the
+   * returned `clientSecret` to confirm payment via Stripe.js. The
+   * webhook (`/api/stripe/webhook`) is the source of truth for moving
+   * the order to `paid`; this method only initiates the payment.
+   */
+  createPaymentIntent(
+    orderId: string,
+  ): Promise<{ clientSecret: string; paymentIntentId: string }>;
 }
 
 // ---------- slice 6: chat / offers / reviews / reports / disputes /

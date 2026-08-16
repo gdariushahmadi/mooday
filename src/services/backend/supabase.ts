@@ -1333,6 +1333,50 @@ class SupabaseOrderService implements OrderService {
       .eq("id", orderId);
     if (error) throw error;
   }
+
+  async createPaymentIntent(
+    orderId: string,
+  ): Promise<{ clientSecret: string; paymentIntentId: string }> {
+    // The Stripe SDK is loaded via dynamic import so the dependency is
+    // optional at build time. Without the SDK this method throws a
+    // clear error; the UI is expected to gate on `hasStripe()`.
+    const Stripe = (await import("stripe").catch(() => null)) as
+      | (typeof import("stripe"))["default"]
+      | null;
+    if (!Stripe) {
+      throw new Error(
+        "Stripe SDK is not installed. Run `npm install stripe` to enable payments.",
+      );
+    }
+    const secretKey = process.env.STRIPE_SECRET_KEY;
+    if (!secretKey) {
+      throw new Error("STRIPE_SECRET_KEY is not configured.");
+    }
+    const order = await this.getById(orderId);
+    if (!order) {
+      throw new Error(`Order ${orderId} not found.`);
+    }
+    const stripe = new Stripe(secretKey, {
+      apiVersion: "2024-06-20" as never,
+    });
+    const intent = await stripe.paymentIntents.create({
+      amount: order.totalMinor,
+      currency: order.currency.toLowerCase(),
+      metadata: {
+        order_id: orderId,
+        buyer_id: order.buyerId,
+        seller_id: order.sellerId,
+      },
+      automatic_payment_methods: { enabled: true },
+    });
+    if (!intent.client_secret) {
+      throw new Error("Stripe did not return a client_secret.");
+    }
+    return {
+      clientSecret: intent.client_secret,
+      paymentIntentId: intent.id,
+    };
+  }
 }
 
 // ---------- chat (Phase 3, slice 6) ----------
