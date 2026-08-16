@@ -21,7 +21,8 @@
     "test:phase2:db": "npx supabase@2.109.1 test db",
     "test:phase2:smoke": "node scripts/phase2-auth-smoke.mjs",
     "test:phase2:e2e": "playwright test",
-    "test:phase2": "npm run test:phase2:db && npm run test:phase2:smoke && npm run test:phase2:e2e",
+    "test:phase2:u3u8": "node scripts/u3-u8-smoke.mjs",
+    "test:phase2": "npm run test:phase2:db && npm run test:phase2:smoke && npm run test:phase2:u3u8 && npm run test:phase2:e2e",
     "typecheck": "tsc --noEmit",
     "verify": "npm run typecheck && npm run lint && npm run test:ci && npm run build"
   },
