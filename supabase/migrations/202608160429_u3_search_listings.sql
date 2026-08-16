@@ -39,79 +39,88 @@ returns table (
   updated_at timestamptz,
   rank real
 )
-language sql
+language plpgsql
 stable
 security invoker
 set search_path = ''
 as $$
-  with params as (
+declare
+  v_category text := coalesce(filters->>'category', null);
+  v_price_min bigint := (filters->>'price_min')::bigint;
+  v_price_max bigint := (filters->>'price_max')::bigint;
+  v_status text := coalesce(filters->>'status', 'active');
+  v_limit_count int := greatest(coalesce((filters->>'limit')::int, 50), 1);
+  v_offset_count int := greatest(coalesce((filters->>'offset')::int, 0), 0);
+  v_tsquery tsquery := websearch_to_tsquery('simple', coalesce(query, ''));
+  v_has_query boolean := v_tsquery::text <> '';
+begin
+  return query
     select
-      coalesce(filters->>'category', null) as category,
-      (filters->>'price_min')::bigint as price_min,
-      (filters->>'price_max')::bigint as price_max,
-      coalesce(filters->>'status', 'active') as status,
-      (filters->>'limit')::int as limit_count,
-      (filters->>'offset')::int as offset_count
-  ),
-  q as (
-    select
-      websearch_to_tsquery('simple', coalesce(query, '')) as tsq
-  )
-  select
-    l.id,
-    l.seller_id,
-    l.title_en,
-    l.title_ar,
-    l.description_en,
-    l.description_ar,
-    l.price_minor,
-    l.original_price_minor,
-    l.currency,
-    l.condition_en,
-    l.condition_ar,
-    l.category,
-    l.size,
-    l.color_en,
-    l.color_ar,
-    l.mode,
-    l.status,
-    l.is_authentic,
-    l.published_at,
-    l.created_at,
-    l.updated_at,
-    case
-      when q.tsq = ''::tsvector then 0.0::real
-      else ts_rank(
-        to_tsvector(
+      l.id,
+      l.seller_id,
+      l.title_en,
+      l.title_ar,
+      l.description_en,
+      l.description_ar,
+      l.price_minor,
+      l.original_price_minor,
+      l.currency,
+      l.condition_en,
+      l.condition_ar,
+      l.category,
+      l.size,
+      l.color_en,
+      l.color_ar,
+      l.mode,
+      l.status,
+      l.is_authentic,
+      l.published_at,
+      l.created_at,
+      l.updated_at,
+      case
+        when not v_has_query then 0.0::real
+        else ts_rank(
+          to_tsvector(
+            'simple',
+            coalesce(l.title_en, '') || ' ' ||
+            coalesce(l.title_ar, '') || ' ' ||
+            coalesce(l.description_en, '') || ' ' ||
+            coalesce(l.description_ar, '')
+          ),
+          v_tsquery
+        )::real
+      end as rank
+    from public.listings l
+    where l.status = v_status
+      and (v_category is null or l.category = v_category)
+      and (v_price_min is null or l.price_minor >= v_price_min)
+      and (v_price_max is null or l.price_minor <= v_price_max)
+      and (
+        not v_has_query
+        or to_tsvector(
           'simple',
           coalesce(l.title_en, '') || ' ' ||
           coalesce(l.title_ar, '') || ' ' ||
           coalesce(l.description_en, '') || ' ' ||
           coalesce(l.description_ar, '')
-        ),
-        q.tsq
-      )::real
-    end as rank
-  from public.listings l
-  cross join q
-  cross join params p
-  where l.status = p.status
-    and (p.category is null or l.category = p.category)
-    and (p.price_min is null or l.price_minor >= p.price_min)
-    and (p.price_max is null or l.price_minor <= p.price_max)
-    and (
-      q.tsq = ''::tsvector
-      or to_tsvector(
-        'simple',
-        coalesce(l.title_en, '') || ' ' ||
-        coalesce(l.title_ar, '') || ' ' ||
-        coalesce(l.description_en, '') || ' ' ||
-        coalesce(l.description_ar, '')
-      ) @@ q.tsq
-    )
-  order by rank desc, l.created_at desc
-  limit greatest(coalesce(p.limit_count, 50), 1)
-  offset greatest(coalesce(p.offset_count, 0), 0);
+        ) @@ v_tsquery
+      )
+    order by
+      case when not v_has_query then 0.0::real
+        else ts_rank(
+          to_tsvector(
+            'simple',
+            coalesce(l.title_en, '') || ' ' ||
+            coalesce(l.title_ar, '') || ' ' ||
+            coalesce(l.description_en, '') || ' ' ||
+            coalesce(l.description_ar, '')
+          ),
+          v_tsquery
+        )::real
+      end desc,
+      l.created_at desc
+    limit v_limit_count offset v_offset_count;
+end;
 $$;
 
 grant execute on function public.search_listings(text, jsonb) to anon, authenticated;
