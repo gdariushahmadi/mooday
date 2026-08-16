@@ -1442,9 +1442,8 @@ class SupabaseOrderService implements OrderService {
     if (!order) {
       throw new Error(`Order ${orderId} not found.`);
     }
-    const stripe = new Stripe(secretKey, {
-      apiVersion: "2024-06-20" as never,
-    });
+    // Omit apiVersion so the SDK uses its bundled default.
+    const stripe = new Stripe(secretKey);
     const intent = await stripe.paymentIntents.create({
       amount: order.totalMinor,
       currency: order.currency.toLowerCase(),

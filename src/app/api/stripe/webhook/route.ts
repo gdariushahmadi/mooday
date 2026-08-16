@@ -44,7 +44,8 @@ export async function POST(req: NextRequest) {
       { status: 500 },
     );
   }
-  const stripe = new Stripe(secretKey, { apiVersion: "2024-06-20" as never });
+  // Omit apiVersion so the SDK uses its bundled default.
+  const stripe = new Stripe(secretKey);
 
   let event;
   try {
