@@ -1425,9 +1425,10 @@ class SupabaseOrderService implements OrderService {
     // The Stripe SDK is loaded via dynamic import so the dependency is
     // optional at build time. Without the SDK this method throws a
     // clear error; the UI is expected to gate on `hasStripe()`.
-    const Stripe = (await import("stripe").catch(() => null)) as
-      | (typeof import("stripe"))["default"]
+    const stripeModule = (await import("stripe").catch(() => null)) as
+      | (typeof import("stripe"))
       | null;
+    const Stripe = stripeModule?.default ?? null;
     if (!Stripe) {
       throw new Error(
         "Stripe SDK is not installed. Run `npm install stripe` to enable payments.",

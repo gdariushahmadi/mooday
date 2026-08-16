@@ -27,9 +27,10 @@ export async function POST(req: NextRequest) {
   }
 
   const rawBody = await req.text();
-  const Stripe = (await import("stripe").catch(() => null)) as
-    | (typeof import("stripe"))["default"]
+  const stripeModule = (await import("stripe").catch(() => null)) as
+    | (typeof import("stripe"))
     | null;
+  const Stripe = stripeModule?.default ?? null;
   if (!Stripe) {
     return NextResponse.json(
       { error: "Stripe SDK not installed." },
