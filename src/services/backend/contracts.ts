@@ -258,6 +258,17 @@ export interface LikeService {
   toggle(listingId: string): Promise<{ liked: boolean }>;
 }
 
+export interface FollowService {
+  /** User ids the current user is following. */
+  listFollowingIds(): Promise<string[]>;
+  /** User ids following the given user. */
+  listFollowerIds(userId: string): Promise<string[]>;
+  follow(userId: string): Promise<void>;
+  unfollow(userId: string): Promise<void>;
+  isFollowing(userId: string): Promise<boolean>;
+  toggle(userId: string): Promise<{ following: boolean }>;
+}
+
 /**
  * A single cart line as stored remotely. The UI rehydrates the related
  * `Product` from `listings` on read, so only identifiers and quantity
@@ -650,6 +661,7 @@ export interface Phase2Backend {
   sellerCards: SellerCardService;
   likes: LikeService;
   cart: CartService;
+  follows: FollowService;
   orders: OrderService;
   chats: ChatService;
   reviews: SellerReviewService;
