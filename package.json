@@ -26,6 +26,7 @@
     "verify": "npm run typecheck && npm run lint && npm run test:ci && npm run build"
   },
   "dependencies": {
+    "@sentry/nextjs": "^10.70.0",
     "@supabase/supabase-js": "^2.110.5",
     "next": "16.2.9",
     "react": "19.2.4",
