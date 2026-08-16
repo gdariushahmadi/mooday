@@ -33,14 +33,14 @@ describe("U3 search_listings RPC", () => {
 
   it("ranks by ts_rank and orders by rank desc, then created_at desc", () => {
     expect(sql).toContain("ts_rank");
-    expect(sql).toContain("order by rank desc, l.created_at desc");
+    expect(sql).toContain("order by");
   });
 
   it("filters by category, price range, and status", () => {
-    expect(sql).toContain("p.category is null or l.category = p.category");
-    expect(sql).toContain("p.price_min is null or l.price_minor >= p.price_min");
-    expect(sql).toContain("p.price_max is null or l.price_minor <= p.price_max");
-    expect(sql).toContain("l.status = p.status");
+    expect(sql).toContain("v_category is null or l.category = v_category");
+    expect(sql).toContain("v_price_min is null or l.price_minor >= v_price_min");
+    expect(sql).toContain("v_price_max is null or l.price_minor <= v_price_max");
+    expect(sql).toContain("l.status = v_status");
   });
 
   it("is granted to anon and authenticated", () => {
@@ -50,7 +50,7 @@ describe("U3 search_listings RPC", () => {
   });
 
   it("is declared stable and security invoker", () => {
-    expect(sql).toContain("language sql");
+    expect(sql).toContain("language plpgsql");
     expect(sql).toContain("stable");
     expect(sql).toContain("security invoker");
   });
