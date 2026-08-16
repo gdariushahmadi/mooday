@@ -3,7 +3,8 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { AppContext, type AppContextType } from "@/context/AppContext";
 import { ForgotPasswordView } from "@/components/ForgotPasswordView";
-import { MOCK_OTP_CODE } from "@/data/users";
+
+const TEST_OTP_CODE = "123456";
 
 function makeContext(overrides: Partial<AppContextType> = {}): AppContextType {
   return {
@@ -151,20 +152,20 @@ describe("ForgotPasswordView (A-05)", () => {
 
   it("moves to the password step after a successful OTP", async () => {
     const user = userEvent.setup();
-    const { ctx } = renderForgot({ sendOtp: vi.fn(() => MOCK_OTP_CODE) });
+    const { ctx } = renderForgot({ sendOtp: vi.fn(() => TEST_OTP_CODE) });
     await step1Email(user, "layla@mooday.app");
-    await step2Code(user, MOCK_OTP_CODE);
+    await step2Code(user, TEST_OTP_CODE);
     expect(
       screen.getByRole("heading", { name: /choose a new password/i }),
     ).toBeInTheDocument();
-    expect(ctx.verifyOtp).toHaveBeenCalledWith("layla@mooday.app", MOCK_OTP_CODE);
+    expect(ctx.verifyOtp).toHaveBeenCalledWith("layla@mooday.app", TEST_OTP_CODE);
   });
 
   it("blocks submission when the password is too short", async () => {
     const user = userEvent.setup();
     const { ctx, onSuccess } = renderForgot();
     await step1Email(user, "layla@mooday.app");
-    await step2Code(user, MOCK_OTP_CODE);
+    await step2Code(user, TEST_OTP_CODE);
     await user.type(screen.getByLabelText(/new password/i), "short");
     await user.type(screen.getByLabelText(/confirm password/i), "short");
     await user.click(screen.getByRole("button", { name: /reset password/i }));
@@ -179,7 +180,7 @@ describe("ForgotPasswordView (A-05)", () => {
     const user = userEvent.setup();
     const { ctx, onSuccess } = renderForgot();
     await step1Email(user, "layla@mooday.app");
-    await step2Code(user, MOCK_OTP_CODE);
+    await step2Code(user, TEST_OTP_CODE);
     await user.type(screen.getByLabelText(/new password/i), "longenough1");
     await user.type(screen.getByLabelText(/confirm password/i), "longenouff2");
     await user.click(screen.getByRole("button", { name: /reset password/i }));
@@ -194,7 +195,7 @@ describe("ForgotPasswordView (A-05)", () => {
     const user = userEvent.setup();
     const { ctx, onSuccess } = renderForgot();
     await step1Email(user, "layla@mooday.app");
-    await step2Code(user, MOCK_OTP_CODE);
+    await step2Code(user, TEST_OTP_CODE);
     await user.type(screen.getByLabelText(/new password/i), "mooday-new");
     await user.type(screen.getByLabelText(/confirm password/i), "mooday-new");
     await user.click(screen.getByRole("button", { name: /reset password/i }));
