@@ -116,6 +116,36 @@ class SupabaseAuthService implements AuthService {
     private readonly siteUrl: string,
   ) {}
 
+  private authCallbackUrl(): string {
+    // Always prefer the live window origin so PKCE / OAuth providers redirect
+    // back to whatever host the user actually opened the app on. Fall back to
+    // the build-time NEXT_PUBLIC_SITE_URL only when running server-side
+    // (no `window` available).
+    const baseUrl =
+      typeof window !== "undefined" && window.location.origin
+        ? window.location.origin
+        : this.siteUrl;
+    const url = `${baseUrl.replace(/\/+$/, "")}/auth/callback`;
+    // Surface unexpected origins in the browser console so a misconfigured
+    // Supabase / Google Cloud / hosting environment is visible during
+    // development. Production OAuth fails silently if the registered redirect
+    // URL does not match, so a wrong host would otherwise be invisible until
+    // the user actually clicks "Continue with Google".
+    if (typeof console !== "undefined" && typeof window !== "undefined") {
+      const isLocal = url.includes("localhost") || url.includes("127.0.0.1");
+      const isHttps = url.startsWith("https://");
+      if (isLocal || !isHttps) {
+        console.warn(
+          `[auth] OAuth callback URL is ${url}. If this is a production ` +
+            "deployment, register it under Authentication -> URL Configuration " +
+            "in the Supabase dashboard, and as an authorized redirect URI in " +
+            "the Google Cloud OAuth client.",
+        );
+      }
+    }
+    return url;
+  }
+
   async getCurrentUser(): Promise<AuthenticatedUser | null> {
     const { data, error } = await this.client.auth.getUser();
     if (error || !data.user) return null;
@@ -135,12 +165,13 @@ class SupabaseAuthService implements AuthService {
     phone: string;
     password: string;
   }): Promise<AuthResult<AuthenticatedUser>> {
+    const redirectTo = this.authCallbackUrl();
     const { data, error } = await this.client.auth.signUp({
       email: input.email,
       password: input.password,
       options: {
         data: { full_name: input.name, phone: input.phone },
-        emailRedirectTo: `${this.siteUrl}/auth/callback`,
+        emailRedirectTo: redirectTo,
       },
     });
     if (error) return failure(error.message);
@@ -167,16 +198,17 @@ class SupabaseAuthService implements AuthService {
   }
 
   async sendOtp(email: string, purpose: OtpPurpose): Promise<AuthResult<null>> {
+    const redirectTo = this.authCallbackUrl();
     const result =
       purpose === "recovery"
         ? await this.client.auth.resetPasswordForEmail(email, {
-            redirectTo: `${this.siteUrl}/auth/callback`,
+            redirectTo,
           })
         : await this.client.auth.resend({
             type: "signup",
             email,
             options: {
-              emailRedirectTo: `${this.siteUrl}/auth/callback`,
+              emailRedirectTo: redirectTo,
             },
           });
     return result.error
@@ -209,10 +241,11 @@ class SupabaseAuthService implements AuthService {
   async signInWithOAuth(
     provider: "google",
   ): Promise<AuthResult<null>> {
+    const redirectTo = this.authCallbackUrl();
     const { error } = await this.client.auth.signInWithOAuth({
       provider,
       options: {
-        redirectTo: `${this.siteUrl}/auth/callback`,
+        redirectTo,
         queryParams: { access_type: "offline" },
       },
     });
@@ -471,6 +504,33 @@ class SupabaseListingService implements ListingService {
       .select("*")
       .eq("seller_id", authData.user.id)
       .order("created_at", { ascending: false });
+    if (error) throw error;
+    return (data ?? []).map(listingFromRow);
+  }
+
+  async search(
+    query: string,
+    filters?: {
+      category?: string;
+      priceMin?: number;
+      priceMax?: number;
+      status?: string;
+      limit?: number;
+      offset?: number;
+    },
+  ): Promise<ListingRecord[]> {
+    const rpcArgs = {
+      category: filters?.category ?? null,
+      price_min: filters?.priceMin ?? null,
+      price_max: filters?.priceMax ?? null,
+      status: filters?.status ?? null,
+      limit_count: filters?.limit ?? null,
+      offset_count: filters?.offset ?? null,
+    };
+    const { data, error } = await this.client.rpc("search_listings", {
+      query,
+      filters: rpcArgs,
+    });
     if (error) throw error;
     return (data ?? []).map(listingFromRow);
   }

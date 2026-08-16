@@ -100,6 +100,22 @@ export type CreateListingInput = Omit<
 export interface ListingService {
   listVisible(): Promise<ListingRecord[]>;
   listMine(): Promise<ListingRecord[]>;
+  /** Full-text search across title_en, title_ar, description_en, description_ar.
+   * Filters: { category?: string, price_min?: number, price_max?: number,
+   *   status?: 'draft' | 'active' | 'reserved' | 'sold' | 'archived',
+   *   limit?: number, offset?: number }.
+   * Empty query returns recent listings (filters still apply). */
+  search(
+    query: string,
+    filters?: {
+      category?: string;
+      priceMin?: number;
+      priceMax?: number;
+      status?: string;
+      limit?: number;
+      offset?: number;
+    },
+  ): Promise<ListingRecord[]>;
   /** Bulk lookup keyed by listingId. Unknown ids return records from the
    * `active` set only — drafts/archived/sold are filtered out so callers
    * stay safe to render without re-validating per row. */
