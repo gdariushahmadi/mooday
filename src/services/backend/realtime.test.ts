@@ -41,7 +41,9 @@ describe("Realtime subscriptions", () => {
 
   function channelSpy(client: ReturnType<typeof recordingClient>) {
     const seen: string[] = [];
-    client.channel = (name: string) => {
+    (client as unknown as { channel: (name: string) => unknown }).channel = (
+      name: string,
+    ) => {
       seen.push(name);
       const builder: Record<string, unknown> = {
         on: () => builder,
