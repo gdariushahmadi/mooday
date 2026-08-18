@@ -106,6 +106,16 @@ export interface Product {
    * (D-20) and Edit Listing (D-21) flows can filter by ownership.
    */
   sellerId?: string;
+  /** Brand display label (EN). Populated by the seed-backfill phase. */
+  brandEn?: string;
+  /** Brand display label (AR). Populated by the seed-backfill phase. */
+  brandAr?: string;
+  /** ISO `YYYY-MM-DD` date the seller originally bought the item. */
+  purchaseDate?: string;
+  /** Self-reported usage count. */
+  usageCount?: number;
+  /** Authenticity review tier surfaced by AuthenticityBadge. */
+  authenticityTier?: "verified" | "in_review" | "self_declared";
 }
 
 export interface ChatMessage {
