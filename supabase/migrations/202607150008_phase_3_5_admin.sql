@@ -60,6 +60,36 @@ using (
   or (select auth.uid()) = seller_id
 );
 
+
+create or replace function public.protect_admin_fields()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  is_caller_admin boolean;
+begin
+  if new.is_admin is distinct from old.is_admin
+     or new.is_suspended is distinct from old.is_suspended
+     or new.suspended_reason is distinct from old.suspended_reason
+     or new.suspended_at is distinct from old.suspended_at
+  then
+    if auth.uid() is not null then
+      select is_admin into is_caller_admin from public.profiles where id = auth.uid();
+      if not coalesce(is_caller_admin, false) then
+        raise exception 'Only admins can modify admin fields' using errcode = '42501';
+      end if;
+    end if;
+  end if;
+  return new;
+end;
+$$;
+
+create trigger ensure_admin_fields
+before update on public.profiles
+for each row execute function public.protect_admin_fields();
+
 -- ---------- audit log ----------
 
 create table public.audit_log (
