@@ -6,6 +6,7 @@ import React, {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useSyncExternalStore,
 } from "react";
 import { defaultProducts, SEED_VERSION } from "@/data/products";
@@ -484,6 +485,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     DEFAULT_CHATS,
   );
   const [remoteThreads, setRemoteThreads] = React.useState<ChatThread[]>([]);
+
+  // Mirror of `remoteThreads` updated on every render. Stable callbacks
+  // (e.g. `markChatRead`) read it through this ref so their identity
+  // stays constant even when the threads array reference changes —
+  // otherwise consumers like ChatOverlay would re-fire their effects on
+  // every state update and create an infinite render loop on the chat
+  // page (`Uncaught rh → ... → up/ud` repeated in the console).
+  const remoteThreadsRef = useRef(remoteThreads);
+  remoteThreadsRef.current = remoteThreads;
   const [ordersLoading, setOrdersLoading] = React.useState(false);
   const [chatsLoading, setChatsLoading] = React.useState(false);
   const [chatLastRead, setChatLastRead] = useLocalStorageState<
@@ -1398,7 +1408,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       if (phase2Backend) {
         // Persist the count of seller messages seen so far. The next
         // refreshChats() will subtract this from the live total.
-        const thread = remoteThreads.find((t) => t.id === threadId);
+        // Read through the ref so this callback's identity remains
+        // stable across renders. Otherwise calling markChatRead() would
+        // recreate itself (because the inner setter returns a new array
+        // reference) and trigger an infinite render loop via consumers
+        // that list `markChatRead` in their useEffect dependencies.
+        const remoteThreadsLatest = remoteThreadsRef.current;
+        const thread = remoteThreadsLatest.find((t) => t.id === threadId);
         const totalSeller = thread
           ? thread.messages.filter((m) => m.sender === "seller").length
           : 0;
@@ -1406,9 +1422,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
           ...prev,
           [threadId]: String(totalSeller),
         }));
-        setRemoteThreads((prev) =>
-          prev.map((t) => (t.id === threadId ? { ...t, unread: 0 } : t)),
-        );
+        setRemoteThreads((prev) => {
+          const target = prev.find((t) => t.id === threadId);
+          if (!target || (target.unread ?? 0) === 0) return prev;
+          return prev.map((t) =>
+            t.id === threadId ? { ...t, unread: 0 } : t,
+          );
+        });
         return;
       }
       setChats((prev) =>
@@ -1417,7 +1437,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
         ),
       );
     },
-    [phase2Backend, remoteThreads, setChatLastRead, setChats],
+    [phase2Backend, setChatLastRead, setRemoteThreads, setChats],
   );
 
   const setChatOfferStatus = useCallback(
