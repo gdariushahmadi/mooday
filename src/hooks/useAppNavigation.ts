@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { useApp, type Product } from "@/context/AppContext";
+import { useApp, type Product, type ChatThread } from "@/context/AppContext";
 import {
   type TabId,
   type ViewState,
@@ -602,20 +602,89 @@ export function useChatNav(
   createChatThread: (product: Product) => Awaitable<string>,
   currentUserId: string | null | undefined,
   listings: Product[],
+  /**
+   * Active chats list and the setter that targets the backing store
+   * (Supabase remoteThreads in Phase 2, the localStorage-backed chats
+   * otherwise). Both are needed so startChat can push an optimistic
+   * placeholder thread before Supabase confirms the real one. Without
+   * it the chat overlay would briefly render the "Chat not found"
+   * view while we wait for the round-trip.
+   */
+  activeChats: ChatThread[],
+  setActiveChats: React.Dispatch<React.SetStateAction<ChatThread[]>>,
+  language: "en" | "ar",
 ) {
-  const startChat = useCallback(
-    (product: Product) => {
-      if (isOwnListing(product, currentUserId)) return;
+  const openChatThread = useCallback(
+    (product: Product): boolean => {
+      if (isOwnListing(product, currentUserId)) return false;
+
+      // Optimistic navigation: collapse productDetails -> chat in a
+      // single render by clearing the selected product and pointing at
+      // a placeholder thread before Supabase confirms the real id.
       setSelectedProduct(null);
-      const result = createChatThread(product);
-      Promise.resolve(result)
-        .then((threadId) => {
-          setActiveChatThreadId(threadId);
+      const optimisticId = `pending-${product.id}`;
+
+      const existing = activeChats.find(
+        (c) => c.id === product.id || c.id === optimisticId,
+      );
+      if (existing) {
+        setActiveChatThreadId(existing.id);
+        return true;
+      }
+
+      const placeholder: ChatThread = {
+        id: optimisticId,
+        sellerName:
+          language === "ar" ? product.sellerNameAr : product.sellerNameEn,
+        sellerAvatar: product.sellerAvatar,
+        productTitle: language === "ar" ? product.titleAr : product.titleEn,
+        productImage: product.image,
+        productPrice: product.price,
+        lastMessage:
+          language === "ar"
+            ? "مرحباً! كيف يمكنني مساعدتك؟"
+            : "Hi! How can I help you?",
+        lastMessageTime: "Just now",
+        unread: 0,
+        messages: [],
+      };
+      setActiveChats((prev) => [placeholder, ...prev]);
+      setActiveChatThreadId(optimisticId);
+
+      Promise.resolve(createChatThread(product))
+        .then((realId) => {
+          if (!realId || realId === optimisticId) return;
+          setActiveChats((prev) =>
+            prev.map((c) =>
+              c.id === optimisticId ? { ...c, id: realId } : c,
+            ),
+          );
+          setActiveChatThreadId(realId);
         })
         .catch(() => {
+          setActiveChats((prev) =>
+            prev.filter((c) => c.id !== optimisticId),
+          );
+          setActiveChatThreadId(null);
         });
+      return true;
     },
-    [createChatThread, currentUserId, setSelectedProduct, setActiveChatThreadId],
+    [
+      activeChats,
+      createChatThread,
+      currentUserId,
+      language,
+      setActiveChats,
+      setActiveChatThreadId,
+      setSelectedProduct,
+    ],
+  );
+
+  const startChat = useCallback(
+    (product: Product) => {
+      openChatThread(product);
+    },
+    [openChatThread],
   );
 
   const startChatWithSeller = useCallback(
@@ -632,14 +701,7 @@ export function useChatNav(
         ) ?? null;
 
       if (match) {
-        if (isOwnListing(match, currentUserId)) return;
-        Promise.resolve(createChatThread(match))
-          .then((threadId) => {
-            setSelectedProduct(null);
-            setActiveChatThreadId(threadId);
-          })
-          .catch(() => {
-          });
+        openChatThread(match);
         return;
       }
 
@@ -664,18 +726,14 @@ export function useChatNav(
         category: "All",
         sellerId,
       };
-      const threadId = createChatThread(synthetic);
-      Promise.resolve(threadId)
-        .then((id) => {
-          setSelectedProduct(null);
-          setActiveChatThreadId(id);
-        })
-        .catch(() => {
-        });
+      openChatThread(synthetic);
     },
-    [createChatThread, currentUserId, setSelectedProduct, setActiveChatThreadId, listings],
+    [
+      currentUserId,
+      listings,
+      openChatThread,
+    ],
   );
-
   const closeChat = useCallback(() => {
     setActiveChatThreadId(null);
   }, [setActiveChatThreadId]);
@@ -776,7 +834,14 @@ export function useSellerNav(
 
 export function useAppNavigation(): AppNavigation {
 
-  const { createChatThread, listings, currentUserId } = useApp();
+  const {
+    createChatThread,
+    listings,
+    currentUserId,
+    chats,
+    setActiveChats,
+    language,
+  } = useApp();
 
   const [activeTab, setActiveTab] = useState<TabId>(() =>
     tabFromView(readUrlParam("view") ?? resolveInitialView()),
@@ -931,6 +996,9 @@ export function useAppNavigation(): AppNavigation {
     createChatThread,
     currentUserId,
     listings,
+    chats,
+    setActiveChats,
+    language,
   );
   const sellerNav = useSellerNav(
     setCurrentView,

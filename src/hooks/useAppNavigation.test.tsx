@@ -1,6 +1,6 @@
 import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { Product } from "@/context/AppContext";
+import type { ChatThread, Product } from "@/context/AppContext";
 import { useAppNavigation } from "@/hooks/useAppNavigation";
 
 const mocks = vi.hoisted(() => ({
@@ -36,8 +36,26 @@ beforeEach(() => {
   window.history.replaceState({}, "", "/");
 });
 
+function makeContext(overrides: {
+  chats?: ChatThread[];
+  setActiveChats?: ReturnType<typeof vi.fn>;
+  language?: "en" | "ar";
+  createChatThread?: ReturnType<typeof vi.fn>;
+  currentUserId?: string | null;
+}) {
+  return {
+    createChatThread: vi.fn(async () => "chat-product-1"),
+    listings: [PRODUCT],
+    chats: [],
+    setActiveChats: vi.fn(),
+    language: "en",
+    currentUserId: null,
+    ...overrides,
+  };
+}
+
 describe("useAppNavigation chat entry", () => {
-  it("closes product details before an async chat thread is ready", async () => {
+  it("navigates to the chat overlay immediately with a placeholder", async () => {
     let resolveThread: (threadId: string) => void = () => {};
     const createChatThread = vi.fn(
       () =>
@@ -45,10 +63,7 @@ describe("useAppNavigation chat entry", () => {
           resolveThread = resolve;
         }),
     );
-    mocks.useApp.mockReturnValue({
-      createChatThread,
-      listings: [PRODUCT],
-    });
+    mocks.useApp.mockReturnValue(makeContext({ createChatThread }));
 
     const { result } = renderHook(() => useAppNavigation());
 
@@ -61,13 +76,47 @@ describe("useAppNavigation chat entry", () => {
       result.current.startChat(PRODUCT);
     });
 
+    // New behavior: the user is taken straight into chat with a
+    // placeholder id; the real id swaps in once Supabase responds.
     expect(result.current.selectedProduct).toBeNull();
-    expect(result.current.activeChatThreadId).toBeNull();
+    expect(result.current.activeChatThreadId).toBe("pending-product-1");
 
     await act(async () => {
       resolveThread("chat-product-1");
     });
 
     expect(result.current.activeChatThreadId).toBe("chat-product-1");
+  });
+
+  it("does not create a duplicate placeholder when one is already in flight", () => {
+    const existingPlaceholder: ChatThread = {
+      id: "pending-product-1",
+      sellerName: "Test seller",
+      sellerAvatar: "/sellers/test.jpg",
+      productTitle: "Test product",
+      productImage: "/products/test.jpg",
+      productPrice: 100,
+      lastMessage: "",
+      lastMessageTime: "",
+      messages: [],
+    };
+    const setActiveChats = vi.fn();
+    mocks.useApp.mockReturnValue(
+      makeContext({
+        chats: [existingPlaceholder],
+        setActiveChats,
+        createChatThread: vi.fn(),
+      }),
+    );
+
+    const { result } = renderHook(() => useAppNavigation());
+
+    act(() => {
+      result.current.startChat(PRODUCT);
+    });
+
+    // Already pointing at the placeholder thread, so we reused it
+    // instead of pushing a duplicate thread or calling createChatThread.
+    expect(result.current.activeChatThreadId).toBe("pending-product-1");
   });
 });

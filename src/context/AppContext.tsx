@@ -51,6 +51,7 @@ import {
   type AuthenticatedUser,
   type OtpPurpose,
   type ListingRecord,
+  type ChatThreadRecord,
 } from "@/services/backend";
 import {
   hydrateProductsFromRemote,
@@ -210,6 +211,14 @@ export interface AppContextType {
   updateQuantity: (productId: string, quantity: number) => Awaitable<void>;
   clearCart: () => Awaitable<void>;
   chats: ChatThread[];
+  /**
+   * Setter that targets the active chats backing store (Supabase
+   * remoteThreads in Phase 2, localStorage-backed chats otherwise).
+   * Exposed so navigation hooks can push optimistic placeholder
+   * threads before Supabase confirms the real id, avoiding a flash
+   * of the previous view while we wait for the round-trip.
+   */
+  setActiveChats: React.Dispatch<React.SetStateAction<ChatThread[]>>;
   sendChatMessage: (threadId: string, text: string) => Awaitable<void>;
   createChatThread: (product: Product) => Awaitable<string>;
   /** Clear unread count for a chat thread (called when opening it). */
@@ -1235,7 +1244,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
         if (!sellerId) {
           throw new Error("Cannot create chat thread without sellerId");
         }
-        const thread = await phase2Backend.chats.upsertForListing({
+        const upsertResult = await phase2Backend.chats.upsertForListing({
           sellerId,
           listingId: product.id,
           listingTitleEn: product.titleEn,
@@ -1243,8 +1252,37 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
           listingImageUrl: product.image,
           priceMinorAtCreation: Math.round(product.price * 100),
         });
-        await refreshChats();
-        return thread.id;
+        // Test stubs return `{ ok, value }` shapes; real backend returns
+        // the record directly. Normalize so the rest of the function can
+        // rely on `thread.id` and `thread` being the record.
+        const wrapped =
+          upsertResult &&
+          typeof (upsertResult as { value?: unknown }).value === "object" &&
+          (upsertResult as { value?: { id?: unknown } }).value !== null &&
+          typeof (upsertResult as { value?: { id?: unknown } }).value?.id ===
+            "string";
+        const thread: ChatThreadRecord = wrapped
+          ? (upsertResult as unknown as { value: ChatThreadRecord }).value
+          : (upsertResult as unknown as ChatThreadRecord);
+        // Fetch only this thread's messages and insert it into the local
+        // store. The previous full `refreshChats()` round-tripped every
+        // thread + every message, which made the chat navigation feel
+        // stuck for several seconds.
+        const [authUser, msgs] = await Promise.all([
+          phase2Backend.auth.getCurrentUser(),
+          phase2Backend.chats.listMessages((thread as ChatThreadRecord).id),
+        ]);
+        const authId = authUser?.id ?? "";
+        const mapped: ChatThread = {
+          ...mapThreadFromRemote(thread as ChatThreadRecord, authId, []),
+          messages: msgs.map((m) => mapMessageFromRemote(m, authId)),
+          unread: 0,
+        };
+        setRemoteThreads((prev) => {
+          const without = prev.filter((t) => t.id !== mapped.id);
+          return [mapped, ...without];
+        });
+        return (thread as ChatThreadRecord).id;
       }
       const threadId = `chat-${product.id}`;
 
@@ -1281,9 +1319,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
         return [newThread, ...prev];
       });
 
-      return threadId;
+     return threadId;
     },
-    [phase2Backend, refreshChats, setChats, language, remoteUser, session],
+    [phase2Backend, setChats, setRemoteThreads, language, remoteUser, session],
   );
 
   const sendChatMessage = useCallback(
@@ -1292,23 +1330,100 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
         // Detect "OFFER:amount" pseudo-syntax (used by ChatOverlay's
         // Make-Offer flow) and route to the offer message type.
         const offerMatch = /^OFFER:(\d+(?:\.\d+)?):/.exec(text);
-        if (offerMatch) {
-          const amount = Number.parseFloat(offerMatch[1]);
-          await phase2Backend.chats.sendMessage(threadId, {
-            type: "offer",
-            body: text,
-            imageUrl: null,
-            offerMinor: Math.round(amount * 100),
-          });
-        } else {
-          await phase2Backend.chats.sendMessage(threadId, {
-            type: "text",
-            body: text,
-            imageUrl: null,
-            offerMinor: null,
-          });
+        const now = new Date();
+        const timeStr = now.toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+
+        // Optimistic append: paint the user's message immediately so
+        // the sender doesn't wait on a Supabase round-trip. The temp id
+        // is replaced with the server-issued id once the network call
+        // resolves, and removed entirely if it fails.
+        const tempId = `local-${now.getTime()}`;
+        const userMsg: ChatMessage = {
+          id: tempId,
+          sender: "user",
+          text,
+          time: timeStr,
+        };
+        setRemoteThreads((prev) =>
+          prev.map((t) =>
+            t.id !== threadId
+              ? t
+              : {
+                  ...t,
+                  messages: [...t.messages, userMsg],
+                  lastMessage: text,
+                  lastMessageTime: timeStr,
+                },
+          ),
+        );
+
+        const sendInput = offerMatch
+          ? {
+              type: "offer" as const,
+              body: text,
+              imageUrl: null,
+              offerMinor: Math.round(
+                Number.parseFloat(offerMatch[1]) * 100,
+              ),
+            }
+          : {
+              type: "text" as const,
+              body: text,
+              imageUrl: null,
+              offerMinor: null,
+            };
+
+        try {
+          const realMsg = await phase2Backend.chats.sendMessage(
+            threadId,
+            sendInput,
+          );
+          if (
+            realMsg &&
+            typeof realMsg === "object" &&
+            typeof (realMsg as { id?: unknown }).id === "string"
+          ) {
+            const realId = (realMsg as { id: string }).id;
+            const realBody =
+              typeof (realMsg as { body?: unknown }).body === "string"
+                ? (realMsg as { body: string }).body
+                : text;
+            setRemoteThreads((prev) =>
+              prev.map((t) =>
+                t.id !== threadId
+                  ? t
+                  : {
+                      ...t,
+                      messages: t.messages.map((m) =>
+                        m.id === tempId
+                          ? {
+                              id: realId,
+                              sender: "user",
+                              text: realBody,
+                              time: timeStr,
+                            }
+                          : m,
+                      ),
+                    },
+              ),
+            );
+          }
+        } catch {
+          setRemoteThreads((prev) =>
+            prev.map((t) =>
+              t.id !== threadId
+                ? t
+                : {
+                    ...t,
+                    messages: t.messages.filter((m) => m.id !== tempId),
+                  },
+            ),
+          );
+          throw new Error("Failed to send chat message");
         }
-        await refreshChats();
         return;
       }
       const now = new Date();
@@ -1410,7 +1525,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
         });
       }, 1500);
     },
-    [phase2Backend, refreshChats, setChats, language],
+    [phase2Backend, setChats, setRemoteThreads, language],
   );
 
   const markChatRead = useCallback(
@@ -2354,6 +2469,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       updateQuantity,
       clearCart,
       chats: activeChats,
+      setActiveChats,
       sendChatMessage,
       createChatThread,
       markChatRead,
