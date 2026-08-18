@@ -191,7 +191,7 @@ select set_config(
 select lives_ok(
   $$insert into public.featured_listings (listing_id, curator_id, sort_order)
     values (
-      'aaaaaaaa-1111-4111-9111-111111111111',
+      'bbbbbbbb-2222-4222-9222-222222222222',
       'a3333333-3333-4333-9333-333333333333',
       1
     )$$,

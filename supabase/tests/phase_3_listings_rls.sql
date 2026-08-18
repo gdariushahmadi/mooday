@@ -1,7 +1,7 @@
 begin;
 
 create extension if not exists pgtap with schema extensions;
-select plan(9);
+select plan(11);
 
 insert into auth.users (
   instance_id, id, aud, role, email, encrypted_password,
@@ -48,6 +48,10 @@ insert into public.listings (
     '44444444-4444-4444-8444-444444444444',
     'B draft', 'ب مسودة', 8000, 'Good', 'جيد', 'Shoes', 'draft'
   );
+
+-- The "approved_at" column was introduced in migration 202607150008_phase_3_5_admin
+-- with a default applied. For a fresh test insert we need to set it to simulate an approved listing.
+update public.listings set approved_at = now() where status = 'active';
 
 insert into public.listing_images (
   listing_id, storage_path, sort_order

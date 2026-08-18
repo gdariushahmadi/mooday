@@ -25,16 +25,26 @@ alter table public.profiles
 -- flip these moderation fields on other users via the service-role
 -- client. The check `(is_admin OR id = auth.uid())` makes that explicit.
 drop policy if exists "profiles_update_own" on public.profiles;
+drop policy if exists "profiles_update_own_or_admin" on public.profiles;
 create policy "profiles_update_own_or_admin" on public.profiles
 for update to authenticated
 using (
   auth.uid() = id
-  or (select is_admin from public.profiles p where p.id = auth.uid())
+  or (select is_admin from public.profiles p where p.id = (select auth.uid()))
 )
 with check (
   auth.uid() = id
-  or (select is_admin from public.profiles p where p.id = auth.uid())
+  or (select is_admin from public.profiles p where p.id = (select auth.uid()))
 );
+
+-- Prevent non-admins from updating restricted columns by revoking
+-- table-level update and granting it only on safe columns.
+revoke update on table public.profiles from authenticated;
+grant update (
+  full_name_en, full_name_ar, handle, avatar_url,
+  bio_en, bio_ar, location_en, location_ar,
+  style_tags_en, style_tags_ar, preferred_language
+) on table public.profiles to authenticated;
 
 -- Listings gain `approved_at` so the moderation queue can distinguish
 -- "freshly listed, awaiting review" from "approved and visible". For
@@ -58,6 +68,21 @@ for select to anon, authenticated
 using (
   status = 'active' and approved_at is not null
   or (select auth.uid()) = seller_id
+);
+
+drop policy if exists "listing_media_select_visible" on storage.objects;
+create policy "listing_media_select_visible"
+on storage.objects for select to anon, authenticated
+using (
+  bucket_id = 'listing-media'
+  and exists (
+    select 1 from public.listings
+    where listings.id::text = (storage.foldername(name))[2]
+      and (
+        (listings.status = 'active' and listings.approved_at is not null)
+        or listings.seller_id = (select auth.uid())
+      )
+  )
 );
 
 -- ---------- audit log ----------

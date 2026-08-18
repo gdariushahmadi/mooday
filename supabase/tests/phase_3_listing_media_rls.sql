@@ -1,7 +1,7 @@
 begin;
 
 create extension if not exists pgtap with schema extensions;
-select plan(5);
+select plan(6);
 
 insert into auth.users (
   instance_id, id, aud, role, email, encrypted_password,
@@ -48,6 +48,8 @@ insert into public.listings (
     '66666666-6666-4666-8666-666666666666',
     'B draft', 'ب مسودة', 1000, 'Good', 'جيد', 'Bags', 'draft'
   );
+
+update public.listings set approved_at = now() where status = 'active';
 
 insert into storage.objects (bucket_id, name, owner_id) values
   (
