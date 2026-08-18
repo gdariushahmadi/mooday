@@ -6,4 +6,7 @@ export type AdminTab =
   | "disputes"
   | "reports"
   | "broadcast"
-  | "audit";
+  | "audit"
+  | "affiliate";
+
+export type AffiliateSubTab = "partners" | "links" | "reports";

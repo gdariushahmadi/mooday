@@ -88,6 +88,12 @@ export interface ListingRecord {
   mode: ListingMode;
   status: ListingStatus;
   isAuthentic: boolean;
+  /** Optional while legacy rows wait for the beta-launch migration. */
+  brandEn?: string | null;
+  brandAr?: string | null;
+  purchaseDate?: string | null;
+  usageCount?: number | null;
+  authenticityTier?: "verified" | "in_review" | "self_declared" | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -446,6 +452,17 @@ export interface ChatService {
     priceMinorAtCreation: number;
   }): Promise<ChatThreadRecord>;
   listMessages(threadId: string): Promise<ChatMessageRecord[]>;
+  /**
+   * Fetch messages for several threads in a single round-trip. Used by
+   * `refreshChats` to avoid the N+1 fan-out (one query per thread) that
+   * used to make opening the chat overlay feel sluggish once a user had
+   * a handful of conversations. Returns an empty array if `threadIds`
+   * is empty. Order within each thread is not guaranteed; callers that
+   * need chronological order should sort by `createdAt`.
+   */
+  listMessagesForThreads(
+    threadIds: string[],
+  ): Promise<ChatMessageRecord[]>;
   sendMessage(
     threadId: string,
     message: Pick<
@@ -670,4 +687,104 @@ export interface Phase2Backend {
   notifications: NotificationService;
   paymentMethods: PaymentMethodService;
   blocks: BlockService;
+  affiliateLinks: AffiliateLinkService;
+  affiliateClicks: AffiliateClickService;
+}
+
+// ---------------------------------------------------------------------------
+// Affiliate / outbound publisher monetization (Phase 5).
+// ---------------------------------------------------------------------------
+
+export interface PartnerRecord {
+  code: string;
+  name: string;
+  logoUrl: string | null;
+  baseUrlTemplate: string | null;
+  isActive: boolean;
+  displayOrder: number;
+  createdAt: string;
+}
+
+export interface AffiliateLinkRecord {
+  id: string;
+  shortId: string;
+  listingId: string;
+  partnerCode: string;
+  affiliateUrl: string;
+  displayOrder: number;
+  isActive: boolean;
+  createdAt: string;
+}
+
+export interface AffiliateClickRecord {
+  id: string;
+  shortId: string;
+  listingId: string;
+  partnerCode: string;
+  userId: string | null;
+  anonId: string | null;
+  clickedAt: string;
+}
+
+export interface AffiliateReportRange {
+  fromIso: string;
+  toIso: string;
+}
+
+export interface AffiliateReportSummary {
+  byPartner: { partnerCode: string; clicks: number }[];
+  byListing: { listingId: string; clicks: number }[];
+  totalClicks: number;
+}
+
+export interface AffiliateLinkService {
+  listPartners(): Promise<PartnerRecord[]>;
+  listLinksForListing(listingId: string): Promise<AffiliateLinkRecord[]>;
+  createPartner(input: {
+    code: string;
+    name: string;
+    logoUrl?: string;
+    baseUrlTemplate?: string;
+    displayOrder?: number;
+    isActive?: boolean;
+  }): Promise<PartnerRecord>;
+  updatePartner(
+    code: string,
+    patch: Partial<{
+      name: string;
+      logoUrl: string | null;
+      baseUrlTemplate: string | null;
+      displayOrder: number;
+      isActive: boolean;
+    }>,
+  ): Promise<void>;
+  deletePartner(code: string): Promise<void>;
+  createLink(input: {
+    listingId: string;
+    partnerCode: string;
+    affiliateUrl: string;
+    displayOrder?: number;
+  }): Promise<AffiliateLinkRecord>;
+  updateLink(
+    id: string,
+    patch: Partial<{
+      affiliateUrl: string;
+      displayOrder: number;
+      isActive: boolean;
+    }>,
+  ): Promise<void>;
+  removeLink(id: string): Promise<void>;
+}
+
+export interface AffiliateClickService {
+  recordClick(input: {
+    shortId: string;
+    listingId: string;
+    partnerCode: string;
+    userId: string | null;
+    anonId: string | null;
+    userAgent: string | null;
+    referer: string | null;
+  }): Promise<void>;
+  aggregateForReports(range: AffiliateReportRange): Promise<AffiliateReportSummary>;
 }

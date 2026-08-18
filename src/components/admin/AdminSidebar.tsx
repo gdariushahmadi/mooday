@@ -49,6 +49,7 @@ export function AdminSidebar({
     },
     { key: "broadcast", labelEn: "Broadcast", labelAr: "إرسال إشعار", icon: "campaign" },
     { key: "audit", labelEn: "Audit Log", labelAr: "سجل العمليات", icon: "history" },
+    { key: "affiliate", labelEn: "Affiliate Links", labelAr: "التسويق بالعمولة", icon: "ads_click" },
   ];
 
   return (

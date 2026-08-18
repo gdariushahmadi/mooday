@@ -414,6 +414,7 @@ export const ProductDetailsView: React.FC<ProductDetailsViewProps> = ({
                 </span>
               </div>
             </div>
+            <AffiliatePartnersCard listingId={product.id} />
           </div>
 
           {/* Size row (read-only — the listing is one size) */}
@@ -742,3 +743,4 @@ function SellerCard({
     </div>
   );
 }
+import { AffiliatePartnersCard } from "@/components/affiliate/AffiliatePartnersCard";

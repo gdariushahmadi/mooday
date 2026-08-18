@@ -52,6 +52,10 @@ import type {
   SellerCardUpsertInput,
   SellerReviewRecord,
   SellerReviewService,
+  AffiliateLinkService,
+  AffiliateClickService,
+  AffiliateReportRange,
+  AffiliateReportSummary,
   ListingImageRecord,
   ListingImageUpload,
   ListingMediaMime,
@@ -72,7 +76,7 @@ function toUser(user: User): AuthenticatedUser {
       (typeof user.user_metadata?.full_name === "string" &&
         user.user_metadata.full_name) ||
       user.email?.split("@")[0] ||
-      "Mooday user",
+      "DANEG user",
   };
 }
 
@@ -118,14 +122,18 @@ class SupabaseAuthService implements AuthService {
   ) {}
 
   private authCallbackUrl(): string {
-    // Always prefer the live window origin so PKCE / OAuth providers redirect
-    // back to whatever host the user actually opened the app on. Fall back to
-    // the build-time NEXT_PUBLIC_SITE_URL only when running server-side
-    // (no `window` available).
-    const baseUrl =
+    // Prefer the live window origin in the browser. If the live origin is a
+    // local host, fall back to NEXT_PUBLIC_SITE_URL so the OAuth redirect
+    // points to a host that is registered with Supabase / Google Cloud.
+    // Server-side (no `window`) always uses NEXT_PUBLIC_SITE_URL.
+    const liveOrigin =
       typeof window !== "undefined" && window.location.origin
         ? window.location.origin
-        : this.siteUrl;
+        : null;
+    const isLocal =
+      liveOrigin !== null &&
+      (liveOrigin.includes("localhost") || liveOrigin.includes("127.0.0.1"));
+    const baseUrl = liveOrigin && !isLocal ? liveOrigin : this.siteUrl;
     const url = `${baseUrl.replace(/\/+$/, "")}/auth/callback`;
     // Surface unexpected origins in the browser console so a misconfigured
     // Supabase / Google Cloud / hosting environment is visible during
@@ -291,6 +299,11 @@ class SupabaseProfileService implements ProfileService {
   }
 
   async updateMine(patch: Partial<ProfileRecord>): Promise<void> {
+    const { data: authData, error: authError } =
+      await this.client.auth.getUser();
+    if (authError || !authData?.user?.id) {
+      throw authError ?? new Error("Not signed in");
+    }
     const { error } = await this.client
       .from("profiles")
       .update({
@@ -317,7 +330,7 @@ class SupabaseProfileService implements ProfileService {
           style_tags_ar: patch.styleTagsAr,
         }),
       })
-      .not("id", "is", null);
+      .eq("id", authData.user.id);
     if (error) throw error;
   }
 }
@@ -450,6 +463,21 @@ function listingFromRow(row: Record<string, unknown>): ListingRecord {
     mode: row.mode as ListingRecord["mode"],
     status: row.status as ListingRecord["status"],
     isAuthentic: Boolean(row.is_authentic),
+    ...(row.brand_en !== null && row.brand_en !== undefined && {
+      brandEn: String(row.brand_en),
+    }),
+    ...(row.brand_ar !== null && row.brand_ar !== undefined && {
+      brandAr: String(row.brand_ar),
+    }),
+    ...(row.purchase_date !== null && row.purchase_date !== undefined && {
+      purchaseDate: String(row.purchase_date),
+    }),
+    ...(row.usage_count !== null && row.usage_count !== undefined && {
+      usageCount: Number(row.usage_count),
+    }),
+    ...(row.authenticity_tier !== null && row.authenticity_tier !== undefined && {
+      authenticityTier: row.authenticity_tier as ListingRecord["authenticityTier"],
+    }),
     createdAt: String(row.created_at),
     updatedAt: String(row.updated_at),
   };
@@ -479,6 +507,13 @@ function listingToRow(input: Partial<CreateListingInput>) {
     ...(input.mode !== undefined && { mode: input.mode }),
     ...(input.status !== undefined && { status: input.status }),
     ...(input.isAuthentic !== undefined && { is_authentic: input.isAuthentic }),
+    ...(input.brandEn !== undefined && { brand_en: input.brandEn }),
+    ...(input.brandAr !== undefined && { brand_ar: input.brandAr }),
+    ...(input.purchaseDate !== undefined && { purchase_date: input.purchaseDate }),
+    ...(input.usageCount !== undefined && { usage_count: input.usageCount }),
+    ...(input.authenticityTier !== undefined && {
+      authenticity_tier: input.authenticityTier,
+    }),
   };
 }
 
@@ -1581,6 +1616,23 @@ class SupabaseChatService implements ChatService {
     return (data ?? []).map(chatMessageFromRow);
   }
 
+  async listMessagesForThreads(
+    threadIds: string[],
+  ): Promise<ChatMessageRecord[]> {
+    if (threadIds.length === 0) return [];
+    // requireUserId is called so RLS is enforced; the actual auth check
+    // happens via Supabase's session and the chat_messages_select
+    // policy. Throwing here would otherwise fail the whole refresh.
+    await this.requireUserId();
+    const { data, error } = await this.client
+      .from("chat_messages")
+      .select("*")
+      .in("thread_id", threadIds)
+      .order("created_at", { ascending: true });
+    if (error) throw error;
+    return (data ?? []).map(chatMessageFromRow);
+  }
+
   async sendMessage(
     threadId: string,
     message: Pick<
@@ -2169,7 +2221,194 @@ class SupabaseBlockService implements BlockService {
   }
 }
 
+import {
+  toPartnerRecord,
+  toAffiliateLinkRecord,
+  type PartnerRow,
+  type AffiliateLinkRow,
+} from "./mappers-affiliate";
+
 let backend: Phase2Backend | null = null;
+
+class SupabaseAffiliateLinkService implements AffiliateLinkService {
+  constructor(private readonly client: SupabaseClient) {}
+
+  async listPartners() {
+    const { data, error } = await this.client
+      .from("partners")
+      .select("*")
+      .eq("is_active", true)
+      .order("display_order", { ascending: true });
+    if (error) throw error;
+    return (data ?? []).map((row) => toPartnerRecord(row as PartnerRow));
+  }
+
+  async listLinksForListing(listingId: string) {
+    const { data, error } = await this.client
+      .from("affiliate_links")
+      .select("*")
+      .eq("listing_id", listingId)
+      .eq("is_active", true)
+      .order("display_order", { ascending: true });
+    if (error) throw error;
+    return (data ?? []).map((row) => toAffiliateLinkRecord(row as AffiliateLinkRow));
+  }
+
+  async createPartner(input: {
+    code: string;
+    name: string;
+    logoUrl?: string;
+    baseUrlTemplate?: string;
+    displayOrder?: number;
+    isActive?: boolean;
+  }) {
+    const { data, error } = await this.client
+      .from("partners")
+      .insert({
+        code: input.code,
+        name: input.name,
+        logo_url: input.logoUrl ?? null,
+        base_url_template: input.baseUrlTemplate ?? null,
+        display_order: input.displayOrder ?? 0,
+        is_active: input.isActive ?? true,
+      })
+      .select("*")
+      .single();
+    if (error) throw error;
+    return toPartnerRecord(data as PartnerRow);
+  }
+
+  async updatePartner(
+    code: string,
+    patch: Partial<{
+      name: string;
+      logoUrl: string | null;
+      baseUrlTemplate: string | null;
+      displayOrder: number;
+      isActive: boolean;
+    }>,
+  ) {
+    const update: Record<string, unknown> = {};
+    if (patch.name !== undefined) update.name = patch.name;
+    if (patch.logoUrl !== undefined) update.logo_url = patch.logoUrl;
+    if (patch.baseUrlTemplate !== undefined)
+      update.base_url_template = patch.baseUrlTemplate;
+    if (patch.displayOrder !== undefined) update.display_order = patch.displayOrder;
+    if (patch.isActive !== undefined) update.is_active = patch.isActive;
+    if (Object.keys(update).length === 0) return;
+    const { error } = await this.client
+      .from("partners")
+      .update(update)
+      .eq("code", code);
+    if (error) throw error;
+  }
+
+  async deletePartner(code: string) {
+    const { error } = await this.client.from("partners").delete().eq("code", code);
+    if (error) throw error;
+  }
+
+  async createLink(input: {
+    listingId: string;
+    partnerCode: string;
+    affiliateUrl: string;
+    displayOrder?: number;
+  }) {
+    const { data, error } = await this.client
+      .from("affiliate_links")
+      .insert({
+        listing_id: input.listingId,
+        partner_code: input.partnerCode,
+        affiliate_url: input.affiliateUrl,
+        display_order: input.displayOrder ?? 0,
+        is_active: true,
+      })
+      .select("*")
+      .single();
+    if (error) throw error;
+    return toAffiliateLinkRecord(data as AffiliateLinkRow);
+  }
+
+  async updateLink(
+    id: string,
+    patch: Partial<{
+      affiliateUrl: string;
+      displayOrder: number;
+      isActive: boolean;
+    }>,
+  ) {
+    const update: Record<string, unknown> = {};
+    if (patch.affiliateUrl !== undefined) update.affiliate_url = patch.affiliateUrl;
+    if (patch.displayOrder !== undefined) update.display_order = patch.displayOrder;
+    if (patch.isActive !== undefined) update.is_active = patch.isActive;
+    if (Object.keys(update).length === 0) return;
+    const { error } = await this.client
+      .from("affiliate_links")
+      .update(update)
+      .eq("id", id);
+    if (error) throw error;
+  }
+
+  async removeLink(id: string) {
+    const { error } = await this.client
+      .from("affiliate_links")
+      .delete()
+      .eq("id", id);
+    if (error) throw error;
+  }
+}
+
+class SupabaseAffiliateClickService implements AffiliateClickService {
+  constructor(private readonly client: SupabaseClient) {}
+
+  async recordClick(input: {
+    shortId: string;
+    listingId: string;
+    partnerCode: string;
+    userId: string | null;
+    anonId: string | null;
+    userAgent: string | null;
+    referer: string | null;
+  }) {
+    const { error } = await this.client.from("affiliate_clicks").insert({
+      short_id: input.shortId,
+      listing_id: input.listingId,
+      partner_code: input.partnerCode,
+      user_id: input.userId,
+      anon_id: input.anonId,
+      user_agent: input.userAgent,
+      referer: input.referer,
+    });
+    if (error) throw error;
+  }
+
+  async aggregateForReports(range: AffiliateReportRange): Promise<AffiliateReportSummary> {
+    const { data, error } = await this.client
+      .from("affiliate_clicks")
+      .select("partner_code, listing_id")
+      .gte("clicked_at", range.fromIso)
+      .lte("clicked_at", range.toIso);
+    if (error) throw error;
+    const rows = data ?? [];
+    const byPartnerMap = new Map<string, number>();
+    const byListingMap = new Map<string, number>();
+    for (const r of rows) {
+      const row = r as { partner_code: string; listing_id: string };
+      byPartnerMap.set(row.partner_code, (byPartnerMap.get(row.partner_code) ?? 0) + 1);
+      byListingMap.set(row.listing_id, (byListingMap.get(row.listing_id) ?? 0) + 1);
+    }
+    return {
+      byPartner: Array.from(byPartnerMap.entries())
+        .map(([partnerCode, clicks]) => ({ partnerCode, clicks }))
+        .sort((a, b) => b.clicks - a.clicks),
+      byListing: Array.from(byListingMap.entries())
+        .map(([listingId, clicks]) => ({ listingId, clicks }))
+        .sort((a, b) => b.clicks - a.clicks)
+        .slice(0, 10),
+      totalClicks: rows.length,
+    };
+  }
+}
 
 
 export function createSupabaseBackend(config: BackendConfig): Phase2Backend {
@@ -2202,6 +2441,8 @@ export function createSupabaseBackend(config: BackendConfig): Phase2Backend {
     notifications: new SupabaseNotificationService(client),
     paymentMethods: new SupabasePaymentMethodService(client),
     blocks: new SupabaseBlockService(client),
+    affiliateLinks: new SupabaseAffiliateLinkService(client),
+    affiliateClicks: new SupabaseAffiliateClickService(client),
   };
   return backend;
 }
