@@ -12,7 +12,6 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import { useApp } from "@/context/AppContext";
-import { MOCK_OTP_CODE } from "@/data/users";
 
 interface OtpViewProps {
   /** Pre-filled email (carried over from the sign-up form, optional). */
@@ -169,15 +168,6 @@ export const OtpView: React.FC<OtpViewProps> = ({
       <div className="text-center px-md flex flex-col gap-xs">
         <p className="text-body-md text-on-surface-variant">
           {t.sub}
-          {authMode !== "supabase" && (
-            <>
-              {" "}
-              <span className="font-mono font-bold text-primary">
-                {MOCK_TP_DISPLAY}
-              </span>{" "}
-              {t.hintSuffix}
-            </>
-          )}
         </p>
         {email && (
           <p className="text-label-sm text-on-surface">
@@ -252,7 +242,3 @@ export const OtpView: React.FC<OtpViewProps> = ({
     </div>
   );
 };
-
-// Make the universal code visible to QA + reviewers in the helper text.
-// Phase 2 will replace this helper with a real "check your inbox" message.
-const MOCK_TP_DISPLAY = MOCK_OTP_CODE;

@@ -12,6 +12,7 @@
     "start:standalone": "node .next/standalone/server.js",
     "deploy:cpanel": "bash scripts/build-standalone.sh",
     "seed:demo": "node scripts/seed-demo-catalog.mjs",
+    "seed:affiliate": "node scripts/seed-affiliate.mjs",
     "lint": "eslint",
     "test": "vitest",
     "test:ci": "vitest run",
@@ -21,15 +22,18 @@
     "test:phase2:db": "npx supabase@2.109.1 test db",
     "test:phase2:smoke": "node scripts/phase2-auth-smoke.mjs",
     "test:phase2:e2e": "playwright test",
-    "test:phase2": "npm run test:phase2:db && npm run test:phase2:smoke && npm run test:phase2:e2e",
+    "test:phase2:u3u8": "node scripts/u3-u8-smoke.mjs",
+    "test:phase2": "npm run test:phase2:db && npm run test:phase2:smoke && npm run test:phase2:u3u8 && npm run test:phase2:e2e",
     "typecheck": "tsc --noEmit",
     "verify": "npm run typecheck && npm run lint && npm run test:ci && npm run build"
   },
   "dependencies": {
+    "@sentry/nextjs": "^10.70.0",
     "@supabase/supabase-js": "^2.110.5",
     "next": "16.2.9",
     "react": "19.2.4",
-    "react-dom": "19.2.4"
+    "react-dom": "19.2.4",
+    "stripe": "^22.5.0"
   },
   "devDependencies": {
     "@playwright/test": "^1.61.1",

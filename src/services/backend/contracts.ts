@@ -88,6 +88,12 @@ export interface ListingRecord {
   mode: ListingMode;
   status: ListingStatus;
   isAuthentic: boolean;
+  /** Optional while legacy rows wait for the beta-launch migration. */
+  brandEn?: string | null;
+  brandAr?: string | null;
+  purchaseDate?: string | null;
+  usageCount?: number | null;
+  authenticityTier?: "verified" | "in_review" | "self_declared" | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -100,6 +106,22 @@ export type CreateListingInput = Omit<
 export interface ListingService {
   listVisible(): Promise<ListingRecord[]>;
   listMine(): Promise<ListingRecord[]>;
+  /** Full-text search across title_en, title_ar, description_en, description_ar.
+   * Filters: { category?: string, price_min?: number, price_max?: number,
+   *   status?: 'draft' | 'active' | 'reserved' | 'sold' | 'archived',
+   *   limit?: number, offset?: number }.
+   * Empty query returns recent listings (filters still apply). */
+  search(
+    query: string,
+    filters?: {
+      category?: string;
+      priceMin?: number;
+      priceMax?: number;
+      status?: string;
+      limit?: number;
+      offset?: number;
+    },
+  ): Promise<ListingRecord[]>;
   /** Bulk lookup keyed by listingId. Unknown ids return records from the
    * `active` set only — drafts/archived/sold are filtered out so callers
    * stay safe to render without re-validating per row. */
@@ -242,6 +264,17 @@ export interface LikeService {
   toggle(listingId: string): Promise<{ liked: boolean }>;
 }
 
+export interface FollowService {
+  /** User ids the current user is following. */
+  listFollowingIds(): Promise<string[]>;
+  /** User ids following the given user. */
+  listFollowerIds(userId: string): Promise<string[]>;
+  follow(userId: string): Promise<void>;
+  unfollow(userId: string): Promise<void>;
+  isFollowing(userId: string): Promise<boolean>;
+  toggle(userId: string): Promise<{ following: boolean }>;
+}
+
 /**
  * A single cart line as stored remotely. The UI rehydrates the related
  * `Product` from `listings` on read, so only identifiers and quantity
@@ -357,6 +390,15 @@ export interface OrderService {
   markDelivered(orderId: string): Promise<void>;
   cancel(orderId: string): Promise<void>;
   requestReturn(orderId: string): Promise<void>;
+  /**
+   * Create a Stripe PaymentIntent for the order. The client uses the
+   * returned `clientSecret` to confirm payment via Stripe.js. The
+   * webhook (`/api/stripe/webhook`) is the source of truth for moving
+   * the order to `paid`; this method only initiates the payment.
+   */
+  createPaymentIntent(
+    orderId: string,
+  ): Promise<{ clientSecret: string; paymentIntentId: string }>;
 }
 
 // ---------- slice 6: chat / offers / reviews / reports / disputes /
@@ -410,6 +452,17 @@ export interface ChatService {
     priceMinorAtCreation: number;
   }): Promise<ChatThreadRecord>;
   listMessages(threadId: string): Promise<ChatMessageRecord[]>;
+  /**
+   * Fetch messages for several threads in a single round-trip. Used by
+   * `refreshChats` to avoid the N+1 fan-out (one query per thread) that
+   * used to make opening the chat overlay feel sluggish once a user had
+   * a handful of conversations. Returns an empty array if `threadIds`
+   * is empty. Order within each thread is not guaranteed; callers that
+   * need chronological order should sort by `createdAt`.
+   */
+  listMessagesForThreads(
+    threadIds: string[],
+  ): Promise<ChatMessageRecord[]>;
   sendMessage(
     threadId: string,
     message: Pick<
@@ -422,6 +475,16 @@ export interface ChatService {
     messageId: string,
     status: "accepted" | "declined",
   ): Promise<void>;
+  /**
+   * Subscribe to new messages on a thread via Supabase Realtime.
+   * Returns an unsubscribe function. The listener is called with the
+   * new ChatMessageRecord whenever a row is added to chat_messages for
+   * this thread. RLS ensures only thread participants can subscribe.
+   */
+  subscribeMessages(
+    threadId: string,
+    listener: (message: ChatMessageRecord) => void,
+  ): () => void;
 }
 
 export interface SellerReviewRecord {
@@ -538,6 +601,14 @@ export interface NotificationService {
   markRead(id: string): Promise<void>;
 
   markAllRead(): Promise<void>;
+  /**
+   * Subscribe to new notifications for the current user via Supabase
+   * Realtime. The listener is called with each new NotificationRecord.
+   * Returns an unsubscribe function.
+   */
+  subscribe(
+    listener: (notification: NotificationRecord) => void,
+  ): () => void;
 }
 
 // ---------- M4: payment methods ----------
@@ -607,6 +678,7 @@ export interface Phase2Backend {
   sellerCards: SellerCardService;
   likes: LikeService;
   cart: CartService;
+  follows: FollowService;
   orders: OrderService;
   chats: ChatService;
   reviews: SellerReviewService;
@@ -615,4 +687,104 @@ export interface Phase2Backend {
   notifications: NotificationService;
   paymentMethods: PaymentMethodService;
   blocks: BlockService;
+  affiliateLinks: AffiliateLinkService;
+  affiliateClicks: AffiliateClickService;
+}
+
+// ---------------------------------------------------------------------------
+// Affiliate / outbound publisher monetization (Phase 5).
+// ---------------------------------------------------------------------------
+
+export interface PartnerRecord {
+  code: string;
+  name: string;
+  logoUrl: string | null;
+  baseUrlTemplate: string | null;
+  isActive: boolean;
+  displayOrder: number;
+  createdAt: string;
+}
+
+export interface AffiliateLinkRecord {
+  id: string;
+  shortId: string;
+  listingId: string;
+  partnerCode: string;
+  affiliateUrl: string;
+  displayOrder: number;
+  isActive: boolean;
+  createdAt: string;
+}
+
+export interface AffiliateClickRecord {
+  id: string;
+  shortId: string;
+  listingId: string;
+  partnerCode: string;
+  userId: string | null;
+  anonId: string | null;
+  clickedAt: string;
+}
+
+export interface AffiliateReportRange {
+  fromIso: string;
+  toIso: string;
+}
+
+export interface AffiliateReportSummary {
+  byPartner: { partnerCode: string; clicks: number }[];
+  byListing: { listingId: string; clicks: number }[];
+  totalClicks: number;
+}
+
+export interface AffiliateLinkService {
+  listPartners(): Promise<PartnerRecord[]>;
+  listLinksForListing(listingId: string): Promise<AffiliateLinkRecord[]>;
+  createPartner(input: {
+    code: string;
+    name: string;
+    logoUrl?: string;
+    baseUrlTemplate?: string;
+    displayOrder?: number;
+    isActive?: boolean;
+  }): Promise<PartnerRecord>;
+  updatePartner(
+    code: string,
+    patch: Partial<{
+      name: string;
+      logoUrl: string | null;
+      baseUrlTemplate: string | null;
+      displayOrder: number;
+      isActive: boolean;
+    }>,
+  ): Promise<void>;
+  deletePartner(code: string): Promise<void>;
+  createLink(input: {
+    listingId: string;
+    partnerCode: string;
+    affiliateUrl: string;
+    displayOrder?: number;
+  }): Promise<AffiliateLinkRecord>;
+  updateLink(
+    id: string,
+    patch: Partial<{
+      affiliateUrl: string;
+      displayOrder: number;
+      isActive: boolean;
+    }>,
+  ): Promise<void>;
+  removeLink(id: string): Promise<void>;
+}
+
+export interface AffiliateClickService {
+  recordClick(input: {
+    shortId: string;
+    listingId: string;
+    partnerCode: string;
+    userId: string | null;
+    anonId: string | null;
+    userAgent: string | null;
+    referer: string | null;
+  }): Promise<void>;
+  aggregateForReports(range: AffiliateReportRange): Promise<AffiliateReportSummary>;
 }

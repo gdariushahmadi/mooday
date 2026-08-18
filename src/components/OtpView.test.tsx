@@ -3,7 +3,8 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { AppContext, type AppContextType } from "@/context/AppContext";
 import { OtpView } from "@/components/OtpView";
-import { MOCK_OTP_CODE } from "@/data/users";
+
+const TEST_OTP_CODE = "123456";
 
 function makeContext(overrides: Partial<AppContextType> = {}): AppContextType {
   return {
@@ -125,8 +126,6 @@ describe("OtpView (A-03)", () => {
     expect(
       screen.getByRole("heading", { name: /enter the code/i }),
     ).toBeInTheDocument();
-    // Universal mock code is shown in the helper hint.
-    expect(screen.getByText(MOCK_OTP_CODE)).toBeInTheDocument();
   });
 
   it("renders Arabic copy when language=ar", () => {
@@ -151,9 +150,9 @@ describe("OtpView (A-03)", () => {
   it("calls verifyOtp and onSuccess when the universal code is entered", async () => {
     const user = userEvent.setup();
     const { ctx, onSuccess } = renderOtp();
-    await typeCode(user, MOCK_OTP_CODE);
+    await typeCode(user, TEST_OTP_CODE);
     await user.click(screen.getByRole("button", { name: /^verify$/i }));
-    expect(ctx.verifyOtp).toHaveBeenCalledWith("", MOCK_OTP_CODE);
+    expect(ctx.verifyOtp).toHaveBeenCalledWith("", TEST_OTP_CODE);
     expect(onSuccess).toHaveBeenCalledTimes(1);
   });
 

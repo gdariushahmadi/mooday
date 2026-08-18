@@ -3,6 +3,7 @@ import { Hanken_Grotesk, Bodoni_Moda, Noto_Sans_Arabic, El_Messiri } from "next/
 import { AppProvider } from "@/context/AppContext";
 import { ServiceWorkerRegistrar } from "@/components/ServiceWorkerRegistrar";
 import { ThemeSync } from "@/components/ThemeSync";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import "./globals.css";
 
 const hankenGrotesk = Hanken_Grotesk({
@@ -112,8 +113,10 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col">
         <ThemeSync />
         <AppProvider>
-          <ServiceWorkerRegistrar />
-          {children}
+          <ErrorBoundary>
+            <ServiceWorkerRegistrar />
+            {children}
+          </ErrorBoundary>
         </AppProvider>
       </body>
     </html>

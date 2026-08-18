@@ -417,7 +417,10 @@ export default function AdminPage() {
             )}
 
             {activeTab === "audit" && (
-              <AdminAuditLogTab logs={auditLogs} lang={lang} />
+             <AdminAuditLogTab logs={auditLogs} lang={lang} />
+           )}
+            {activeTab === "affiliate" && (
+              <AffiliateTab />
             )}
           </>
         )}
@@ -426,3 +429,4 @@ export default function AdminPage() {
     </div>
   );
 }
+import { AffiliateTab } from "@/components/admin/affiliate/AffiliateTab";
