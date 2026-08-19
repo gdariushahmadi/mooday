@@ -31,22 +31,8 @@ interface ChatCopy {
   notFound: string;
   notFoundBack: string;
   attachImage: string;
-  voiceNote: string;
   attachmentUnavailable: string;
-  makeOffer: string;
-  offerAmount: string;
-  offerPlaceholder: string;
-  offerSend: string;
-  offerCancel: string;
-  offerCard: (amount: number) => string;
-  offerAccepted: string;
-  offerDeclined: string;
-  offerPending: string;
-  offerAcceptedAr: string;
-  offerDeclinedAr: string;
-  offerPendingAr: string;
   imageAttached: string;
-  voiceAttached: string;
   quickReply1: string;
   quickReply2: string;
   quickReply3: string;
@@ -62,22 +48,8 @@ const COPY: Record<"en" | "ar", ChatCopy> = {
     notFound: "Chat not found.",
     notFoundBack: "Back",
     attachImage: "Attach image",
-    voiceNote: "Voice note",
     attachmentUnavailable: "Available after media upload is connected",
-    makeOffer: "Make Offer",
-    offerAmount: "Your offer (AED)",
-    offerPlaceholder: "Enter amount",
-    offerSend: "Send offer",
-    offerCancel: "Cancel",
-    offerCard: (amount) => `Offer: ${formatAEDLabel(amount)}`,
-    offerAccepted: "Accepted",
-    offerDeclined: "Declined",
-    offerPending: "Pending",
-    offerAcceptedAr: "مقبول",
-    offerDeclinedAr: "مرفوض",
-    offerPendingAr: "قيد الانتظار",
     imageAttached: "📷 Photo",
-    voiceAttached: "🎙 Voice note",
     quickReply1: "Is this still available?",
     quickReply2: "Can you share more photos?",
     quickReply3: "What's your best price?",
@@ -91,44 +63,19 @@ const COPY: Record<"en" | "ar", ChatCopy> = {
     notFound: "المحادثة غير موجودة.",
     notFoundBack: "رجوع",
     attachImage: "إرفاق صورة",
-    voiceNote: "رسالة صوتية",
     attachmentUnavailable: "يتوفر بعد ربط رفع الوسائط",
-    makeOffer: "إرسال عرض",
-    offerAmount: "عرضك (AED)",
-    offerPlaceholder: "أدخلي المبلغ",
-    offerSend: "إرسال العرض",
-    offerCancel: "إلغاء",
-    offerCard: (amount) => `عرض: ${formatAEDLabel(amount)}`,
-    offerAccepted: "مقبول",
-    offerDeclined: "مرفوض",
-    offerPending: "قيد الانتظار",
-    offerAcceptedAr: "مقبول",
-    offerDeclinedAr: "مرفوض",
-    offerPendingAr: "قيد الانتظار",
     imageAttached: "📷 صورة",
-    voiceAttached: "🎙 رسالة صوتية",
     quickReply1: "هل لا يزال متوفراً؟",
     quickReply2: "هل يمكنك مشاركة المزيد من الصور؟",
     quickReply3: "ما هو أفضل سعر؟",
   },
 };
 
-type OfferStatus = "pending" | "accepted" | "declined";
-
-interface OfferMessage {
-  amount: number;
-  status: OfferStatus;
-}
-
 /**
  * F-29 — Chat Thread (enhanced).
  *
  * Adds over the previous version:
  *  - **Image attachment** button (Phase 1: inserts a "📷 Photo" stub message).
- *  - **Voice note** button (Phase 1: inserts a "🎙 Voice note" stub).
- *  - **Make an Offer** (F-30): a special card message with the offer
- *    amount + status pill (Pending → Accepted/Declined). Phase 1
- *    auto-accepts offers after 2 seconds to simulate seller response.
  *  - **Quick replies**: three chips above the input for common questions.
  *
  * Read receipts and real-time updates arrive with Phase 3.
@@ -146,17 +93,6 @@ export const ChatOverlay: React.FC<ChatOverlayProps> = ({
 
 
   const [inputText, setInputText] = useState("");
-  const [showOfferForm, setShowOfferForm] = useState(false);
-  const [offerAmount, setOfferAmount] = useState("");
-  const [offers, setOffers] = useState<Record<string, OfferMessage>>(() => {
-    try {
-      return JSON.parse(
-        localStorage.getItem(`mooday_chat_offers_${threadId}`) ?? "{}",
-      );
-    } catch {
-      return {};
-    }
-  });
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const thread = chats.find((c) => c.id === threadId);
@@ -175,14 +111,7 @@ export const ChatOverlay: React.FC<ChatOverlayProps> = ({
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [thread?.messages, offers]);
-
-  useEffect(() => {
-    localStorage.setItem(
-      `mooday_chat_offers_${threadId}`,
-      JSON.stringify(offers),
-    );
-  }, [offers, threadId]);
+  }, [thread?.messages]);
 
   if (!thread) {
     return (
@@ -209,55 +138,8 @@ export const ChatOverlay: React.FC<ChatOverlayProps> = ({
     sendChatMessage(threadId, text);
   };
 
-  const handleSendOffer = () => {
-    const amount = parseFloat(offerAmount);
-    if (!amount || amount <= 0) return;
-    const msgId = `offer-${Date.now()}`;
-    setOffers((prev) => ({ ...prev, [msgId]: { amount, status: "pending" } }));
-    sendChatMessage(threadId, `${isAr ? "عرض" : "OFFER"}:${amount}:${msgId}`);
-    setOfferAmount("");
-    setShowOfferForm(false);
-
-    // Simulate seller response after 2s (Phase 1 mock).
-    setTimeout(() => {
-      setOffers((prev) => {
-        const offer = prev[msgId];
-        if (!offer) return prev;
-        // Auto-accept if the offer is >= 80% of list price.
-        const shouldAccept = amount >= thread.productPrice * 0.8;
-        return {
-          ...prev,
-          [msgId]: {
-            ...offer,
-            status: shouldAccept ? "accepted" : "declined",
-          },
-        };
-      });
-    }, 2000);
-  };
-
-  // Parse messages to detect offer messages (format: "OFFER:amount:msgId").
   const renderMessage = (msg: (typeof thread.messages)[number]) => {
     const isUser = msg.sender === "user";
-    const offerMatch = msg.text.match(/^(?:عرض|OFFER):(\d+(?:\.\d+)?):(.+)$/);
-    if (offerMatch) {
-      const [, amountStr, msgId] = offerMatch;
-      const amount = parseFloat(amountStr);
-      const offer = offers[msgId] ?? {
-        amount,
-        status: "pending" as OfferStatus,
-      };
-      return (
-        <OfferCard
-          key={msg.id}
-          amount={offer.amount}
-          status={offer.status}
-          isUser={isUser}
-          isAr={isAr}
-          t={t}
-        />
-      );
-    }
     return (
       <div
         key={msg.id}
@@ -415,46 +297,6 @@ export const ChatOverlay: React.FC<ChatOverlayProps> = ({
         </div>
       )}
 
-      {/* Offer form */}
-      {showOfferForm && (
-        <div className="bg-surface-container-low border-t border-surface-container-high p-md flex flex-col gap-sm">
-          <div className="flex items-center justify-between">
-            <span className="text-label-sm font-bold text-primary uppercase tracking-wider">
-              {t.makeOffer}
-            </span>
-            <span className="text-[11px] text-outline">
-              {formatAEDLabel(thread.productPrice)}
-            </span>
-          </div>
-          <div className="flex gap-sm">
-            <input
-              type="number"
-              inputMode="numeric"
-              placeholder={t.offerPlaceholder}
-              value={offerAmount}
-              onChange={(e) => setOfferAmount(e.target.value)}
-              className="flex-grow p-md bg-surface border border-outline-variant rounded-full text-body-md focus:border-primary outline-none"
-              autoFocus
-            />
-            <button
-              type="button"
-              onClick={handleSendOffer}
-              disabled={!offerAmount || parseFloat(offerAmount) <= 0}
-              className="btn-primary px-4 py-md rounded-full text-label-sm font-bold uppercase tracking-wider active:scale-95 transition-transform disabled:opacity-50"
-            >
-              {t.offerSend}
-            </button>
-            <button
-              type="button"
-              onClick={() => setShowOfferForm(false)}
-              className="px-3 py-md rounded-full border border-outline-variant text-on-surface-variant text-label-sm font-bold uppercase tracking-wider active:scale-95 transition-transform"
-            >
-              {t.offerCancel}
-            </button>
-          </div>
-        </div>
-      )}
-
       {/* Input bar */}
       <footer className="bg-surface border-t border-surface-container-high p-md">
         <form onSubmit={handleSend} className="flex gap-sm items-center">
@@ -471,39 +313,6 @@ export const ChatOverlay: React.FC<ChatOverlayProps> = ({
               aria-hidden="true"
             >
               photo_camera
-            </span>
-          </button>
-          {/* Make offer */}
-          <button
-            type="button"
-            onClick={() => setShowOfferForm((v) => !v)}
-            aria-label={t.makeOffer}
-            className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors flex-shrink-0 ${
-              showOfferForm
-                ? "bg-primary text-on-primary"
-                : "bg-surface-container-low text-on-surface-variant hover:text-primary"
-            }`}
-          >
-            <span
-              className="material-symbols-outlined text-[20px] no-mirror"
-              aria-hidden="true"
-            >
-              local_offer
-            </span>
-          </button>
-          {/* Voice note — Phase 1 stub inserts a voice message */}
-          <button
-            type="button"
-            aria-label={t.voiceNote}
-            title={t.voiceNote}
-            onClick={() => sendChatMessage(threadId, t.voiceAttached)}
-            className="w-10 h-10 rounded-full bg-surface-container-low flex items-center justify-center text-on-surface-variant hover:text-primary transition-colors flex-shrink-0 active:scale-95"
-          >
-            <span
-              className="material-symbols-outlined text-[20px] no-mirror"
-              aria-hidden="true"
-            >
-              mic
             </span>
           </button>
           {/* Text input */}
@@ -538,65 +347,3 @@ export const ChatOverlay: React.FC<ChatOverlayProps> = ({
   );
 };
 
-// ---------- Offer card (F-30) ----------
-
-const OfferCard: React.FC<{
-  amount: number;
-  status: OfferStatus;
-  isUser: boolean;
-  isAr: boolean;
-  t: ChatCopy;
-}> = ({ amount, status, isUser, isAr, t }) => {
-  const statusText =
-    status === "accepted"
-      ? isAr
-        ? t.offerAcceptedAr
-        : t.offerAccepted
-      : status === "declined"
-        ? isAr
-          ? t.offerDeclinedAr
-          : t.offerDeclined
-        : isAr
-          ? t.offerPendingAr
-          : t.offerPending;
-
-  const statusColor =
-    status === "accepted"
-      ? "bg-emerald-100 text-emerald-900"
-      : status === "declined"
-        ? "bg-red-100 text-red-900"
-        : "bg-amber-100 text-amber-900";
-
-  return (
-    <div
-      className={`flex flex-col max-w-[75%] ${
-        isUser ? "self-end items-end" : "self-start items-start"
-      }`}
-    >
-      <div
-        className={`p-md rounded-2xl border-2 ${
-          isUser
-            ? "bg-primary/5 border-primary rounded-br-none"
-            : "bg-surface-container-high border-surface-container-high rounded-bl-none"
-        }`}
-      >
-        <div className="flex items-center gap-sm">
-          <span
-            className="material-symbols-outlined text-[20px] text-primary no-mirror"
-            aria-hidden="true"
-          >
-            local_offer
-          </span>
-          <span className="font-serif text-headline-sm text-primary font-bold">
-            {formatAEDLabel(amount)}
-          </span>
-        </div>
-        <span
-          className={`inline-block mt-1 text-[10px] uppercase tracking-wider font-bold px-2 py-0.5 rounded-full ${statusColor}`}
-        >
-          {statusText}
-        </span>
-      </div>
-    </div>
-  );
-};

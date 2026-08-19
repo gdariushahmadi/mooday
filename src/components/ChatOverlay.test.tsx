@@ -36,6 +36,7 @@ function makeContext(overrides: Partial<AppContextType> = {}): AppContextType {
     updateQuantity: vi.fn(),
     clearCart: vi.fn(),
     chats: [THREAD],
+    setActiveChats: vi.fn(),
     sendChatMessage: vi.fn(),
     createChatThread: vi.fn(() => "t1"),
     markChatRead: vi.fn(),
@@ -142,19 +143,7 @@ describe("ChatOverlay (F-29/F-30)", () => {
     ).toBeInTheDocument();
   });
 
-  it("renders the voice note button", () => {
-    renderChat();
-    expect(
-      screen.getByRole("button", { name: /Voice note/i }),
-    ).toBeInTheDocument();
-  });
 
-  it("renders the Make Offer button", () => {
-    renderChat();
-    expect(
-      screen.getByRole("button", { name: /Make Offer/i }),
-    ).toBeInTheDocument();
-  });
 
   it("renders quick reply chips when the thread is short", () => {
     renderChat();
@@ -170,27 +159,7 @@ describe("ChatOverlay (F-29/F-30)", () => {
     expect(ctx.sendChatMessage).toHaveBeenCalledWith("t1", "Hello!");
   });
 
-  it("Make Offer form opens on tap and has amount + send fields", async () => {
-    const user = userEvent.setup();
-    renderChat();
-    await user.click(screen.getByRole("button", { name: /Make Offer/i }));
-    expect(screen.getByPlaceholderText(/Enter amount/i)).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: /Send offer/i }),
-    ).toBeInTheDocument();
-  });
 
-  it("submitting an offer calls sendChatMessage with the OFFER: format", async () => {
-    const user = userEvent.setup();
-    const { ctx } = renderChat();
-    await user.click(screen.getByRole("button", { name: /Make Offer/i }));
-    await user.type(screen.getByPlaceholderText(/Enter amount/i), "900");
-    await user.click(screen.getByRole("button", { name: /Send offer/i }));
-    expect(ctx.sendChatMessage).toHaveBeenCalledWith(
-      "t1",
-      expect.stringMatching(/^OFFER:900:/),
-    );
-  });
 
   it("inserts a Phase 1 photo stub message when Attach image is clicked", async () => {
     const user = userEvent.setup();
@@ -201,14 +170,6 @@ describe("ChatOverlay (F-29/F-30)", () => {
     expect(ctx.sendChatMessage).toHaveBeenCalledWith("t1", "📷 Photo");
   });
 
-  it("inserts a Phase 1 voice stub message when Voice note is clicked", async () => {
-    const user = userEvent.setup();
-    const { ctx } = renderChat();
-    const button = screen.getByRole("button", { name: /Voice note/i });
-    expect(button).toBeEnabled();
-    await user.click(button);
-    expect(ctx.sendChatMessage).toHaveBeenCalledWith("t1", "🎙 Voice note");
-  });
 
   it("shows 'Chat not found' for an unknown thread id", () => {
     render(
