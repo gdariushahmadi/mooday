@@ -37,6 +37,8 @@ export function mapThreadFromRemote(
     productTitle: record.listingTitleEn,
     productImage: record.listingImageUrl,
     productPrice: record.priceMinorAtCreation / 100,
+    sellerId: record.sellerId,
+    productId: record.listingId ?? undefined,
     lastMessage: record.lastMessageBody ?? "",
     lastMessageTime: record.lastMessageAt ?? record.createdAt,
     unread: 0, // computed by caller from lastReadAt map

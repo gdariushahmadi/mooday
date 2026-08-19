@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useApp, type Product, type ChatThread } from "@/context/AppContext";
 import {
   type TabId,
@@ -603,6 +603,18 @@ export function useChatNav(
   currentUserId: string | null | undefined,
   listings: Product[],
   /**
+   * Save the Product page the user was on when opening chat, so the
+   * back button can restore it instead of dropping the user to the
+   * home feed. Called once per chat open.
+   */
+  /**
+   * Mutable ref tracking the Product the user was viewing when chat
+   * was opened. Owned by useAppNavigation. We read/write the ref
+   * directly here so the back-button restore sees the latest value
+   * without depending on the React render cycle.
+   */
+  chatOriginProductRef: React.MutableRefObject<Product | null>,
+  /**
    * Active chats list and the setter that targets the backing store
    * (Supabase remoteThreads in Phase 2, the localStorage-backed chats
    * otherwise). Both are needed so startChat can push an optimistic
@@ -617,6 +629,11 @@ export function useChatNav(
   const openChatThread = useCallback(
     (product: Product): boolean => {
       if (isOwnListing(product, currentUserId)) return false;
+
+      // Remember which Product page the user came from so the back
+      // button can restore it. This must happen before we clear
+      // selectedProduct below.
+      chatOriginProductRef.current = product;
 
       // Optimistic navigation: collapse productDetails -> chat in a
       // single render by clearing the selected product and pointing at
@@ -640,6 +657,8 @@ export function useChatNav(
         productTitle: language === "ar" ? product.titleAr : product.titleEn,
         productImage: product.image,
         productPrice: product.price,
+        sellerId: product.sellerId,
+        productId: product.id,
         lastMessage:
           language === "ar"
             ? "مرحباً! كيف يمكنني مساعدتك؟"
@@ -653,12 +672,12 @@ export function useChatNav(
 
       Promise.resolve(createChatThread(product))
         .then((realId) => {
-          if (!realId || realId === optimisticId) return;
-          setActiveChats((prev) =>
-            prev.map((c) =>
-              c.id === optimisticId ? { ...c, id: realId } : c,
-            ),
-          );
+          if (!realId) return;
+          // `createChatThread` already swapped the placeholder for the
+          // real thread (and preserved the optimistic avatar/name when
+          // the remote mapper returned placeholders). We just need to
+          // point the active chat at the confirmed id so React picks up
+          // the renamed record on the next render.
           setActiveChatThreadId(realId);
         })
         .catch(() => {
@@ -736,7 +755,14 @@ export function useChatNav(
   );
   const closeChat = useCallback(() => {
     setActiveChatThreadId(null);
-  }, [setActiveChatThreadId]);
+    // Restore the Product page the user was on when opening chat.
+    const origin = chatOriginProductRef.current;
+    if (origin) {
+      chatOriginProductRef.current = null;
+      setSelectedProduct(origin);
+      setCurrentView("home");
+    }
+  }, [setActiveChatThreadId, setSelectedProduct, setCurrentView]);
 
   const openChat = useCallback(
     (threadId: string) => {
@@ -860,6 +886,10 @@ export function useAppNavigation(): AppNavigation {
   const [activeChatThreadId, setActiveChatThreadId] = useState<string | null>(
     () => readUrlParam("chat"),
   );
+  // Remember which Product page (if any) the user was on when they
+  // opened a chat thread, so closeChat can restore it instead of
+  // dropping the user back to the home feed.
+  const chatOriginProductRef = useRef<Product | null>(null);
   const [activeSellerId, setActiveSellerId] = useState<string | null>(() => {
     const id = readUrlParam("seller");
     return id ?? null;
@@ -996,6 +1026,7 @@ export function useAppNavigation(): AppNavigation {
     createChatThread,
     currentUserId,
     listings,
+    chatOriginProductRef,
     chats,
     setActiveChats,
     language,

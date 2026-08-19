@@ -145,6 +145,16 @@ export const AppContent: React.FC<AppContentProps> = ({ nav }) => {
     closeSocialLogin,
   } = nav;
 
+  // Helper for ChatOverlay's "tap product preview" affordance: the
+  // preview only carries the listing id, so look up the full record
+  // before calling selectProduct. Falls back to a no-op when the
+  // product isn't in the loaded catalogue (e.g. cold-load from chat
+  // before listings are hydrated).
+  const selectProductById = (productId: string) => {
+    const product = listings.find((l) => l.id === productId);
+    if (product) selectProduct(product);
+  };
+
   if (selectedProduct) {
     return (
       <ProductDetailsView
@@ -168,6 +178,8 @@ export const AppContent: React.FC<AppContentProps> = ({ nav }) => {
         threadId={activeChatThreadId}
         onBack={closeChat}
         onCheckout={checkoutFromActiveChat}
+        onSelectSeller={openSeller}
+        onSelectProduct={selectProductById}
       />
     );
   }

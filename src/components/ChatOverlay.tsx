@@ -8,6 +8,18 @@ interface ChatOverlayProps {
   threadId: string;
   onBack: () => void;
   onCheckout: () => void;
+  /**
+   * Optional: tap the seller avatar to leave the chat and open the
+   * seller's public profile. Required for the Phase 2 chat header to
+   * behave like the design — the avatar otherwise renders as a
+   * non-interactive decoration.
+   */
+  onSelectSeller?: (sellerId: string) => void;
+  /**
+   * Optional: tap the product preview bar to leave the chat and open
+   * the listing. Same rationale as `onSelectSeller`.
+   */
+  onSelectProduct?: (productId: string) => void;
 }
 
 interface ChatCopy {
@@ -125,10 +137,13 @@ export const ChatOverlay: React.FC<ChatOverlayProps> = ({
   threadId,
   onBack,
   onCheckout,
+  onSelectSeller,
+  onSelectProduct,
 }) => {
   const { language, chats, sendChatMessage, markChatRead } = useApp();
   const isAr = language === "ar";
   const t = isAr ? COPY.ar : COPY.en;
+
 
   const [inputText, setInputText] = useState("");
   const [showOfferForm, setShowOfferForm] = useState(false);
@@ -145,6 +160,14 @@ export const ChatOverlay: React.FC<ChatOverlayProps> = ({
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const thread = chats.find((c) => c.id === threadId);
+
+  // Resolve to the actual navigation handler only when both the
+  // callback was wired up and the thread knows which listing/seller
+  // it belongs to. The optimistic chat thread records both ids so
+  // this works as soon as the chat opens, even before Supabase
+  // confirms the real record.
+  const goToSeller = thread?.sellerId ? onSelectSeller : undefined;
+  const goToProduct = thread?.productId ? onSelectProduct : undefined;
 
   useEffect(() => {
     markChatRead(threadId);
@@ -283,19 +306,44 @@ export const ChatOverlay: React.FC<ChatOverlayProps> = ({
               arrow_back
             </span>
           </button>
-          <img
-            alt={thread.sellerName}
-            src={thread.sellerAvatar}
-            className="w-10 h-10 rounded-full object-cover border border-outline-variant"
-          />
-          <div>
-            <h3 className="text-label-md font-bold text-on-surface leading-tight">
-              {thread.sellerName}
-            </h3>
-            <span className="text-[11px] text-primary font-bold">
-              {t.online}
-            </span>
-          </div>
+          {goToSeller ? (
+            <button
+              type="button"
+              onClick={() => goToSeller(thread.sellerId as string)}
+              aria-label={`View ${thread.sellerName}'s profile`}
+              className="flex items-center gap-md rounded-full px-1 py-0.5 -mx-1 hover:bg-surface-container-low active:scale-[0.98] transition-transform"
+            >
+              <img
+                alt={thread.sellerName}
+                src={thread.sellerAvatar}
+                className="w-10 h-10 rounded-full object-cover border border-outline-variant"
+              />
+              <div className="text-left">
+                <h3 className="text-label-md font-bold text-on-surface leading-tight">
+                  {thread.sellerName}
+                </h3>
+                <span className="text-[11px] text-primary font-bold">
+                  {t.online}
+                </span>
+              </div>
+            </button>
+          ) : (
+            <div className="flex items-center gap-md">
+              <img
+                alt={thread.sellerName}
+                src={thread.sellerAvatar}
+                className="w-10 h-10 rounded-full object-cover border border-outline-variant"
+              />
+              <div>
+                <h3 className="text-label-md font-bold text-on-surface leading-tight">
+                  {thread.sellerName}
+                </h3>
+                <span className="text-[11px] text-primary font-bold">
+                  {t.online}
+                </span>
+              </div>
+            </div>
+          )}
         </div>
         <button
           onClick={onCheckout}
@@ -306,21 +354,44 @@ export const ChatOverlay: React.FC<ChatOverlayProps> = ({
       </header>
 
       {/* Product preview bar */}
-      <div className="bg-surface-container-low border-b border-surface-container-high px-margin-mobile py-sm flex items-center gap-sm">
-        <img
-          alt={thread.productTitle}
-          src={thread.productImage}
-          className="w-10 h-10 rounded object-cover border border-outline-variant flex-shrink-0"
-        />
-        <div className="min-w-0">
-          <p className="text-label-sm font-bold text-on-surface truncate">
-            {thread.productTitle}
-          </p>
-          <span className="text-[11px] text-outline font-bold">
-            {formatAEDLabel(thread.productPrice)}
-          </span>
+      {goToProduct ? (
+        <button
+          type="button"
+          onClick={() => goToProduct(thread.productId as string)}
+          aria-label={`View ${thread.productTitle}`}
+          className="w-full bg-surface-container-low border-b border-surface-container-high px-margin-mobile py-sm flex items-center gap-sm text-left hover:bg-surface-container-high transition-colors"
+        >
+          <img
+            alt={thread.productTitle}
+            src={thread.productImage}
+            className="w-10 h-10 rounded object-cover border border-outline-variant flex-shrink-0"
+          />
+          <div className="min-w-0">
+            <p className="text-label-sm font-bold text-on-surface truncate">
+              {thread.productTitle}
+            </p>
+            <span className="text-[11px] text-outline font-bold">
+              {formatAEDLabel(thread.productPrice)}
+            </span>
+          </div>
+        </button>
+      ) : (
+        <div className="bg-surface-container-low border-b border-surface-container-high px-margin-mobile py-sm flex items-center gap-sm">
+          <img
+            alt={thread.productTitle}
+            src={thread.productImage}
+            className="w-10 h-10 rounded object-cover border border-outline-variant flex-shrink-0"
+          />
+          <div className="min-w-0">
+            <p className="text-label-sm font-bold text-on-surface truncate">
+              {thread.productTitle}
+            </p>
+            <span className="text-[11px] text-outline font-bold">
+              {formatAEDLabel(thread.productPrice)}
+            </span>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Messages area */}
       <main className="flex-grow overflow-y-auto no-scrollbar p-lg flex flex-col gap-md bg-surface-container-lowest">

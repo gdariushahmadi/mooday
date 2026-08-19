@@ -100,11 +100,10 @@ describe("useAppNavigation chat entry", () => {
       lastMessageTime: "",
       messages: [],
     };
-    const setActiveChats = vi.fn();
     mocks.useApp.mockReturnValue(
       makeContext({
         chats: [existingPlaceholder],
-        setActiveChats,
+        setActiveChats: vi.fn(),
         createChatThread: vi.fn(),
       }),
     );
@@ -118,5 +117,26 @@ describe("useAppNavigation chat entry", () => {
     // Already pointing at the placeholder thread, so we reused it
     // instead of pushing a duplicate thread or calling createChatThread.
     expect(result.current.activeChatThreadId).toBe("pending-product-1");
+  });
+
+  it("restores the originating product when the chat closes (back button)", () => {
+    mocks.useApp.mockReturnValue(makeContext({}));
+
+    const { result } = renderHook(() => useAppNavigation());
+
+    act(() => {
+      result.current.selectProduct(PRODUCT);
+      result.current.startChat(PRODUCT);
+    });
+    expect(result.current.selectedProduct).toBeNull();
+    expect(result.current.activeChatThreadId).toBe("pending-product-1");
+
+    act(() => {
+      result.current.closeChat();
+    });
+    // Back from the chat takes the user back to the product they
+    // opened chat from — not the home feed.
+    expect(result.current.activeChatThreadId).toBeNull();
+    expect(result.current.selectedProduct).toEqual(PRODUCT);
   });
 });

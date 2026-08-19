@@ -136,6 +136,17 @@ export interface ChatThread {
   lastMessage: string;
   lastMessageTime: string;
   messages: ChatMessage[];
+  /**
+   * Seller id for navigation to the public profile. Carried through
+   * from the original product (optimistic path) or the chat_threads
+   * row (Phase 2 path).
+   */
+  sellerId?: string;
+  /**
+   * Listing id for navigation back to the product page. Same
+   * provenance as `sellerId`.
+   */
+  productId?: string;
   /** Unread seller messages; cleared when the thread is opened. */
   unread?: number;
 }
@@ -1280,7 +1291,33 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
         };
         setRemoteThreads((prev) => {
           const without = prev.filter((t) => t.id !== mapped.id);
-          return [mapped, ...without];
+          // Drop any optimistic placeholder that useChatNav pushed for
+          // this listing so we don't end up with two entries sharing the
+          // same id once the rename happens later.
+          const clean = without.filter(
+            (t) => t.id !== `pending-${product.id}`,
+          );
+          // The Phase 2 mapper currently returns generic placeholders
+          // ("/sellers/placeholder.svg", "Seller") because chat_threads
+          // doesn't store the seller's display name or avatar. Fall back
+          // to the product we just clicked from so the chat header
+          // renders correctly instead of a broken image / generic name.
+          const placeholder = prev.find(
+            (t) => t.id === `pending-${product.id}`,
+          );
+          const merged: ChatThread = placeholder
+            ? {
+                ...mapped,
+                sellerName:
+                  mapped.sellerName === "Seller" || mapped.sellerName === "Buyer"
+                    ? placeholder.sellerName
+                    : mapped.sellerName,
+                sellerAvatar: mapped.sellerAvatar.endsWith("placeholder.svg")
+                  ? placeholder.sellerAvatar
+                  : mapped.sellerAvatar,
+              }
+            : mapped;
+          return [merged, ...clean];
         });
         return (thread as ChatThreadRecord).id;
       }
