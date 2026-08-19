@@ -359,6 +359,7 @@ export const ChatOverlay: React.FC<ChatOverlayProps> = ({
             <input
               type="number"
               inputMode="numeric"
+              aria-label={t.offerAmount}
               placeholder={t.offerPlaceholder}
               value={offerAmount}
               onChange={(e) => setOfferAmount(e.target.value)}
