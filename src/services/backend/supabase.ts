@@ -8,6 +8,7 @@ import type { AuthErrorCode } from "@/data/users";
 import {
   LISTING_MEDIA_ALLOWED_MIME,
   LISTING_MEDIA_MAX_BYTES,
+  AVATAR_MAX_BYTES,
 } from "./contracts";
 import type {
   AddressService,
@@ -37,6 +38,7 @@ import type {
   OrderStatus,
   OrderWithItems,
   Phase2Backend,
+  AvatarUpload,
   CreateListingInput,
   ListingRecord,
   ListingService,
@@ -72,7 +74,7 @@ function toUser(user: User): AuthenticatedUser {
       (typeof user.user_metadata?.full_name === "string" &&
         user.user_metadata.full_name) ||
       user.email?.split("@")[0] ||
-      "Mooday user",
+      "DANEG user",
   };
 }
 
@@ -319,6 +321,69 @@ class SupabaseProfileService implements ProfileService {
       })
       .not("id", "is", null);
     if (error) throw error;
+  }
+
+  async uploadAvatar(file: AvatarUpload): Promise<string> {
+    if (!LISTING_MEDIA_ALLOWED_MIME.includes(file.mimeType)) {
+      throw new Error(
+        `Unsupported image type ${file.mimeType}. Allowed: ${LISTING_MEDIA_ALLOWED_MIME.join(", ")}`,
+      );
+    }
+    if (file.sizeBytes <= 0) {
+      throw new Error("Image is empty.");
+    }
+    if (file.sizeBytes > AVATAR_MAX_BYTES) {
+      throw new Error(
+        `Image exceeds the ${AVATAR_MAX_BYTES / (1024 * 1024)} MB avatar limit.`,
+      );
+    }
+    const userId = await this.requireAuthUserId();
+    const extension = MIME_TO_EXTENSION[file.mimeType];
+    // Single canonical path per user. `upsert: true` lets the picker
+    // overwrite the previous avatar without leaking orphaned objects.
+    const storagePath = `${userId}/avatar.${extension}`;
+    const cacheBust = Date.now();
+
+    const { error: uploadError } = await this.client.storage
+      .from("avatars")
+      .upload(storagePath, file.body, {
+        contentType: file.mimeType,
+        cacheControl: "3600",
+        upsert: true,
+      });
+    if (uploadError) throw uploadError;
+
+    const {
+      data: publicUrlData,
+    } = this.client.storage.from("avatars").getPublicUrl(storagePath);
+    const publicUrl = publicUrlData.publicUrl;
+    if (!publicUrl) {
+      throw new Error("Avatar upload succeeded but no public URL was returned.");
+    }
+    // The bucket is public, but Supabase CDN caches by path. A query
+    // parameter gives the user immediate visual feedback after picking
+    // a new photo even when the browser cached the old one.
+    const url = `${publicUrl}?v=${cacheBust}`;
+
+    const { error: persistError } = await this.client
+      .from("profiles")
+      .update({ avatar_url: url })
+      .not("id", "is", null);
+    if (persistError) {
+      // Best-effort rollback: drop the orphaned storage object so the
+      // user does not pay for a file with no metadata row.
+      await this.client.storage.from("avatars").remove([storagePath]);
+      throw persistError;
+    }
+    return url;
+  }
+
+  private async requireAuthUserId(): Promise<string> {
+    const { data, error } = await this.client.auth.getUser();
+    if (error || !data.user) {
+      throw error ?? new Error("Authentication required");
+    }
+    return data.user.id;
   }
 }
 
@@ -724,6 +789,36 @@ class SupabaseListingMediaService implements ListingMediaService {
 
     const resolved = await this.resolveUrl(storagePath);
     return listingImageFromRow(data, resolved.url, resolved.expiresAt);
+  }
+
+  async attachPublicUrl(
+    listingId: string,
+    url: string,
+    sortOrder: number,
+    altEn?: string,
+    altAr?: string,
+  ): Promise<ListingImageRecord> {
+    if (!isPublicImageUrl(url)) {
+      throw new Error(
+        `attachPublicUrl requires a public URL, got: ${url}`,
+      );
+    }
+    // Storage-side validation lives in `upload`; passthrough URLs skip it
+    // entirely because the bucket only accepts image/* bodies and the URL
+    // is already reachable in the browser.
+    const { data, error } = await this.client
+      .from("listing_images")
+      .insert({
+        listing_id: listingId,
+        storage_path: url,
+        sort_order: sortOrder,
+        alt_en: altEn ?? "",
+        alt_ar: altAr ?? "",
+      })
+      .select("*")
+      .single();
+    if (error) throw error;
+    return listingImageFromRow(data, url);
   }
 
   async listForListing(listingId: string): Promise<ListingImageRecord[]> {

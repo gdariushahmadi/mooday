@@ -52,9 +52,28 @@ export interface ProfileRecord {
   styleTagsAr: string[];
 }
 
+/**
+ * Browser-supplied avatar image. Mirrors the staging fields used by
+ * listing media so the same `{ mime, size, body }` envelope works for
+ * both pipelines. The UI is expected to downscale before staging so
+ * the upload stays under the bucket's 2 MiB cap.
+ */
+export interface AvatarUpload {
+  filename: string;
+  mimeType: ListingMediaMime;
+  sizeBytes: number;
+  body: Blob | ArrayBuffer;
+}
+
 export interface ProfileService {
   getMine(): Promise<ProfileRecord | null>;
   updateMine(patch: Partial<ProfileRecord>): Promise<void>;
+  /**
+   * Upload a new avatar to the user's `avatars` bucket path and persist
+   * the public URL on `profiles.avatar_url`. Returns the absolute URL
+   * the caller should store on the in-memory profile snapshot.
+   */
+  uploadAvatar(file: AvatarUpload): Promise<string>;
 }
 
 export interface AddressService {
@@ -156,6 +175,14 @@ export type ListingMediaMime = (typeof LISTING_MEDIA_ALLOWED_MIME)[number];
 /** Max upload size. Mirrors the `file_size_limit` on the `listing-media` bucket. */
 export const LISTING_MEDIA_MAX_BYTES = 10 * 1024 * 1024;
 
+/**
+ * Max avatar upload size. Mirrors `file_size_limit` on the `avatars`
+ * bucket (2 MiB). The UI downscales anything bigger than 1024px on the
+ * long edge before staging so the bucket cap is comfortable even for
+ * unprocessed phone shots.
+ */
+export const AVATAR_MAX_BYTES = 2 * 1024 * 1024;
+
 export interface ListingImageUpload {
   /** Original filename without path. Used for mime inference only. */
   filename: string;
@@ -177,6 +204,22 @@ export interface ListingMediaService {
     listingId: string,
     file: ListingImageUpload,
     sortOrder: number,
+  ): Promise<ListingImageRecord>;
+  /**
+   * Persist a public image URL (`/products/foo.jpg` or `https://...`) as a
+   * `listing_images` row without touching the storage bucket. Used by the
+   * picker when the seller picks from the mock library or restores an
+   * existing photo URL. The bucket only accepts `image/jpeg`, `image/png`,
+   * and `image/webp`; uploading an empty blob with the wrong mime gets a
+   * 415 from Supabase Storage, so we skip storage entirely for passthrough
+   * URLs.
+   */
+  attachPublicUrl(
+    listingId: string,
+    url: string,
+    sortOrder: number,
+    altEn?: string,
+    altAr?: string,
   ): Promise<ListingImageRecord>;
   listForListing(listingId: string): Promise<ListingImageRecord[]>;
   /** Bulk lookup keyed by listingId. Empty array for unknown ids. */

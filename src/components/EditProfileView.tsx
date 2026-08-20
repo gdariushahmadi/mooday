@@ -1,7 +1,12 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import { useApp } from "@/context/AppContext";
+import {
+  AVATAR_MAX_BYTES,
+  LISTING_MEDIA_ALLOWED_MIME,
+} from "@/services/backend";
+
 
 interface EditProfileViewProps {
   onBack: () => void;
@@ -26,6 +31,12 @@ interface ProfileCopy {
   locationPh: string;
   avatarHeading: string;
   avatarHelp: string;
+  avatarUpload: string;
+  avatarChange: string;
+  avatarUploading: string;
+  avatarTooLarge: (limitMb: number) => string;
+  avatarUnsupported: string;
+  avatarUploadFailed: string;
   styleTags: string;
   styleTagPh: string;
   styleTagHelp: string;
@@ -48,10 +59,18 @@ const COPY: Record<"en" | "ar", ProfileCopy> = {
     bioPh: "A short description about your closet and what you curate.",
     location: "City",
     locationPh: "e.g. Dubai, UAE",
-    avatarHeading: "Profile photo",
+  avatarHeading: "Profile photo",
     avatarHelp:
-      "Square JPG or PNG, at least 400×400. Buyers love seeing a face.",
-    styleTags: "Style tags",
+      "JPG, PNG, or WEBP, up to 2 MB. Buyers love seeing a face.",
+  avatarUpload: "Upload photo",
+  avatarChange: "Change photo",
+  avatarUploading: "Uploading…",
+  avatarTooLarge: (limitMb) =>
+    `That photo is too large. Keep it under ${limitMb} MB.`,
+  avatarUnsupported:
+    "We couldn't read that file. Use JPG, PNG, or WEBP.",
+  avatarUploadFailed: "We couldn't upload your photo. Please try again.",
+  styleTags: "Style tags",
     styleTagPh: "Add a tag…",
     styleTagHelp:
       "Up to 5 tags help the Discover feed surface your listings to the right audience.",
@@ -72,10 +91,17 @@ const COPY: Record<"en" | "ar", ProfileCopy> = {
     bioPh: "وصف قصير عن خزانتك وما تختارينه.",
     location: "المدينة",
     locationPh: "مثال: دبي، الإمارات",
-    avatarHeading: "صورة الملف الشخصي",
+  avatarHeading: "صورة الملف الشخصي",
     avatarHelp:
-      "صورة مربعة JPG أو PNG، على الأقل 400×400.",
-    styleTags: "كلمات أسلوبك",
+      "JPG أو PNG أو WEBP، حتى 2 ميغابايت.",
+  avatarUpload: "رفع صورة",
+  avatarChange: "تغيير الصورة",
+  avatarUploading: "جارٍ الرفع…",
+  avatarTooLarge: (limitMb) =>
+    `الصورة كبيرة جدًا. يجب ألّا تتجاوز ${limitMb} ميغابايت.`,
+  avatarUnsupported: "تعذّر قراءة هذا الملف. استخدمي JPG أو PNG أو WEBP.",
+  avatarUploadFailed: "تعذّر رفع الصورة. حاولي مجدداً.",
+  styleTags: "كلمات أسلوبك",
     styleTagPh: "أضيفي كلمة…",
     styleTagHelp:
       "حتى 5 كلمات تساعد في اقتراح منتجاتك في صفحة الاكتشاف.",
@@ -88,6 +114,53 @@ const PRESET_AVATARS = [
   "/sellers/sarah.jpg",
   "/sellers/layla.jpg",
 ];
+
+const AVATAR_MAX_LONG_EDGE_PX = 1024;
+
+function coerceAvatarMime(mime: string): string | null {
+  if (mime === "image/jpg") return "image/jpeg";
+  if ((LISTING_MEDIA_ALLOWED_MIME as readonly string[]).includes(mime)) {
+    return mime;
+  }
+  return null;
+}
+
+async function loadFileAsImage(file: File): Promise<HTMLImageElement> {
+  const url = URL.createObjectURL(file);
+  try {
+    return await new Promise<HTMLImageElement>((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = () => reject(new Error("invalid image"));
+      img.src = url;
+    });
+  } finally {
+    setTimeout(() => URL.revokeObjectURL(url), 0);
+  }
+}
+
+async function resizeAvatarToBlob(
+  source: HTMLImageElement,
+  maxLongEdge: number,
+  mime: string,
+): Promise<Blob> {
+  const { naturalWidth, naturalHeight } = source;
+  const longEdge = Math.max(naturalWidth, naturalHeight);
+  const scale = longEdge > maxLongEdge ? maxLongEdge / longEdge : 1;
+  const width = Math.max(1, Math.round(naturalWidth * scale));
+  const height = Math.max(1, Math.round(naturalHeight * scale));
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("canvas 2d context unavailable");
+  ctx.drawImage(source, 0, 0, width, height);
+  const blob = await new Promise<Blob | null>((resolve) => {
+    canvas.toBlob(resolve, mime, 0.9);
+  });
+  if (!blob) throw new Error("image resize failed");
+  return blob;
+}
 
 /**
  * G-33 — Edit Profile.
@@ -104,6 +177,7 @@ export const EditProfileView: React.FC<EditProfileViewProps> = ({
   onSaved,
 }) => {
   const { language, userProfile, updateUserProfile } = useApp();
+  const phase2Backend = useApp().phase2Backend;
   const isAr = language === "ar";
   const t = isAr ? COPY.ar : COPY.en;
 
@@ -123,6 +197,55 @@ export const EditProfileView: React.FC<EditProfileViewProps> = ({
   );
   const [tagDraft, setTagDraft] = useState("");
   const [formError, setFormError] = useState("");
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const [avatarError, setAvatarError] = useState("");
+  const avatarInputRef = useRef<HTMLInputElement | null>(null);
+
+  const triggerAvatarPicker = () => {
+    setAvatarError("");
+    avatarInputRef.current?.click();
+  };
+
+  const handleAvatarFile = async (file: File) => {
+    setAvatarError("");
+    const coerced = coerceAvatarMime(file.type);
+    if (!coerced) {
+      setAvatarError(t.avatarUnsupported);
+      return;
+    }
+    if (file.size > AVATAR_MAX_BYTES) {
+      setAvatarError(t.avatarTooLarge(AVATAR_MAX_BYTES / (1024 * 1024)));
+      return;
+    }
+    if (!phase2Backend) {
+      setAvatarError(t.avatarUploadFailed);
+      return;
+    }
+    setAvatarUploading(true);
+    try {
+      const image = await loadFileAsImage(file);
+      const blob = await resizeAvatarToBlob(
+        image,
+        AVATAR_MAX_LONG_EDGE_PX,
+        coerced,
+      );
+      const url = await phase2Backend.profiles.uploadAvatar({
+        filename: file.name || "avatar",
+        mimeType: coerced as
+          | "image/jpeg"
+          | "image/png"
+          | "image/webp",
+        sizeBytes: blob.size,
+        body: blob,
+      });
+      setAvatar(url);
+    } catch {
+      setAvatarError(t.avatarUploadFailed);
+    } finally {
+      setAvatarUploading(false);
+      if (avatarInputRef.current) avatarInputRef.current.value = "";
+    }
+  };
 
   const addTag = () => {
     const t = tagDraft.trim();
@@ -200,7 +323,6 @@ export const EditProfileView: React.FC<EditProfileViewProps> = ({
 
       <form onSubmit={handleSave} className="flex flex-col gap-md font-sans">
         {formError && <p role="alert" className="rounded-lg bg-error-container p-sm text-error font-bold">{formError}</p>}
-        {/* Avatar */}
         <section className="bg-surface-container-lowest border border-surface-container-high rounded-xl p-md">
           <h2 className="text-[10px] uppercase tracking-wider text-primary font-bold mb-sm">
             {t.avatarHeading}
@@ -211,10 +333,46 @@ export const EditProfileView: React.FC<EditProfileViewProps> = ({
               src={avatar}
               className="w-20 h-20 rounded-full object-cover border-4 border-surface-container-low"
             />
-            <p className="text-[11px] text-on-surface-variant leading-normal">
-              {t.avatarHelp}
-            </p>
+            <div className="flex flex-col gap-xs flex-1">
+              <p className="text-[11px] text-on-surface-variant leading-normal">
+                {t.avatarHelp}
+              </p>
+              <button
+                type="button"
+                onClick={triggerAvatarPicker}
+                disabled={avatarUploading}
+                className="self-start flex items-center gap-1 px-3 py-1.5 rounded-full bg-primary text-on-primary text-label-sm font-bold uppercase tracking-wider active:scale-95 transition-transform disabled:opacity-60"
+              >
+                <span
+                  className="material-symbols-outlined text-[16px] no-mirror"
+                  aria-hidden="true"
+                >
+                  {avatarUploading ? "progress_activity" : "upload"}
+                </span>
+                {avatarUploading ? t.avatarUploading : avatar ? t.avatarChange : t.avatarUpload}
+              </button>
+            </div>
           </div>
+          <input
+            ref={avatarInputRef}
+            type="file"
+            accept={LISTING_MEDIA_ALLOWED_MIME.join(",")}
+            className="sr-only"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) {
+                void handleAvatarFile(file);
+              }
+            }}
+          />
+          {avatarError && (
+            <p
+              role="alert"
+              className="text-[11px] text-error font-bold mb-sm"
+            >
+              {avatarError}
+            </p>
+          )}
           <div className="flex gap-sm flex-wrap">
             {PRESET_AVATARS.map((url) => (
               <button

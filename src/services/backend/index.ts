@@ -72,6 +72,7 @@ export type {
   ChatMessageRecord,
   ChatMessageType,
   ChatService,
+  AvatarUpload,
   ChatThreadRecord,
   SellerReviewRecord,
   SellerReviewService,
@@ -91,6 +92,7 @@ export type {
 export {
   LISTING_MEDIA_ALLOWED_MIME,
   LISTING_MEDIA_MAX_BYTES,
+  AVATAR_MAX_BYTES,
 } from "./contracts";
 export { getBackendConfig } from "./config";
 export {

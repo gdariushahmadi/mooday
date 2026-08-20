@@ -23,7 +23,7 @@ function makeContext(overrides: Partial<AppContextType> = {}): AppContextType {
     language: "en", setLanguage: vi.fn(), listings: [], addListing: vi.fn(),
     updateListing: vi.fn(), removeListing: vi.fn(), likes: [], toggleLike: vi.fn(),
     cart: [], addToCart: vi.fn(), removeFromCart: vi.fn(), updateQuantity: vi.fn(),
-    clearCart: vi.fn(), chats: [], sendChatMessage: vi.fn(),
+    clearCart: vi.fn(), chats: [], setActiveChats: vi.fn(), sendChatMessage: vi.fn(),
     createChatThread: vi.fn(() => "t1"),
     markChatRead: vi.fn(),
     setChatOfferStatus: vi.fn(),
@@ -39,6 +39,7 @@ function makeContext(overrides: Partial<AppContextType> = {}): AppContextType {
     updateOrderStatus: vi.fn(), notifications: [], markNotificationRead: vi.fn(),
     markAllNotificationsRead: vi.fn(),
     userProfile: USER, updateUserProfile: vi.fn(),
+    phase2Backend: undefined,
     myReviews: [],
     addMyReview: vi.fn(),
     blockedUsers: [],
@@ -154,5 +155,23 @@ describe("EditProfileView (G-33)", () => {
     const input = screen.getByPlaceholderText(/Add a tag/i);
     await user.type(input, "Boho{Enter}");
     expect(screen.getByText("Boho")).toBeInTheDocument();
+  });
+
+  it("renders an Upload photo button for the avatar picker", () => {
+    renderView();
+    expect(
+      screen.getByRole("button", { name: /Upload photo|Change photo/i }),
+    ).toBeInTheDocument();
+  });
+
+  it("renders a hidden file input bound to the avatar picker", () => {
+    renderView();
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    expect(input).toBeInTheDocument();
+    expect(input.type).toBe("file");
+    // Accept attribute restricts the picker to the bucket's mime list.
+    expect(input.accept).toContain("image/jpeg");
+    expect(input.accept).toContain("image/png");
+    expect(input.accept).toContain("image/webp");
   });
 });
