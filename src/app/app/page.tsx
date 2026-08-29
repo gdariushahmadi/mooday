@@ -11,7 +11,9 @@ import { WelcomeView } from "@/components/WelcomeView";
 import { InstallPrompt } from "@/components/InstallPrompt";
 import { AuthSheet } from "@/components/AuthSheet";
 import { LockScreen } from "@/components/LockScreen";
+import { BrandLogo } from "@/components/BrandLogo";
 import { readUrlParam } from "@/types/navigation";
+import { BRAND, BRAND_AR } from "@/lib/brand";
 
 /** Views that are the app's primary destinations and use shared shell chrome. */
 const PRIMARY_SHELL_VIEWS = new Set([
@@ -188,14 +190,18 @@ export default function Home() {
           </div>
 
           {/* Title Logo */}
-          <h1 className="min-w-0 text-center font-serif text-display-lg-mobile italic tracking-widest text-primary">
+          <h1 className="min-w-0 flex items-center justify-center">
             <button
               type="button"
               onClick={() => changeTab("home")}
-              className="rounded-lg px-2 py-1 transition-opacity hover:opacity-85 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+              className="rounded-lg p-1 transition-opacity hover:opacity-85 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
               aria-label={isAr ? "العودة إلى الرئيسية" : "Go to Home"}
             >
-              Mooday
+              <BrandLogo
+                variant="horizontal-orange-green"
+                height={26}
+                alt={isAr ? BRAND_AR : BRAND}
+              />
             </button>
           </h1>
 

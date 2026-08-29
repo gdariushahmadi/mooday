@@ -1,4 +1,4 @@
-/* Landing — Mooday editorial system
+/* Landing — DANEG editorial system
  * ------------------------------------------------------------------
  * Fashion-magazine composition: brand-first hero, full-bleed media,
  * champagne / ink / plum palette. Bodoni Moda for display, Hanken
@@ -358,6 +358,28 @@
   margin: 0 0 1rem;
   width: fit-content;
   max-width: 100%;
+}
+
+.heroMark {
+  display: block;
+  margin: 0 0 1.1rem;
+  filter: drop-shadow(0 14px 40px rgba(0, 0, 0, 0.45));
+  animation: markSettle 1.2s var(--ease-out) both;
+}
+
+.heroMark img {
+  display: block;
+}
+
+@keyframes markSettle {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 
 .heroBrand {

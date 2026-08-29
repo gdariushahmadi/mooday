@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { BrandLogo } from "@/components/BrandLogo";
 import { COPY, type Lang } from "./copy";
 import { LangToggle } from "./LangToggle";
 import { Reveal } from "./Reveal";
@@ -22,8 +23,8 @@ export function Landing({ lang }: LandingProps) {
 
       {/* ============== Top bar ============== */}
       <header className={styles.nav}>
-        <a href="#top" className={styles.navBrand}>
-          Mooday
+        <a href="#top" className={styles.navBrand} aria-label="DANEG">
+          <BrandLogo variant="horizontal-orange-cream" height={24} />
         </a>
         <nav className={styles.navLinks} aria-label="Primary">
           <a href="#categories">{t.nav.discover}</a>
@@ -41,7 +42,7 @@ export function Landing({ lang }: LandingProps) {
       {/* ============== Hero — brand-first, full-bleed ============== */}
       <section className={styles.hero} id="top" aria-labelledby="hero-brand">
         <video
-          src="/landing/mooday_hero.mp4"
+          src="/landing/daneg_hero.mp4"
           className={styles.heroImg}
           autoPlay
           muted
@@ -60,6 +61,9 @@ export function Landing({ lang }: LandingProps) {
 
         <div className={styles.heroContent}>
           <div className={styles.heroBrandStack}>
+            <div className={styles.heroMark} aria-hidden="true">
+              <BrandLogo variant="mark-orange" height={64} alt="" />
+            </div>
             <h1 className={styles.heroBrand} id="hero-brand">
               {t.hero.brand}
             </h1>
@@ -349,7 +353,7 @@ export function Landing({ lang }: LandingProps) {
         <div className={styles.closingGlow} aria-hidden="true" />
         <Reveal>
           <div className={styles.closingInner}>
-            <p className={styles.closingBrand}>Mooday</p>
+            <p className={styles.closingBrand}>DANEG</p>
             <h2 className={styles.closingTitle} id="closing-title">
               {t.closing.title}
             </h2>
@@ -372,7 +376,7 @@ export function Landing({ lang }: LandingProps) {
       <footer className={styles.footer}>
         <div className={styles.footerInner}>
           <div className={styles.footerBrand}>
-            <h3>Mooday</h3>
+            <h3>DANEG</h3>
             <p>{t.footer.tagline}</p>
           </div>
           {t.footer.columns.map((col) => (
@@ -394,7 +398,7 @@ export function Landing({ lang }: LandingProps) {
         </div>
         <div className={styles.footerBottom}>
           <span>
-            © {new Date().getFullYear()} Mooday · {t.footer.rights}
+            © {new Date().getFullYear()} DANEG · {t.footer.rights}
           </span>
           <span>{t.footer.legal}</span>
         </div>
