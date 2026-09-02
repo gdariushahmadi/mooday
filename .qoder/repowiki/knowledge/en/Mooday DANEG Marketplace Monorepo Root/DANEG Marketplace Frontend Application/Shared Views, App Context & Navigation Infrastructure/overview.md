@@ -1,0 +1,1 @@
+Provides the React application's global state context, navigation hooks and URL routing, plus all top-level view components (including an admin panel) that render the marketplace UI.

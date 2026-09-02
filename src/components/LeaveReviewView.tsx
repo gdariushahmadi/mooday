@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { useApp } from "@/context/AppContext";
 import type { Order } from "@/data/orders";
 import type { ReviewRating } from "@/data/my-reviews";
+import { AppImage } from "@/components/AppImage";
 
 interface LeaveReviewViewProps {
   order: Order;
@@ -23,10 +24,12 @@ interface LeaveReviewCopy {
   bodyPh: string;
   attachPhotos: string;
   attachHelp: string;
+  photoUnavailable: string;
   verifiedPurchase: string;
   submit: string;
   cancel: string;
   required: string;
+  submitError: string;
   submitted: string;
   productLine: string;
 }
@@ -52,11 +55,13 @@ const COPY: Record<"en" | "ar", LeaveReviewCopy> = {
     bodyPh: "What did you love (or not)?",
     attachPhotos: "Attach photos (optional)",
     attachHelp:
-      "Tap to add up to 3 photos. Phase 1 inserts a stub photo URL.",
+      "Photo upload is not available in this release. No product image is added as a review photo.",
+    photoUnavailable: "Photo upload is not available yet",
     verifiedPurchase: "Verified purchase",
     submit: "Submit review",
     cancel: "Cancel",
     required: "Please choose a rating and add a short headline.",
+    submitError: "We could not submit your review. Try again.",
     submitted: "Review submitted. Thanks for sharing!",
     productLine: "Reviewing:",
   },
@@ -79,11 +84,13 @@ const COPY: Record<"en" | "ar", LeaveReviewCopy> = {
     bodyLabel: "تفاصيل التقييم",
     bodyPh: "ما الذي أحببتِ (أو لم تحبي)؟",
     attachPhotos: "إرفاق صور (اختياري)",
-    attachHelp: "اضغطي لإضافة حتى ٣ صور.",
+    attachHelp: "رفع صور التقييم غير متاح في هذه النسخة. لا تُستخدم صورة المنتج كصورة تقييم.",
+    photoUnavailable: "رفع الصور غير متاح حالياً",
     verifiedPurchase: "شراء موثق",
     submit: "إرسال التقييم",
     cancel: "إلغاء",
     required: "يرجى اختيار تقييم وإضافة عنوان قصير.",
+    submitError: "تعذر إرسال تقييمك. حاولي مرة أخرى.",
     submitted: "تم إرسال التقييم. شكراً لمشاركتك!",
     productLine: "تقييم:",
   },
@@ -97,7 +104,9 @@ const STAR_LABELS_AR = ["", "ضعيف", "أقل من المتوقع", "متوس�
  *
  * The order context drives the seller + product + verified-purchase flag.
  * The user picks a 1–5 star rating, writes a headline and body, optionally
- * adds up to 3 stub photos, and submits via `addMyReview()`.
+ * submits via `addMyReview()`. Review photo upload stays disabled until a
+ * real media pipeline is available; the product image is never used as a
+ * fake review photo.
  */
 export const LeaveReviewView: React.FC<LeaveReviewViewProps> = ({
   order,
@@ -120,17 +129,9 @@ export const LeaveReviewView: React.FC<LeaveReviewViewProps> = ({
   const [body, setBody] = useState("");
   const [photos, setPhotos] = useState<string[]>([]);
   const [formError, setFormError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleAddPhoto = () => {
-    if (photos.length >= 3) return;
-    // Phase 1: insert a stub photo (Phase 3 will be a real file picker).
-    setPhotos([
-      ...photos,
-      first ? first.product.image : "/products/placeholder.jpg",
-    ]);
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim() || !body.trim()) {
       setFormError(t.required);
@@ -144,18 +145,26 @@ export const LeaveReviewView: React.FC<LeaveReviewViewProps> = ({
     // carries it so the backend doesn't need to round-trip back to
     // the order to discover it.
     const productSellerId = first?.product.sellerId;
-    addMyReview({
-      orderId: order.id,
-      sellerKey: productSellerId ?? first?.product.sellerNameEn ?? "Unknown",
-      rating,
-      title: title.trim(),
-      body: body.trim(),
-      photos,
-      date: new Date().toISOString(),
-      isVerifiedPurchase: true,
-    });
-    onSubmitted?.();
-    onBack();
+    setIsSubmitting(true);
+    try {
+      await addMyReview({
+        orderId: order.id,
+        listingId: first?.product.id,
+        sellerKey: productSellerId ?? first?.product.sellerNameEn ?? "Unknown",
+        rating,
+        title: title.trim(),
+        body: body.trim(),
+        photos,
+        date: new Date().toISOString(),
+        isVerifiedPurchase: true,
+      });
+      onSubmitted?.();
+      onBack();
+    } catch {
+      setFormError(t.submitError);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -184,9 +193,11 @@ export const LeaveReviewView: React.FC<LeaveReviewViewProps> = ({
       {/* Order / product summary */}
       <div className="bg-surface-container-low border border-surface-container-high rounded-xl p-md flex items-center gap-md">
         {first && (
-          <img
+          <AppImage
             alt={productLabel}
             src={first.product.image}
+            width={64}
+            height={64}
             className="w-16 h-16 rounded object-cover border border-outline-variant flex-shrink-0"
           />
         )}
@@ -271,7 +282,7 @@ export const LeaveReviewView: React.FC<LeaveReviewViewProps> = ({
           </div>
         </section>
 
-        {/* Photo upload (Phase 1: stub) */}
+        {/* Photo upload is explicitly disabled until a real media pipeline exists. */}
         <section className="bg-surface-container-lowest border border-surface-container-high rounded-xl p-md">
           <h2 className="text-[10px] uppercase tracking-wider text-primary font-bold">
             {t.attachPhotos}{" "}
@@ -284,7 +295,13 @@ export const LeaveReviewView: React.FC<LeaveReviewViewProps> = ({
                 key={i}
                 className="relative w-20 h-20 rounded-lg overflow-hidden border border-surface-container-high"
               >
-                <img alt="" src={url} className="w-full h-full object-cover" />
+                <AppImage
+                  alt=""
+                  src={url}
+                  fill
+                  sizes="80px"
+                  className="object-cover"
+                />
                 <button
                   type="button"
                   onClick={() => setPhotos(photos.filter((_, j) => j !== i))}
@@ -298,9 +315,11 @@ export const LeaveReviewView: React.FC<LeaveReviewViewProps> = ({
             {photos.length < 3 && (
               <button
                 type="button"
-                onClick={handleAddPhoto}
                 aria-label={isAr ? "إضافة صورة" : "Add photo"}
-                className="w-20 h-20 rounded-lg border-2 border-dashed border-outline-variant flex flex-col items-center justify-center text-outline hover:border-primary hover:text-primary transition-colors"
+                title={t.photoUnavailable}
+                disabled
+                aria-disabled="true"
+                className="w-20 h-20 rounded-lg border-2 border-dashed border-outline-variant flex flex-col items-center justify-center text-outline cursor-not-allowed"
               >
                 <span
                   className="material-symbols-outlined text-[24px]"
@@ -315,9 +334,11 @@ export const LeaveReviewView: React.FC<LeaveReviewViewProps> = ({
 
         <button
           type="submit"
+          disabled={isSubmitting}
+          aria-busy={isSubmitting}
           className="btn-primary py-4 rounded-xl text-label-md uppercase tracking-widest font-bold shadow-md active:scale-95 transition-transform"
         >
-          {t.submit}
+          {isSubmitting ? (isAr ? "جارٍ الإرسال..." : "Submitting...") : t.submit}
         </button>
         <button
           type="button"

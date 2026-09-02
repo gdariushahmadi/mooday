@@ -1,0 +1,1 @@
+Vitest for unit-style copy-guard scanning; Playwright (`@playwright/test`) for browser-based e2e tests; Mailpit HTTP API polled via `fetch` to intercept OTP emails during auth flows.

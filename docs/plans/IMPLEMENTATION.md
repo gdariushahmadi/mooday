@@ -1,4 +1,9 @@
-# Mooday Beta Launch - Implementation Status
+# Historical implementation status (superseded)
+
+> This file records the earlier closed-beta implementation. It is kept for
+> history and is not the release checklist. The current release is the DANEG
+> public Demo/Beta. Use `docs/STATUS.md`, `docs/plans/HANDOFF.md`, and
+> `docs/EXTERNAL_SETUP_TODO.md` for the current state and operator gates.
 
 **Plan:** `docs/plans/2026-08-16-0347-feat-mooday-beta-launch-plan.md`
 **Implemented:** 2026-08-16 (closed beta target)

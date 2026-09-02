@@ -46,7 +46,7 @@ function makeContext(overrides: Partial<AppContextType> = {}): AppContextType {
     language: "en", setLanguage: vi.fn(), listings: [], addListing: vi.fn(),
     updateListing: vi.fn(), removeListing: vi.fn(), likes: [], toggleLike: vi.fn(),
     cart: [], addToCart: vi.fn(), removeFromCart: vi.fn(), updateQuantity: vi.fn(),
-    clearCart: vi.fn(), chats: [], sendChatMessage: vi.fn(),
+    clearCart: vi.fn(), chats: [], setActiveChats: vi.fn(), sendChatMessage: vi.fn(),
     createChatThread: vi.fn(() => "t1"),
     markChatRead: vi.fn(),
     setChatOfferStatus: vi.fn(),
@@ -110,13 +110,13 @@ describe("HelpSupportView (G-38)", () => {
   it("renders the FAQ section", () => {
     renderView();
     expect(screen.getByText("Frequently asked")).toBeInTheDocument();
-    expect(screen.getByText(/How do I sell on Mooday/)).toBeInTheDocument();
+    expect(screen.getByText(/How do I sell on DANEG/)).toBeInTheDocument();
   });
 
   it("clicking a FAQ opens its answer", async () => {
     const user = userEvent.setup();
     renderView();
-    await user.click(screen.getByText(/How do I sell on Mooday/));
+    await user.click(screen.getByText(/How do I sell on DANEG/));
     expect(screen.getByText(/Tap the Sell button/)).toBeInTheDocument();
   });
 
@@ -136,7 +136,7 @@ describe("HelpSupportView (G-38)", () => {
       "ord-INVALID",
     );
     await user.click(screen.getByRole("button", { name: /Find my order/i }));
-    expect(screen.getByText(/No order matches that id/i)).toBeInTheDocument();
+    expect(screen.getByText(/No real order matches that id/i)).toBeInTheDocument();
   });
 
   it("renders the contact section with 3 channels", () => {

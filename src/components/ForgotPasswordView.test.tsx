@@ -21,6 +21,7 @@ function makeContext(overrides: Partial<AppContextType> = {}): AppContextType {
     updateQuantity: vi.fn(),
     clearCart: vi.fn(),
     chats: [],
+    setActiveChats: vi.fn(),
     sendChatMessage: vi.fn(),
     createChatThread: vi.fn(() => "test-thread"),
     markChatRead: vi.fn(),
@@ -136,7 +137,7 @@ describe("ForgotPasswordView (A-05)", () => {
   it("moves to the OTP step after entering an email", async () => {
     const user = userEvent.setup();
     renderForgot();
-    await step1Email(user, "layla@mooday.app");
+    await step1Email(user, "layla@daneg.app");
     expect(
       screen.getByRole("heading", { name: /enter the code/i }),
     ).toBeInTheDocument();
@@ -145,25 +146,25 @@ describe("ForgotPasswordView (A-05)", () => {
   it("calls sendOtp after the email is submitted", async () => {
     const user = userEvent.setup();
     const { ctx } = renderForgot();
-    await step1Email(user, "layla@mooday.app");
-    expect(ctx.sendOtp).toHaveBeenCalledWith("layla@mooday.app");
+    await step1Email(user, "layla@daneg.app");
+    expect(ctx.sendOtp).toHaveBeenCalledWith("layla@daneg.app");
   });
 
   it("moves to the password step after a successful OTP", async () => {
     const user = userEvent.setup();
     const { ctx } = renderForgot({ sendOtp: vi.fn(() => MOCK_OTP_CODE) });
-    await step1Email(user, "layla@mooday.app");
+    await step1Email(user, "layla@daneg.app");
     await step2Code(user, MOCK_OTP_CODE);
     expect(
       screen.getByRole("heading", { name: /choose a new password/i }),
     ).toBeInTheDocument();
-    expect(ctx.verifyOtp).toHaveBeenCalledWith("layla@mooday.app", MOCK_OTP_CODE);
+    expect(ctx.verifyOtp).toHaveBeenCalledWith("layla@daneg.app", MOCK_OTP_CODE);
   });
 
   it("blocks submission when the password is too short", async () => {
     const user = userEvent.setup();
     const { ctx, onSuccess } = renderForgot();
-    await step1Email(user, "layla@mooday.app");
+    await step1Email(user, "layla@daneg.app");
     await step2Code(user, MOCK_OTP_CODE);
     await user.type(screen.getByLabelText(/new password/i), "short");
     await user.type(screen.getByLabelText(/confirm password/i), "short");
@@ -178,7 +179,7 @@ describe("ForgotPasswordView (A-05)", () => {
   it("blocks submission when the passwords don't match", async () => {
     const user = userEvent.setup();
     const { ctx, onSuccess } = renderForgot();
-    await step1Email(user, "layla@mooday.app");
+    await step1Email(user, "layla@daneg.app");
     await step2Code(user, MOCK_OTP_CODE);
     await user.type(screen.getByLabelText(/new password/i), "longenough1");
     await user.type(screen.getByLabelText(/confirm password/i), "longenouff2");
@@ -193,14 +194,14 @@ describe("ForgotPasswordView (A-05)", () => {
   it("calls resetPassword and onSuccess on a complete flow", async () => {
     const user = userEvent.setup();
     const { ctx, onSuccess } = renderForgot();
-    await step1Email(user, "layla@mooday.app");
+    await step1Email(user, "layla@daneg.app");
     await step2Code(user, MOCK_OTP_CODE);
-    await user.type(screen.getByLabelText(/new password/i), "mooday-new");
-    await user.type(screen.getByLabelText(/confirm password/i), "mooday-new");
+    await user.type(screen.getByLabelText(/new password/i), "daneg-new");
+    await user.type(screen.getByLabelText(/confirm password/i), "daneg-new");
     await user.click(screen.getByRole("button", { name: /reset password/i }));
     expect(ctx.resetPassword).toHaveBeenCalledWith(
-      "layla@mooday.app",
-      "mooday-new",
+      "layla@daneg.app",
+      "daneg-new",
     );
     expect(onSuccess).toHaveBeenCalledTimes(1);
   });
@@ -208,12 +209,12 @@ describe("ForgotPasswordView (A-05)", () => {
   it("shows an error when the OTP code is wrong", async () => {
     const user = userEvent.setup();
     const { ctx } = renderForgot({ verifyOtp: vi.fn(() => false) });
-    await step1Email(user, "layla@mooday.app");
+    await step1Email(user, "layla@daneg.app");
     await step2Code(user, "111111");
     expect(
       screen.queryByRole("heading", { name: /choose a new password/i }),
     ).not.toBeInTheDocument();
-    expect(ctx.verifyOtp).toHaveBeenCalledWith("layla@mooday.app", "111111");
+    expect(ctx.verifyOtp).toHaveBeenCalledWith("layla@daneg.app", "111111");
   });
 
   it("calls onBack when the back button is clicked", async () => {

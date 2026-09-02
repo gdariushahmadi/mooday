@@ -1,0 +1,184 @@
+# 知识卡导出索引文件
+schema_version: 1
+locale: en-US
+branch: main
+nodes_managed: true
+exported_at: "2026-08-20T19:24:25Z"
+modules:
+    "":
+        dir_name: Mooday DANEG Marketplace Monorepo Root
+        title: Mooday DANEG Marketplace Monorepo Root
+        scope:
+            - README.md
+            - ROADMAP.md
+            - AGENTS.md
+            - CLAUDE.md
+            - .gitignore
+            - .vercelignore
+            - package.json
+            - package-lock.json
+            - next.config.ts
+            - tsconfig.json
+            - eslint.config.mjs
+            - postcss.config.mjs
+            - vitest.config.mts
+            - vitest.setup.ts
+            - playwright.config.ts
+            - sentry.client.config.ts
+            - sentry.edge.config.ts
+            - sentry.server.config.ts
+            - .github/
+            - .impeccable/
+            - .env.example
+            - .tmp-appbar.mjs
+            - mooday-deploy.tar.gz
+            - test-oauth.mjs
+        source_files: []
+        children:
+            - backend_client
+            - database_schema
+            - docs_and_plans
+            - frontend_app
+            - public_assets
+            - scripts_and_deploy
+            - tests
+        depends_on: []
+        related_to: []
+    backend_client:
+        dir_name: Backend Client Abstraction & Seed Data
+        title: Backend Client Abstraction & Seed Data
+        scope:
+            - src/services/
+            - src/data/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: frontend_app
+            - path: scripts_and_deploy
+            - path: tests
+    database_schema:
+        dir_name: Supabase Database Schema & Migrations
+        title: Supabase Database Schema & Migrations
+        scope:
+            - supabase/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: scripts_and_deploy
+    docs_and_plans:
+        dir_name: Product Documentation, Audit & Release Plans
+        title: Product Documentation, Audit & Release Plans
+        scope:
+            - docs/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    frontend_app:
+        dir_name: DANEG Marketplace Frontend Application
+        title: DANEG Marketplace Frontend Application
+        scope:
+            - src/app/
+            - src/components/
+            - src/context/
+            - src/hooks/
+            - src/types/
+        source_files: []
+        children:
+            - frontend_app/admin_panel
+            - frontend_app/app_routes
+            - frontend_app/landing_page
+            - frontend_app/listing_management
+            - frontend_app/shared_views_and_infrastructure
+        depends_on: []
+        related_to:
+            - path: backend_client
+            - path: public_assets
+    frontend_app/admin_panel:
+        dir_name: Admin Panel Dashboard
+        title: Admin Panel Dashboard
+        scope:
+            - src/components/admin/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: frontend_app/app_routes
+    frontend_app/app_routes:
+        dir_name: Next.js App Router Pages & API Routes
+        title: Next.js App Router Pages & API Routes
+        scope:
+            - src/app/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: frontend_app/admin_panel
+            - path: frontend_app/landing_page
+            - path: frontend_app/listing_management
+    frontend_app/landing_page:
+        dir_name: DANEG Marketing Landing Page
+        title: DANEG Marketing Landing Page
+        scope:
+            - src/components/landing/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: frontend_app/app_routes
+    frontend_app/listing_management:
+        dir_name: Listing Creation & Photo Management UI
+        title: Listing Creation & Photo Management UI
+        scope:
+            - src/components/listing/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: frontend_app/app_routes
+    frontend_app/shared_views_and_infrastructure:
+        dir_name: Shared Views, App Context & Navigation Infrastructure
+        title: Shared Views, App Context & Navigation Infrastructure
+        scope:
+            - src/components/
+            - src/context/
+            - src/hooks/
+            - src/types/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    public_assets:
+        dir_name: Public Static Assets & PWA Shell
+        title: Public Static Assets & PWA Shell
+        scope:
+            - public/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: frontend_app
+    scripts_and_deploy:
+        dir_name: Build, Deployment & Smoke Test Scripts
+        title: Build, Deployment & Smoke Test Scripts
+        scope:
+            - scripts/
+            - .deploy/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: backend_client
+            - path: database_schema
+    tests:
+        dir_name: Application & E2E Test Suite
+        title: Application & E2E Test Suite
+        scope:
+            - tests/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: backend_client

@@ -230,8 +230,8 @@ export const DEFAULT_NOTIFICATIONS: AppNotification[] = [
   {
     id: id(),
     type: "system",
-    titleEn: "Welcome to Mooday Phase 1",
-    titleAr: "أهلاً بك في مودي Phase 1",
+    titleEn: "Welcome to DANEG Phase 1",
+    titleAr: "أهلاً بك في دانق Phase 1",
     bodyEn:
       "Your buyer-side experience is now live. Listing your first item is just a tap away.",
     bodyAr:

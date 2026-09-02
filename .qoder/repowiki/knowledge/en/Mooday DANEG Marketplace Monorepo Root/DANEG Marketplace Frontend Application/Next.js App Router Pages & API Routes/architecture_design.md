@@ -1,0 +1,10 @@
+Built on Next.js App Router under `src/app/`, where each directory maps to a URL segment and a `page.tsx` exports the React component or route handler.
+
+- Root layout (`layout.tsx`) is the single `<html>/<body>` wrapper that installs global Google fonts (Latin + Arabic), PWA metadata (manifest, apple-web-app, icons), viewport settings, and wraps every page in `AppProvider` → `ErrorBoundary` → `ServiceWorkerRegistrar` → `ThemeSync`.
+- Marketing entry `/` (`page.tsx`) renders a server-rendered landing with SEO metadata and OpenGraph/Twitter cards; it redirects to `/auth/callback` when an OAuth `code` query param is present.
+- Authenticated SPA shell lives at `/app/page.tsx`, mounting `AppContent` inside a top header + bottom navigation chrome that is conditionally shown only for primary views (`home`, `search`, `activity`, `profile`). It integrates welcome/onboarding, idle lock screen, install prompt, and deep-link routing via URL params.
+- `/admin/page.tsx` is a client-side admin dashboard with tabbed subviews (overview, listings, orders, users, disputes, reports, broadcast, audit) that can toggle between live Supabase-backed actions and a mock service for demo mode.
+- `/auth/callback/page.tsx` completes the OAuth flow by exchanging the authorization code via `getPhase2Backend().auth.completeOAuth` and redirecting to the original `next` target.
+- `/preview/page.tsx` renders a stripped-down version of `AppContent` without chrome, intended for iframe embedding and mobile-width previews.
+- Server routes under `api/` use Next.js Route Handlers: `/api/health/route.ts` pings Supabase and returns a JSON health status (used by cPanel/Sentry uptime checks); `/api/stripe/webhook/route.ts` verifies Stripe signatures with `STRIPE_WEBHOOK_SECRET`, then uses a Supabase service-role client to mark orders `paid` / `payment_failed` based on `payment_intent.*` events.
+- `sitemap.ts` dynamically generates the site map listing the English and Arabic landing URLs while excluding the SPA shell from indexing.

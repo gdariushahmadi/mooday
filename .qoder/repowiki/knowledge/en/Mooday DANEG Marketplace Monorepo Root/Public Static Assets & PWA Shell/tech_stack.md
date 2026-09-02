@@ -1,0 +1,1 @@
+Web App Manifest v2 for PWA configuration (standalone display, shortcuts, `web+daneg` custom protocol handler, edge-side-panel width); vanilla Service Worker with Cache Storage API implementing network-first/cache-first/stale-while-revalidate strategies and push notification handling; HTML/CSS-only offline fallback page.

@@ -1,4 +1,5 @@
 import React from "react";
+import Image from "next/image";
 
 /**
  * Reusable DANEG brand logo.
@@ -29,6 +30,22 @@ export type BrandLogoVariant =
   | "mark-black"
   | "mark-white";
 
+const LOGO_ASPECT_RATIOS: Record<BrandLogoVariant, number> = {
+  "horizontal-orange-cream": 244.7 / 44.6,
+  "horizontal-orange-green": 244.7 / 44.6,
+  "horizontal-mono-black": 238.6 / 48.7,
+  "horizontal-mono-white": 238.6 / 48.7,
+  "vertical-orange-cream": 143.3 / 92.3,
+  "vertical-orange-green": 147.5 / 95,
+  "vertical-mono-black": 109.6 / 76.3,
+  "vertical-mono-white": 109.6 / 76.3,
+  "mark-orange": 49 / 57,
+  "mark-orange-green": 147.5 / 50,
+  "mark-silver": 145.2 / 52,
+  "mark-black": 109.6 / 44,
+  "mark-white": 109.6 / 44,
+};
+
 interface BrandLogoProps {
   variant?: BrandLogoVariant;
   /** Render height in CSS pixels. Width auto-scales from the SVG aspect. */
@@ -47,14 +64,16 @@ export function BrandLogo({
   src,
 }: BrandLogoProps) {
   const resolvedSrc = src ?? `/brand/daneg/daneg-${variant}.svg`;
+  const width = Math.max(1, Math.round(height * LOGO_ASPECT_RATIOS[variant]));
   return (
-    <img
+    <Image
       src={resolvedSrc}
       alt={alt}
+      width={width}
       height={height}
-      decoding="async"
       className={className}
       style={{ height, width: "auto", display: "block" }}
+      sizes={`${width}px`}
     />
   );
 }

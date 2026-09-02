@@ -62,13 +62,15 @@ export type {
   LikeService,
   CartItemRecord,
   CartService,
+  SavedItemRecord,
+  SavedItemsService,
   OrderItemRecord,
-  OrderItemSnapshot,
   OrderRecord,
   OrderService,
   OrderStatus,
+  PaymentStatus,
   OrderWithItems,
-  CreateOrderInput,
+  CreateSingleListingOrderInput,
   ChatMessageRecord,
   ChatMessageType,
   ChatService,
@@ -88,6 +90,13 @@ export type {
   NotificationKind,
   NotificationRecord,
   NotificationService,
+  PartnerRecord,
+  AffiliateLinkRecord,
+  AffiliateClickRecord,
+  AffiliateReportRange,
+  AffiliateReportSummary,
+  AffiliateLinkService,
+  AffiliateClickService,
 } from "./contracts";
 export {
   LISTING_MEDIA_ALLOWED_MIME,
@@ -97,11 +106,14 @@ export {
 export { getBackendConfig } from "./config";
 export {
   mapOrderFromRemote,
-  buildCreateOrderInput,
   hydrateOrderProduct,
   type MapOrderInput,
-  type BuildCreateOrderInputArgs,
 } from "./mappers-orders";
+export {
+  toPartnerRecord,
+  toAffiliateLinkRecord,
+  toAffiliateClickRecord,
+} from "./mappers-affiliate";
 export {
   mapThreadFromRemote,
   mapMessageFromRemote,

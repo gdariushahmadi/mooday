@@ -80,32 +80,32 @@ export type LandingCopy = {
 
 export const COPY: Record<Lang, LandingCopy> = {
   en: {
-    metaTitle: "Mooday — Resell & rent pre-loved fashion in the UAE",
+    metaTitle: "DANEG — Pre-loved luxury. Authenticated.",
     metaDescription:
-      "A peer-to-peer marketplace for women in the UAE to resell or rent out the dresses, shoes, bags, and accessories they bought or received as gifts.",
+      "A public Demo/Beta marketplace for women in the UAE to browse and list pre-loved fashion. Demo orders are saved in the browser. No payment is taken.",
     nav: {
       discover: "Discover",
       how: "How it works",
-      trust: "Why Mooday",
+      trust: "Why DANEG",
       open: "Open the app",
     },
     hero: {
-      brand: "Mooday",
+      brand: "DANEG",
       ghost: "Wardrobe",
       folio: "Vol. 01 — UAE",
       title: "Pre-loved fashion, beautifully lived in.",
       subtitle:
-        "The UAE marketplace where women resell and rent the pieces they love — and find their next favourite thing.",
-      ctaPrimary: "Open Mooday",
+        "The UAE marketplace where women can discover and list pieces they love. This public beta includes a clear, no-charge Demo checkout.",
+      ctaPrimary: "Open DANEG",
       ctaSecondary: "Browse pieces",
       scrollCue: "Discover",
     },
     pulse: {
       aria: "Platform highlights",
       stats: [
-        { value: "12k+", label: "Pieces listed" },
-        { value: "AED 5k", label: "Median sale" },
-        { value: "48 h", label: "Seller payout" },
+        { value: "Demo", label: "Checkout mode" },
+        { value: "1", label: "Listing per order" },
+        { value: "AED 0", label: "Payment taken" },
         { value: "UAE", label: "Built for here" },
       ],
     },
@@ -144,8 +144,8 @@ export const COPY: Record<Lang, LandingCopy> = {
           badge: "Coming soon",
         },
         {
-          title: "Buy with escrow",
-          body: "Every purchase is held safely until the piece arrives and matches its listing.",
+          title: "Try the Demo checkout",
+          body: "Review one listing and save a clearly labelled Demo order. No payment, card number, or CVV is requested.",
           icon: "verified_user",
         },
       ],
@@ -165,20 +165,20 @@ export const COPY: Record<Lang, LandingCopy> = {
           name: "Browse all",
           span: "wide",
           fallback: {
-            gradient: "linear-gradient(145deg, #2a1224 0%, #512443 55%, #8a6510 140%)",
+            gradient: "linear-gradient(145deg, #071714 0%, #11302d 55%, #96650f 140%)",
             icon: "arrow_forward",
           },
         },
-      ],
+],
     },
     lifestyle: {
       eyebrow: "From their closet to yours",
       title: "Loved first by women across the Emirates.",
-      body: "Every Mooday seller is a real person with a real wardrobe. Browse profiles, follow the curators you trust, and message them directly — no middlemen, no markup on the conversation.",
+      body: "Every DANEG seller is a real person with a real wardrobe. Browse profiles, follow the curators you trust, and message them directly — no middlemen, no markup on the conversation.",
       cta: "Meet our sellers",
     },
     howItWorks: {
-      eyebrow: "How Mooday works",
+      eyebrow: "How DANEG works",
       title: "From closet to wardrobe in three steps.",
       steps: [
         {
@@ -190,18 +190,18 @@ export const COPY: Record<Lang, LandingCopy> = {
           body: "Message the seller directly. Ask questions, request photos, or make an offer. The conversation is the deal.",
         },
         {
-          title: "Escrow checkout",
-          body: "Pay through Mooday. Funds are released to the seller only after the piece arrives and you're happy.",
+          title: "Demo checkout",
+          body: "Choose an address and save a Demo receipt in this browser. No charge, payment, shipment, escrow, or seller payout is created.",
         },
       ],
     },
     editorial: {
       quote:
-        "I wore my friend's Mooday dress twice last month. Now I've sold three of my own. It's the wardrobe I always wanted, shared.",
-      attribution: "Latifa · Mooday seller, Dubai",
+        "I wore my friend's DANEG dress twice last month. Now I've sold three of my own. It's the wardrobe I always wanted, shared.",
+      attribution: "Latifa · DANEG seller, Dubai",
     },
     trust: {
-      eyebrow: "Why Mooday",
+      eyebrow: "Why DANEG",
       title: "Designed for trust, built for women.",
       items: [
         {
@@ -210,21 +210,21 @@ export const COPY: Record<Lang, LandingCopy> = {
           icon: "badge",
         },
         {
-          title: "Escrow protection",
-          body: "Your money is held safely until the piece arrives and matches its listing.",
+          title: "Clear Demo boundaries",
+          body: "Demo orders are labelled and stored only in your browser. Real payment and seller payout features are not active.",
           icon: "shield",
         },
         {
-          title: "Free returns",
-          body: "If it doesn't match the description, request a return within 48 hours of delivery.",
+          title: "Future-ready policies",
+          body: "Real returns, payment protection, and payouts will be published and enabled in a later phase.",
           icon: "undo",
         },
       ],
     },
     closing: {
       title: "Find your next favourite thing.",
-      body: "Free to browse, free to list. The rest of your wardrobe is waiting.",
-      cta: "Open Mooday",
+      body: "Free to browse and list in the public beta. Demo checkout takes no payment and stores the receipt in this browser.",
+      cta: "Open DANEG",
     },
     footer: {
       tagline: "A peer-to-peer marketplace for women in the UAE.",
@@ -232,7 +232,7 @@ export const COPY: Record<Lang, LandingCopy> = {
         {
           heading: "App",
           links: [
-            { label: "Open Mooday", href: "/app" },
+            { label: "Open DANEG", href: "/app" },
             { label: "Sell an item", href: "/app?view=sell" },
             { label: "My Vault", href: "/app?view=profile" },
           ],
@@ -248,7 +248,7 @@ export const COPY: Record<Lang, LandingCopy> = {
         {
           heading: "Company",
           links: [
-            { label: "About Mooday", href: "/app?view=help" },
+            { label: "About DANEG", href: "/app?view=help" },
             { label: "Community guidelines", href: "/app?view=help" },
             { label: "Help & support", href: "/app?view=help" },
           ],
@@ -256,44 +256,44 @@ export const COPY: Record<Lang, LandingCopy> = {
         {
           heading: "Legal",
           links: [
-            { label: "Privacy", href: "/app?view=help" },
-            { label: "Terms", href: "/app?view=help" },
-            { label: "Escrow policy", href: "/app?view=help" },
+            { label: "Privacy", href: "/legal/privacy" },
+            { label: "Terms", href: "/legal/terms" },
+            { label: "Returns & refunds", href: "/legal/refunds" },
           ],
         },
       ],
-      legal: "Mooday is a marketplace operated by Mooday FZ-LLC, UAE.",
+      legal: "DANEG public Demo/Beta. Real payments and seller payouts are not active.",
       rights: "All rights reserved.",
     },
   },
 
   ar: {
-    metaTitle: "موداي — بيعي وأَجّيري ملابسك المستعملة في الإمارات",
+    metaTitle: "دانق — أزياء فاخرة محبوبة. معتمدة.",
     metaDescription:
-      "سوق نظير-لنظير للنساء في الإمارات لبيع وتأجير الفساتين والأحذية والحقائب والإكسسوارات التي اشترينها أو تلقينها كهدايا.",
+      "نسخة تجريبية عامة من دانق للنساء في الإمارات لتصفح الأزياء المحبوبة وإضافتها. تُحفظ الطلبات التجريبية في المتصفح فقط ولا يتم خصم أي مبلغ.",
     nav: {
       discover: "اكتشفي",
       how: "كيف يعمل",
-      trust: "لماذا موداي",
+      trust: "لماذا دانق",
       open: "افتحي التطبيق",
     },
     hero: {
-      brand: "Mooday",
+      brand: "DANEG",
       ghost: "خزانة",
       folio: "المجلد ٠١ — الإمارات",
       title: "أزياء محبوبة، عاشت بأناقة.",
       subtitle:
         "سوق الإمارات حيث تبيع النساء وتؤجّرن القطع التي يحببنها — ويجدنَ قطعتهنّ المفضلة التالية.",
-      ctaPrimary: "افتحي موداي",
+      ctaPrimary: "افتحي دانق",
       ctaSecondary: "تصفّحي القطع",
       scrollCue: "اكتشفي",
     },
     pulse: {
       aria: "أبرز الأرقام",
       stats: [
-        { value: "+١٢ ألف", label: "قطعة معروضة" },
-        { value: "٥ آلاف د.إ", label: "متوسط البيع" },
-        { value: "٤٨ ساعة", label: "تحصيل البائعة" },
+        { value: "تجريبي", label: "وضع الطلب" },
+        { value: "١", label: "قطعة في الطلب" },
+        { value: "٠ د.إ", label: "المبلغ المخصوم" },
         { value: "الإمارات", label: "مبنية هنا" },
       ],
     },
@@ -332,8 +332,8 @@ export const COPY: Record<Lang, LandingCopy> = {
           badge: "قريبًا",
         },
         {
-          title: "اشتري بأمان",
-          body: "كل عملية محمية حتى تصلك القطعة وتطابق وصفها.",
+          title: "جرّبي الطلب التجريبي",
+          body: "راجعي قطعة واحدة واحفظي طلباً تجريبياً واضحاً. لا نطلب أو نحفظ رقم البطاقة أو CVV ولا نخصم أي مبلغ.",
           icon: "verified_user",
         },
       ],
@@ -353,20 +353,20 @@ export const COPY: Record<Lang, LandingCopy> = {
           name: "كل الفئات",
           span: "wide",
           fallback: {
-            gradient: "linear-gradient(145deg, #2a1224 0%, #512443 55%, #8a6510 140%)",
+            gradient: "linear-gradient(145deg, #071714 0%, #11302d 55%, #96650f 140%)",
             icon: "arrow_forward",
           },
         },
-      ],
+],
     },
     lifestyle: {
       eyebrow: "من خزائنهنّ إلى خزانتك",
       title: "حظي بها أولاً نساء من كل الإمارات.",
-      body: "كل بائعة على موداي شخص حقيقي وخزانة حقيقية. تصفّحي بروفايلاتهنّ، تابعي من تثقين باختيارها، وراسلنه مباشرة — بلا وسطاء.",
+      body: "كل بائعة على دانق شخص حقيقي وخزانة حقيقية. تصفّحي بروفايلاتهنّ، تابعي من تثقين باختيارها، وراسلنه مباشرة — بلا وسطاء.",
       cta: "تعرّفي على البائعات",
     },
     howItWorks: {
-      eyebrow: "كيف تعمل موداي",
+      eyebrow: "كيف تعمل دانق",
       title: "من الخزانة إلى دولابك في ثلاث خطوات.",
       steps: [
         {
@@ -378,18 +378,18 @@ export const COPY: Record<Lang, LandingCopy> = {
           body: "راسلي البائعة مباشرة. اسألي، اطلبي صورًا إضافية، وقدّمي عرضًا. المحادثة هي الاتفاق.",
         },
         {
-          title: "الدفع عبر موداي",
-          body: "ادفعي بأمان عبر موداي. لا يُحوَّل المبلغ للبائعة حتى تصلكِ القطعة وترضيها.",
+          title: "الطلب التجريبي",
+          body: "اختاري العنوان واحفظي إيصالاً تجريبياً في هذا المتصفح. لا يتم إنشاء دفع أو شحن أو ضمان أو تحويل أرباح حقيقي.",
         },
       ],
     },
     editorial: {
       quote:
-        "ارتديت فستان صديقتي من موداي مرتين الشهر الماضي. والآن بعتُ ثلاثًا من قطعِي. إنه الخزانة التي طالما أردتُها، مشتركة.",
-      attribution: "لطيفة · بائعة موداي، دبي",
+        "ارتديت فستان صديقتي من دانق مرتين الشهر الماضي. والآن بعتُ ثلاثًا من قطعِي. إنه الخزانة التي طالما أردتُها، مشتركة.",
+      attribution: "لطيفة · بائعة دانق، دبي",
     },
     trust: {
-      eyebrow: "لماذا موداي",
+      eyebrow: "لماذا دانق",
       title: "مصمَّمة للثقة، مبنية للنساء.",
       items: [
         {
@@ -398,21 +398,21 @@ export const COPY: Record<Lang, LandingCopy> = {
           icon: "badge",
         },
         {
-          title: "حماية الدفع",
-          body: "يُحفظ المبلغ بأمان حتى تصل القطعة وتطابق الوصف.",
+          title: "حدود تجريبية واضحة",
+          body: "تُعرّف الطلبات التجريبية بوضوح وتُحفظ في المتصفح فقط. الدفع وتحويل أرباح البائعين غير مفعّلين.",
           icon: "shield",
         },
         {
-          title: "إرجاع مجاني",
-          body: "إن لم تطابق القطعة الوصف، يمكنك طلب الإرجاع خلال ٤٨ ساعة من التسليم.",
+          title: "سياسات للمرحلة القادمة",
+          body: "سيتم نشر وتفعيل الدفع والحماية والإرجاع وتحويل الأرباح في مرحلة لاحقة.",
           icon: "undo",
         },
       ],
     },
     closing: {
       title: "دوّري على حبّك القادم.",
-      body: "التسوّق مجاني، العرض مجاني. بقية خزانتك بانتظارك.",
-      cta: "افتحي موداي",
+      body: "التصفح والإضافة مجانيان في النسخة العامة. الطلب التجريبي لا يخصم مبلغاً ويحفظ الإيصال في هذا المتصفح.",
+      cta: "افتحي دانق",
     },
     footer: {
       tagline: "سوق نظير-لنظير للنساء في الإمارات.",
@@ -420,7 +420,7 @@ export const COPY: Record<Lang, LandingCopy> = {
         {
           heading: "التطبيق",
           links: [
-            { label: "افتحي موداي", href: "/app" },
+            { label: "افتحي دانق", href: "/app" },
             { label: "بيعي قطعة", href: "/app?view=sell" },
             { label: "خزانتي", href: "/app?view=profile" },
           ],
@@ -436,7 +436,7 @@ export const COPY: Record<Lang, LandingCopy> = {
         {
           heading: "الشركة",
           links: [
-            { label: "عن موداي", href: "/app?view=help" },
+            { label: "عن دانق", href: "/app?view=help" },
             { label: "إرشادات المجتمع", href: "/app?view=help" },
             { label: "المساعدة", href: "/app?view=help" },
           ],
@@ -444,13 +444,13 @@ export const COPY: Record<Lang, LandingCopy> = {
         {
           heading: "قانوني",
           links: [
-            { label: "الخصوصية", href: "/app?view=help" },
-            { label: "الشروط", href: "/app?view=help" },
-            { label: "سياسة الدفع", href: "/app?view=help" },
+            { label: "الخصوصية", href: "/legal/privacy" },
+            { label: "الشروط", href: "/legal/terms" },
+            { label: "الإرجاع والاسترداد", href: "/legal/refunds" },
           ],
         },
       ],
-      legal: "موداي سوق تُشغّله موداي ش.ش.م.م، الإمارات.",
+      legal: "دانق — نسخة تجريبية عامة. الدفع وتحويل أرباح البائعين غير مفعّلين.",
       rights: "جميع الحقوق محفوظة.",
     },
   },

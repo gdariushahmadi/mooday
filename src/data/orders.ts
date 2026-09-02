@@ -87,9 +87,21 @@ export interface Order {
   /** Optional shipping recipient name (buyer snapshot for seller-side views). */
   addressFullNameEn?: string;
   addressFullNameAr?: string;
-  /** "Visa •••• 4242" — last-4 only, no PAN. */
-  paymentBrandEn: "Visa" | "Mastercard" | "Amex" | "Apple Pay" | "Cash";
-  paymentBrandAr: "فيزا" | "ماستركارد" | "أمريكان إكسبريس" | "آبل باي" | "نقداً";
+  /** Real payment metadata is future-only. Demo orders use the neutral value. */
+  paymentBrandEn:
+    | "Visa"
+    | "Mastercard"
+    | "Amex"
+    | "Apple Pay"
+    | "Cash"
+    | "Demo";
+  paymentBrandAr:
+    | "فيزا"
+    | "ماستركارد"
+    | "أمريكان إكسبريس"
+    | "آبل باي"
+    | "نقداً"
+    | "تجريبي";
   paymentLast4: string;
   subtotal: number;
   shipping: number;
@@ -126,8 +138,8 @@ const PROCESSING_TIMELINE: OrderTimelineEvent[] = [
   {
     status: "processing",
     date: isoDaysAgo(1),
-    descriptionEn: "Order placed, payment secured in Mooday escrow.",
-    descriptionAr: "تم تسجيل الطلب وتأمين المبلغ في حساب مودي.",
+    descriptionEn: "Order recorded. Payment is not active in the public Demo.",
+    descriptionAr: "تم تسجيل الطلب. الدفع غير مفعّل في النسخة التجريبية العامة.",
   },
 ];
 
@@ -135,8 +147,8 @@ const SHIPPED_TIMELINE: OrderTimelineEvent[] = [
   {
     status: "processing",
     date: isoDaysAgo(4),
-    descriptionEn: "Order placed, payment secured in Mooday escrow.",
-    descriptionAr: "تم تسجيل الطلب وتأمين المبلغ في حساب مودي.",
+    descriptionEn: "Order recorded. Payment is not active in the public Demo.",
+    descriptionAr: "تم تسجيل الطلب. الدفع غير مفعّل في النسخة التجريبية العامة.",
   },
   {
     status: "shipped",
@@ -150,8 +162,8 @@ const DELIVERED_TIMELINE: OrderTimelineEvent[] = [
   {
     status: "processing",
     date: isoDaysAgo(10),
-    descriptionEn: "Order placed, payment secured in Mooday escrow.",
-    descriptionAr: "تم تسجيل الطلب وتأمين المبلغ في حساب مودي.",
+    descriptionEn: "Order recorded. Payment is not active in the public Demo.",
+    descriptionAr: "تم تسجيل الطلب. الدفع غير مفعّل في النسخة التجريبية العامة.",
   },
   {
     status: "shipped",
@@ -172,8 +184,8 @@ const RETURNED_TIMELINE: OrderTimelineEvent[] = [
   {
     status: "returned",
     date: isoDaysAgo(1),
-    descriptionEn: "Return requested. Refund pending parcel receipt.",
-    descriptionAr: "تم طلب الإرجاع. الاسترداد بعد استلام الشحنة.",
+    descriptionEn: "Demo return recorded. No refund was processed.",
+    descriptionAr: "تم تسجيل الإرجاع التجريبي. لم يتم أي استرداد.",
   },
 ];
 
@@ -194,7 +206,7 @@ function p(id: string): Product {
   return found;
 }
 
-export const DEFAULT_ORDERS: Order[] = [
+const DEMO_ORDER_FIXTURES: Order[] = [
   {
     id: makeId(),
     dateOrdered: isoDaysAgo(1),
@@ -267,7 +279,6 @@ export const DEFAULT_ORDERS: Order[] = [
     status: "shipped",
     lineItems: [
       makeLine(p("red-sole-heels"), 1, 540),
-      makeLine(p("silk-scarf"), 1, 180),
     ],
     addressCityEn: "Dubai",
     addressCityAr: "دبي",
@@ -276,9 +287,9 @@ export const DEFAULT_ORDERS: Order[] = [
     paymentBrandEn: "Visa",
     paymentBrandAr: "فيزا",
     paymentLast4: "4242",
-    subtotal: 720,
-    shipping: 0,
-    total: 720,
+    subtotal: 540,
+    shipping: 25,
+    total: 565,
     courier: {
       nameEn: "Fetchr",
       nameAr: "فتشر",
@@ -492,8 +503,8 @@ export const DEFAULT_ORDERS: Order[] = [
       {
         status: "cancelled",
         date: isoDaysAgo(5),
-        descriptionEn: "Order cancelled by buyer — refund issued.",
-        descriptionAr: "تم إلغاء الطلب من المشتري، وتم الاسترداد.",
+        descriptionEn: "Demo order cancelled. No refund was processed.",
+        descriptionAr: "تم إلغاء الطلب التجريبي. لم يتم أي استرداد.",
       },
     ],
   },
@@ -542,6 +553,22 @@ export const DEFAULT_ORDERS: Order[] = [
     timeline: DELIVERED_TIMELINE,
   },
 ];
+
+/** Keep the public mock catalogue aligned with the one-listing Demo contract. */
+export function normalizeDemoOrders(orders: Order[]): Order[] {
+  return orders.map((order) => ({
+    ...order,
+    lineItems: order.lineItems.slice(0, 1).map((item) => ({
+      ...item,
+      quantity: 1,
+    })),
+    paymentBrandEn: "Demo",
+    paymentBrandAr: "تجريبي",
+    paymentLast4: "",
+  }));
+}
+
+export const DEFAULT_ORDERS: Order[] = normalizeDemoOrders(DEMO_ORDER_FIXTURES);
 
 /** Returns the order matching the given id, or null if not found. */
 export function findOrder(orders: Order[], id: string): Order | null {

@@ -1,0 +1,4 @@
+- Banned phrase detection is centralized in `src/lib/banned-phrases` and enforced by a filesystem walker that skips `node_modules` and dotfiles, then reports hits with file, line, and column positions.
+- Playwright tests use semantic locators (`getByRole`, `getByLabel`, `getByTestId`) rather than brittle CSS selectors to assert UI elements.
+- Email-driven flows poll an external service (Mailpit) with retry loops (`expect.poll`) instead of hard sleeps to wait for asynchronous messages.
+- Each e2e spec groups related assertions into a single `test.describe` block scoped to one user journey (rebrand smoke, phase-2 auth).

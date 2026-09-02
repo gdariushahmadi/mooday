@@ -52,9 +52,9 @@ function check(label, ok, detail) {
 
 async function main() {
   const suffix = `${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
-  const sellerEmail = `phase2-seller-${suffix}@mooday.test`;
-  const buyerEmail = `phase2-buyer-${suffix}@mooday.test`;
-  const pw = "Mooday-Smoke-42!";
+  const sellerEmail = `phase2-seller-${suffix}@daneg.test`;
+  const buyerEmail = `phase2-buyer-${suffix}@daneg.test`;
+  const pw = "DANEG-Smoke-42!";
 
   console.log("Creating users...");
   const { data: sellerCreated, error: sellerErr } =
@@ -94,6 +94,7 @@ async function main() {
       category: "Bags",
       mode: "resell",
       status: "active",
+      approved_at: new Date().toISOString(),
       is_authentic: true,
     })
     .select("*")
@@ -182,14 +183,14 @@ async function main() {
   // ---------- reports ----------
   console.log("\nreports slice:");
   const { data: report, error: reportErr } = await admin.from("reports").insert({
-    case_number: `MOODAY-SMOKE-${suffix}`,
+    case_number: `DANEG-SMOKE-${suffix}`,
     reporter_id: buyerId,
     target: "listing",
     target_id: listingId,
     reason: "spam",
     body: "Smoke test report",
   }).select("*").single();
-  check("report created with case number", !reportErr && report?.case_number?.startsWith("MOODAY-SMOKE-"), reportErr?.message);
+  check("report created with case number", !reportErr && report?.case_number?.startsWith("DANEG-SMOKE-"), reportErr?.message);
 
   // ---------- disputes ----------
   console.log("\ndisputes slice:");

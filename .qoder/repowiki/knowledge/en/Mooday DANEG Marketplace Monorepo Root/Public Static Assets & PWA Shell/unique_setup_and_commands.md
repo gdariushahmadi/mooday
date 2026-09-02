@@ -1,0 +1,1 @@
+Bump `CACHE_VERSION` in `sw.js` whenever the app shell changes so clients invalidate caches and refetch the shell; keep `manifest.json` icon entries in sync with filenames under `public/icons/` since they are hard-coded there.

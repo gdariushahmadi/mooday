@@ -1,0 +1,6 @@
+- Bilingual content is centralized in `copy.ts` as a `Record<Lang, LandingCopy>` object keyed by `en`/`ar`, and pages select copy via `const t = COPY[lang]` rather than per-string lookups.
+- Client-side interactivity is isolated behind explicit `'use client'` directives on small components (`LangToggle`, `Reveal`, `LandingInstallPrompt`, `DocumentDirSync`) while the parent `Landing` remains a server component for SSR/SEO.
+- RTL support is implemented by setting `dir` based on `lang === 'ar'` and mirroring directional UI via `[dir="rtl"]` CSS selectors plus inline `style={{ transform: isAr ? 'scaleX(-1)' : undefined }}` on arrow icons.
+- Scroll-triggered animations use the shared `Reveal` wrapper with an optional `delay` prop (often computed as `idx * N`) to stagger entries within lists.
+- CSS is scoped under a single `.landing` root class and uses CSS custom properties for colors and easing, with responsive behavior expressed through `@media` blocks rather than utility classes.
+- The PWA install prompt persists dismissal state in `localStorage` under a shared key (`mooday.installPrompt.dismissedAt`) with a 7-day cooldown, reused across the landing and app-shell contexts.

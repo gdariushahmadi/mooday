@@ -12,6 +12,7 @@ import { SIZES } from "@/data/attributes";
 import { COLOURS, findColour } from "@/data/attributes";
 import { mockImageOptions } from "@/data/mock-images";
 import { formatAEDLabel } from "@/lib/format";
+import { fetchActiveCategories, type CategoryOption } from "@/services/categories";
 import { ListingPhotoPicker } from "./ListingPhotoPicker";
 
 /** Bilingual form copy. */
@@ -51,7 +52,7 @@ export const LISTING_FORM_COPY_EN: ListingFormCopy = {
   discount: "Discount %",
   size: "Size",
   color: "Colour",
-  authentic: "Authentic — verified by Mooday",
+  authentic: "Authentic — verified by DANEG",
   authenticHelp:
     "Buyers trust authentic items 3× more; we'll spot-check the listing within 30 days.",
   publish: "Publish listing",
@@ -74,7 +75,7 @@ export const LISTING_FORM_COPY_AR: ListingFormCopy = {
   discount: "الخصم %",
   size: "المقاس",
   color: "اللون",
-  authentic: "أصلي — معتمد من مودي",
+  authentic: "أصلي — معتمد من دانق",
   authenticHelp:
     "المشترون يثقون بالمنتجات الأصلية 3 أضعاف؛ سنتحقق خلال 30 يوماً.",
   publish: "نشر المنتج",
@@ -111,7 +112,14 @@ interface ListingFormProps {
    * matching entry here are public/mock paths the picker let through
    * unchanged.
    */
-  onStagedFiles?: (files: File[]) => void;
+  /**
+   * Phase 3 slice 7: receives the *same* `url → File` map the form
+   * built while the user picked photos. The parent uses this map to
+   * pair staged files with the URLs that ended up in `data.images`
+   * — a fresh `URL.createObjectURL(file)` here would miss the
+   * picker's key and silently drop the real upload.
+   */
+  onStagedFiles?: (staged: Map<string, File>) => void;
 }
 
 /**
@@ -196,6 +204,27 @@ export const ListingForm: React.FC<ListingFormProps> = ({
   // `media.upload` after the listing row exists.
   const stagedFilesRef = useRef<Map<string, File>>(new Map());
   const [validationError, setValidationError] = useState("");
+
+  // Admin-managed categories (falls back to the static list in mock mode
+  // or if the fetch fails — see src/services/categories.ts).
+  const [categoryOptions, setCategoryOptions] = useState<CategoryOption[]>(
+    () =>
+      SELL_CATEGORIES.map((c) => ({
+        slug: c.toLowerCase(),
+        nameEn: c,
+        nameAr: CATEGORIES_AR[c] ?? c,
+      })),
+  );
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchActiveCategories().then((options) => {
+      if (!cancelled && options.length > 0) setCategoryOptions(options);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     if (!draftKey || initial || typeof window === "undefined") return;
@@ -287,11 +316,13 @@ export const ListingForm: React.FC<ListingFormProps> = ({
       onSaveDraft(data);
     } else {
       if (draftKey) window.localStorage.removeItem(draftKey);
+      // Pass the same `url → File` map the form maintained while the
+      // user picked photos. The parent uses the URL keys to look up
+      // each staged file at the right index in `data.images`, so a
+      // fresh `URL.createObjectURL(file)` on the receiving end would
+      // miss the picker's key and drop the real upload.
       if (onStagedFiles) {
-        const staged = (data.images ?? photos)
-          .map((url) => stagedFilesRef.current.get(url) ?? null)
-          .filter((f): f is File => f !== null);
-        onStagedFiles(staged);
+        onStagedFiles(stagedFilesRef.current);
       }
       onSubmit(data);
     }
@@ -342,10 +373,11 @@ export const ListingForm: React.FC<ListingFormProps> = ({
             name: opt.name,
             url: opt.url,
           }))}
-          onFileStage={(file) => {
-            // Track by a synthetic URL so the staged map can be looked
-            // up from the same array the form holds at submit time.
-            const url = URL.createObjectURL(file);
+          onFileStage={(file, url) => {
+            // Store by the URL the picker pushed into `photos` so the
+            // submit-time lookup hits. Using a fresh URL here would
+            // leave the staged file orphaned and the real upload
+            // would never reach the backend.
             stagedFilesRef.current.set(url, file);
           }}
         />
@@ -387,9 +419,9 @@ export const ListingForm: React.FC<ListingFormProps> = ({
             onChange={(e) => setCategory(e.target.value)}
             className="p-md bg-surface border border-outline-variant rounded-lg text-body-md focus:border-primary outline-none"
           >
-            {SELL_CATEGORIES.map((c) => (
-              <option key={c} value={c}>
-                {isAr ? CATEGORIES_AR[c] : c}
+            {categoryOptions.map((c) => (
+              <option key={c.slug} value={c.nameEn}>
+                {isAr ? c.nameAr : c.nameEn}
               </option>
             ))}
           </select>

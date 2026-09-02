@@ -20,6 +20,7 @@ function makeContext(overrides: Partial<AppContextType> = {}): AppContextType {
     updateQuantity: vi.fn(),
     clearCart: vi.fn(),
     chats: [],
+    setActiveChats: vi.fn(),
     sendChatMessage: vi.fn(),
     createChatThread: vi.fn(() => "test-thread"),
     markChatRead: vi.fn(),
@@ -171,13 +172,13 @@ describe("SignInView (A-04)", () => {
     const { ctx, onSuccess } = renderSignIn();
     await user.type(
       screen.getByPlaceholderText(/you@example.com/i),
-      "layla@mooday.app",
+      "layla@daneg.app",
     );
-    await user.type(screen.getByPlaceholderText(/your password/i), "mooday123");
+    await user.type(screen.getByPlaceholderText(/your password/i), "daneg123");
     await user.click(screen.getByRole("button", { name: /^sign in$/i }));
     expect(ctx.signIn).toHaveBeenCalledWith({
-      email: "layla@mooday.app",
-      password: "mooday123",
+      email: "layla@daneg.app",
+      password: "daneg123",
     });
     expect(onSuccess).toHaveBeenCalledTimes(1);
   });
@@ -187,7 +188,7 @@ describe("SignInView (A-04)", () => {
     const { onSuccess } = renderSignIn({ signIn: vi.fn(() => false) });
     await user.type(
       screen.getByPlaceholderText(/you@example.com/i),
-      "layla@mooday.app",
+      "layla@daneg.app",
     );
     await user.type(screen.getByPlaceholderText(/your password/i), "wrong");
     await user.click(screen.getByRole("button", { name: /^sign in$/i }));

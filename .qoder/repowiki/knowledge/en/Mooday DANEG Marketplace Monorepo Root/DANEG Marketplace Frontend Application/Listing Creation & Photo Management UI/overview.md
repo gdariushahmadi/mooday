@@ -1,0 +1,1 @@
+React client components that render the bilingual create/edit listing form, a premium-brand autocomplete, and a staged photo picker with in-browser image resizing for product listings.

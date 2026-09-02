@@ -99,6 +99,7 @@ function makeContext(overrides: Partial<AppContextType> = {}): AppContextType {
     updateQuantity: vi.fn(),
     clearCart: vi.fn(),
     chats: [],
+    setActiveChats: vi.fn(),
     sendChatMessage: vi.fn(),
     createChatThread: vi.fn(() => "t1"),
     markChatRead: vi.fn(),
@@ -237,6 +238,14 @@ describe("MyPurchasesView (C-16)", () => {
     expect(screen.getAllByText("Shipped").length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText("Processing").length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText("Cancelled").length).toBeGreaterThanOrEqual(1);
+  });
+
+  it("keeps Reorder visibly disabled in the public Demo", () => {
+    renderPurchases();
+    const reorder = screen.getByRole("button", {
+      name: /Reorder: Unavailable in Demo/i,
+    });
+    expect(reorder).toBeDisabled();
   });
 
   it("clicking an order card calls onOpenOrder with the order id", async () => {

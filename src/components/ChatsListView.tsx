@@ -4,6 +4,7 @@ import React, { useMemo } from "react";
 import { useApp } from "@/context/AppContext";
 import { ClickableCard } from "./ClickableCard";
 import { formatAEDLabel } from "@/lib/format";
+import { AppImage } from "@/components/AppImage";
 
 interface ChatsListViewProps {
   onBack: () => void;
@@ -170,17 +171,25 @@ export const ChatsListView: React.FC<ChatsListViewProps> = ({
                   ariaLabel={`${thread.sellerName} — ${thread.productTitle}`}
                   className="flex items-center gap-md p-md bg-surface-container-lowest border border-surface-container-high rounded-xl hover:shadow-sm transition-shadow"
                 >
-                  <div className="relative flex-shrink-0">
-                    <img
-                      alt={thread.sellerName}
-                      src={thread.sellerAvatar}
-                      className="w-12 h-12 rounded-full object-cover border border-outline-variant"
-                    />
-                    <img
-                      alt={thread.productTitle}
-                      src={thread.productImage}
-                      className="absolute -bottom-1 -end-1 w-6 h-6 rounded object-cover border-2 border-surface"
-                    />
+                  <div className="relative h-12 w-12 flex-shrink-0">
+                    <div className="relative h-12 w-12 overflow-hidden rounded-full border border-outline-variant">
+                      <AppImage
+                        alt={thread.sellerName}
+                        src={thread.sellerAvatar || "/sellers/placeholder.svg"}
+                        fill
+                        sizes="48px"
+                        className="object-cover"
+                      />
+                    </div>
+                    <div className="absolute -bottom-1 -end-1 h-6 w-6 overflow-hidden rounded border-2 border-surface">
+                      <AppImage
+                        alt={thread.productTitle}
+                        src={thread.productImage || "/products/placeholder.svg"}
+                        fill
+                        sizes="24px"
+                        className="object-cover"
+                      />
+                    </div>
                     {(thread.unread ?? 0) > 0 && (
                       <span
                         className="absolute -top-1 -start-1 min-w-5 h-5 px-1 rounded-full bg-error text-on-error text-[10px] font-bold flex items-center justify-center"

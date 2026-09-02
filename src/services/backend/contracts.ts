@@ -15,6 +15,15 @@ export type OtpPurpose = "signup" | "recovery";
 
 export interface AuthService {
   getCurrentUser(): Promise<AuthenticatedUser | null>;
+  /**
+   * Raw access token (JWT) for the current session, or null when signed
+   * out. The browser client persists its session in localStorage rather
+   * than cookies, so Server Actions cannot read it from the request.
+   * Callers that need a server-verified identity pass this token
+   * explicitly; the server re-verifies it against Supabase and never
+   * trusts any caller-supplied user id.
+   */
+  getAccessToken(): Promise<string | null>;
   subscribe(listener: (user: AuthenticatedUser | null) => void): () => void;
   signUp(input: {
     name: string;
@@ -342,10 +351,24 @@ export interface CartService {
   clear(): Promise<void>;
 }
 
+export interface SavedItemRecord {
+  listingId: string;
+  createdAt: string;
+}
+
+export interface SavedItemsService {
+  listMine(): Promise<SavedItemRecord[]>;
+  save(listingId: string): Promise<void>;
+  remove(listingId: string): Promise<void>;
+}
+
 // ---------- slice 5: orders ----------
 
 export type OrderStatus =
-  "paid" | "shipped" | "delivered" | "returned" | "cancelled";
+  "pending_payment" | "paid" | "shipped" | "delivered" | "returned" | "cancelled";
+
+export type PaymentStatus =
+  "pending" | "succeeded" | "failed" | "refunded";
 
 export interface OrderItemRecord {
   id: string;
@@ -364,6 +387,9 @@ export interface OrderRecord {
   buyerId: string;
   sellerId: string;
   status: OrderStatus;
+  paymentStatus: PaymentStatus;
+  paymentIntentId: string | null;
+  paidAt: string | null;
   shippingAddress: {
     cityEn: string;
     cityAr: string;
@@ -386,26 +412,10 @@ export interface OrderRecord {
   updatedAt: string;
 }
 
-export interface OrderItemSnapshot {
+/** Server-authoritative input for the future real checkout path. */
+export interface CreateSingleListingOrderInput {
   listingId: string;
-  titleEnAtPurchase: string;
-  titleArAtPurchase: string;
-  imageUrlAtPurchase: string;
-  priceMinorAtPurchase: number;
-  quantity: number;
-}
-
-export interface CreateOrderInput {
-  sellerId: string;
-  shippingAddress: OrderRecord["shippingAddress"];
-  itemsSubtotalMinor: number;
-  shippingFeeMinor: number;
-  totalMinor: number;
-  paymentMethod: string | null;
-  paymentBrandEn: string | null;
-  paymentBrandAr: string | null;
-  paymentLast4: string | null;
-  items: OrderItemSnapshot[];
+  addressId: string;
 }
 
 export interface OrderWithItems extends OrderRecord {
@@ -418,7 +428,10 @@ export interface OrderService {
   /** Orders where the current user is the seller, newest first. */
   listMineAsSeller(): Promise<OrderWithItems[]>;
   getById(orderId: string): Promise<OrderWithItems | null>;
-  create(input: CreateOrderInput): Promise<OrderRecord>;
+  /** Creates a pending order through the atomic database RPC. */
+  createSingleListingOrder(
+    input: CreateSingleListingOrderInput,
+  ): Promise<OrderRecord>;
   /** `markShipped` is seller-only; the state-machine trigger enforces it. */
   markShipped(
     orderId: string,
@@ -518,6 +531,7 @@ export interface SellerReviewRecord {
   sellerId: string;
   buyerId: string;
   orderId: string | null;
+  listingId: string | null;
   rating: number;
   bodyEn: string;
   bodyAr: string;
@@ -704,6 +718,7 @@ export interface Phase2Backend {
   sellerCards: SellerCardService;
   likes: LikeService;
   cart: CartService;
+  savedItems: SavedItemsService;
   follows: FollowService;
   orders: OrderService;
   chats: ChatService;
@@ -713,4 +728,111 @@ export interface Phase2Backend {
   notifications: NotificationService;
   paymentMethods: PaymentMethodService;
   blocks: BlockService;
+  affiliateLinks: AffiliateLinkService;
+  affiliateClicks: AffiliateClickService;
+}
+
+// ---------- affiliate / outbound publisher monetization ----------
+
+export interface PartnerRecord {
+  code: string;
+  name: string;
+  logoUrl: string | null;
+  baseUrlTemplate: string | null;
+  isActive: boolean;
+  displayOrder: number;
+  createdAt: string;
+}
+
+export interface AffiliateLinkRecord {
+  id: string;
+  shortId: string;
+  listingId: string;
+  partnerCode: string;
+  affiliateUrl: string;
+  displayOrder: number;
+  isActive: boolean;
+  createdAt: string;
+}
+
+export interface AffiliateClickRecord {
+  id: string;
+  shortId: string;
+  listingId: string;
+  partnerCode: string;
+  userId: string | null;
+  anonId: string | null;
+  clickedAt: string;
+}
+
+export interface AffiliateReportRange {
+  fromIso: string;
+  toIso: string;
+}
+
+export interface AffiliateReportSummary {
+  byPartner: { partnerCode: string; clicks: number }[];
+  byListing: { listingId: string; clicks: number }[];
+  totalClicks: number;
+}
+
+export interface AffiliateLinkService {
+  /**
+   * Public callers receive active rows. Admin callers can include inactive
+   * rows so that the panel can restore or deactivate an item.
+   */
+  listPartners(includeInactive?: boolean): Promise<PartnerRecord[]>;
+  listLinksForListing(
+    listingId: string,
+    includeInactive?: boolean,
+  ): Promise<AffiliateLinkRecord[]>;
+  createPartner(input: {
+    code: string;
+    name: string;
+    logoUrl?: string;
+    baseUrlTemplate?: string;
+    displayOrder?: number;
+    isActive?: boolean;
+  }): Promise<PartnerRecord>;
+  updatePartner(
+    code: string,
+    patch: Partial<{
+      name: string;
+      logoUrl: string | null;
+      baseUrlTemplate: string | null;
+      displayOrder: number;
+      isActive: boolean;
+    }>,
+  ): Promise<void>;
+  deletePartner(code: string): Promise<void>;
+  createLink(input: {
+    listingId: string;
+    partnerCode: string;
+    affiliateUrl: string;
+    displayOrder?: number;
+  }): Promise<AffiliateLinkRecord>;
+  updateLink(
+    id: string,
+    patch: Partial<{
+      affiliateUrl: string;
+      displayOrder: number;
+      isActive: boolean;
+    }>,
+  ): Promise<void>;
+  removeLink(id: string): Promise<void>;
+}
+
+export interface AffiliateClickService {
+  recordClick(input: {
+    shortId: string;
+    listingId: string;
+    partnerCode: string;
+    userId: string | null;
+    anonId: string | null;
+    userAgent: string | null;
+    referer: string | null;
+  }): Promise<void>;
+  aggregateForReports(
+    range: AffiliateReportRange,
+  ): Promise<AffiliateReportSummary>;
 }

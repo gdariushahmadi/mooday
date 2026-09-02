@@ -1,0 +1,4 @@
+- Each view component ships a co-located `.test.tsx` unit test file next to its implementation.
+- Route pages under `src/app/` are thin wrappers that delegate rendering to view components in `src/components/`.
+- Global state and navigation are accessed exclusively through the `AppContext` provider and `useAppNavigation` hook rather than prop drilling.
+- Feature-scoped subdirectories group related components (e.g., `components/admin/`, `components/landing/`, `components/listing/`) instead of flat organization.

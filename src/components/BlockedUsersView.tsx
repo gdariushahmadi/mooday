@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { useApp } from "@/context/AppContext";
 import type { BlockedUser } from "@/data/blocked-users";
+import { AppImage } from "@/components/AppImage";
 
 interface BlockedUsersViewProps {
   onBack: () => void;
@@ -177,11 +178,15 @@ const BlockedUserRow: React.FC<{
   onUnblock: () => void;
 }> = ({ user, isAr, t, onUnblock }) => (
   <div className="bg-surface-container-lowest border border-surface-container-high rounded-xl p-md flex items-center gap-md">
-    <img
-      alt=""
-      src={user.avatar}
-      className="w-12 h-12 rounded-full object-cover border border-outline-variant flex-shrink-0"
-    />
+    <div className="relative h-12 w-12 flex-shrink-0 overflow-hidden rounded-full border border-outline-variant">
+      <AppImage
+        alt=""
+        src={user.avatar || "/sellers/placeholder.svg"}
+        fill
+        sizes="48px"
+        className="object-cover"
+      />
+    </div>
     <div className="flex-grow min-w-0">
       <p className="font-serif text-label-md text-on-surface truncate">
         {isAr ? user.nameAr : user.nameEn}

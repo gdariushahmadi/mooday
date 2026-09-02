@@ -58,6 +58,9 @@ export function mapMessageFromRemote(
       hour: "2-digit",
       minute: "2-digit",
     }),
+    type: record.type === "offer" ? "offer" : record.type,
+    offerMinor: record.offerMinor ?? undefined,
+    offerStatus: record.offerStatus ?? undefined,
   };
 }
 

@@ -1,0 +1,11 @@
+schema_version: 1
+module_path: frontend_app/shared_views_and_infrastructure
+title: Shared Views, App Context & Navigation Infrastructure
+scope:
+    - src/components/
+    - src/context/
+    - src/hooks/
+    - src/types/
+source_files: []
+depends_on: []
+related_to: []

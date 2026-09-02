@@ -1,0 +1,1 @@
+Defines the Mooday marketplace PostgreSQL schema, Row Level Security policies, triggers, and notification fan-out via Supabase migrations, tests, and project configuration.

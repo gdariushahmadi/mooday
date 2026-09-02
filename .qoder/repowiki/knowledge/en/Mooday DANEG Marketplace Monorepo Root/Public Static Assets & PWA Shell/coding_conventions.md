@@ -1,0 +1,3 @@
+- Asset filenames use kebab-case descriptive names (e.g. `daneg-horizontal-mono-black.svg`, `black-lace-abaya.jpg`) rather than hashed or opaque identifiers.
+- Brand assets are provided in multiple formats and color variants side-by-side within the same directory, allowing consumers to pick the appropriate MIME/type automatically.
+- PWA assets reference each other by absolute root paths (`/icons/...`, `/app?view=...`) so the service worker and manifest resolve correctly regardless of deployment base path.

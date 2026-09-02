@@ -40,27 +40,27 @@ where p.seller_id = v.seller_id;
 
 insert into public.listings (
   id, seller_id, title_en, title_ar, price_minor,
-  condition_en, condition_ar, category, status
+  condition_en, condition_ar, category, status, approved_at
 ) values
   (
     'cccccccc-7777-4777-8777-777777777771',
     'a7777777-7777-4777-8777-777777777777',
-    'A active 1', 'أ نشط ١', 1000, 'Good', 'جيد', 'Bags', 'active'
+    'A active 1', 'أ نشط ١', 1000, 'Good', 'جيد', 'Bags', 'active', timezone('utc', now())
   ),
   (
     'cccccccc-7777-4777-8777-777777777772',
     'a7777777-7777-4777-8777-777777777777',
-    'A active 2', 'أ نشط ٢', 1000, 'Good', 'جيد', 'Bags', 'active'
+    'A active 2', 'أ نشط ٢', 1000, 'Good', 'جيد', 'Bags', 'active', timezone('utc', now())
   ),
   (
     'cccccccc-7777-4777-8777-777777777773',
     'a7777777-7777-4777-8777-777777777777',
-    'A draft', 'أ مسودة', 1000, 'Good', 'جيد', 'Bags', 'draft'
+    'A draft', 'أ مسودة', 1000, 'Good', 'جيد', 'Bags', 'draft', null
   ),
   (
     'dddddddd-8888-4888-9888-888888888881',
     'a8888888-8888-4888-9888-888888888888',
-    'B active', 'ب نشط', 1000, 'Good', 'جيد', 'Shoes', 'active'
+    'B active', 'ب نشط', 1000, 'Good', 'جيد', 'Shoes', 'active', timezone('utc', now())
   );
 
 -- Anonymous read of the public projection.

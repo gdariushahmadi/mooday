@@ -129,7 +129,7 @@ export function AdminOverviewTab({
       </div>
 
       {/* Quick Action Cards */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
         <div className="rounded-2xl border border-surface-container-high bg-surface p-5">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/10 text-amber-600">
@@ -162,12 +162,12 @@ export function AdminOverviewTab({
             </div>
             <div>
               <h3 className="font-semibold text-on-surface">
-                {isAr ? "إدارة النزاعات والمستحقات" : "Dispute & Claim Resolution"}
+                {isAr ? "إدارة النزاعات التجريبية" : "Demo dispute review"}
               </h3>
               <p className="text-xs text-on-surface-variant">
                 {isAr
-                  ? "مراجعة شكاوى المشترين والبائعين وإصدار القرارات"
-                  : "Resolve order disputes between buyers and sellers"}
+                  ? "مراجعة الحالات التجريبية وإصدار قرارات الحالة"
+                  : "Review Demo dispute records and update their status"}
               </p>
             </div>
           </div>
@@ -177,6 +177,33 @@ export function AdminOverviewTab({
             className="mt-4 w-full rounded-xl border border-surface-container-high bg-surface-container-low px-4 py-2 text-sm font-semibold text-on-surface hover:bg-surface-container transition"
           >
             {isAr ? "عرض النزاعات النشطة" : "View Active Disputes"}
+          </button>
+        </div>
+
+        <div className="rounded-2xl border border-surface-container-high bg-surface p-5">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+              <span className="material-symbols-outlined text-[24px]">
+                ads_click
+              </span>
+            </div>
+            <div>
+              <h3 className="font-semibold text-on-surface">
+                {isAr ? "روابط التسويق بالعمولة" : "Affiliate links"}
+              </h3>
+              <p className="text-xs text-on-surface-variant">
+                {isAr
+                  ? "إدارة الشركاء وقياس النقرات الخارجية"
+                  : "Manage partners and measure outbound clicks"}
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => onNavigateTab("affiliate")}
+            className="mt-4 w-full rounded-xl border border-primary/30 bg-primary/5 px-4 py-2 text-sm font-semibold text-primary hover:bg-primary/10 transition"
+          >
+            {isAr ? "إدارة الروابط" : "Manage affiliate links"}
           </button>
         </div>
       </div>

@@ -1,0 +1,1 @@
+Tests require mocking every server action from `@/services/admin/actions` because they throw when no Supabase session is present; run with `vitest` to exercise the demo/mock mode flow that loads fake data via a "Load demo data" button.

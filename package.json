@@ -1,5 +1,5 @@
 {
-  "name": "mooday",
+  "name": "daneg",
   "version": "0.1.0",
   "private": true,
   "engines": {
@@ -10,9 +10,9 @@
     "build": "next build",
     "start": "next start",
     "start:standalone": "node .next/standalone/server.js",
-    "deploy:cpanel": "bash scripts/build-standalone.sh",
+    "deploy:vps": "bash scripts/build-vps.sh",
     "seed:demo": "node scripts/seed-demo-catalog.mjs",
-    "lint": "eslint",
+    "lint": "eslint src scripts next.config.ts",
     "test": "vitest",
     "test:ci": "vitest run",
     "test:watch": "vitest watch",

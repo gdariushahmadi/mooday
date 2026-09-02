@@ -38,7 +38,7 @@ export function ServiceWorkerRegistrar() {
         })
         .catch((err) => {
           // Service worker registration failure shouldn't break the app.
-          console.warn("[Mooday] SW registration failed:", err);
+          console.warn("[DANEG] SW registration failed:", err);
         });
     };
 

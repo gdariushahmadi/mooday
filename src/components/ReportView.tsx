@@ -8,6 +8,7 @@ import {
   REPORT_REASONS_EN,
   REPORT_REASONS_AR,
 } from "@/data/reports";
+import { AppImage } from "@/components/AppImage";
 
 interface ReportViewProps {
   /** Order context (H-40 is reachable from order details). */
@@ -34,6 +35,7 @@ interface ReportCopy {
   successBody: (n: string) => string;
   backToOrder: string;
   required: string;
+  missingTarget: string;
 }
 
 const COPY: Record<"en" | "ar", ReportCopy> = {
@@ -54,6 +56,7 @@ const COPY: Record<"en" | "ar", ReportCopy> = {
       `Your case ID is ${n}. We'll review and update you via the Activity feed.`,
     backToOrder: "Back to order",
     required: "Please pick a reason and add a short description.",
+    missingTarget: "This report has no valid listing or seller target.",
   },
   ar: {
     title: "الإبلاغ",
@@ -72,6 +75,7 @@ const COPY: Record<"en" | "ar", ReportCopy> = {
       `رقم القضية هو ${n}. سنراجع ونبلغك عبر صفحة التنبيهات.`,
     backToOrder: "العودة للطلب",
     required: "يرجى اختيار سبب ووصف قصير.",
+    missingTarget: "لا يحتوي هذا البلاغ على منتج أو بائع صالح.",
   },
 };
 
@@ -99,6 +103,7 @@ export const ReportView: React.FC<ReportViewProps> = ({
   const [photos, setPhotos] = useState<string[]>([]);
   const [submittedCase, setSubmittedCase] = useState<string | null>(null);
   const [formError, setFormError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Resolve a friendly label for the target so the submitter can
   // confirm what they're reporting.
@@ -116,35 +121,64 @@ export const ReportView: React.FC<ReportViewProps> = ({
     return sellerName;
   })();
 
-  const handleAddPhoto = () => {
-    if (photos.length >= 3) return;
-    const sample =
-      listings.find((l) => l.id === targetId)?.image ??
-      orders.find((o) => o.id === orderId)?.lineItems[0]?.product.image ??
-      "/products/placeholder.jpg";
-    setPhotos([...photos, sample]);
+  const handlePhotoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const selected = Array.from(event.target.files ?? []);
+    const valid = selected.filter(
+      (file) =>
+        ["image/jpeg", "image/png", "image/webp"].includes(file.type) &&
+        file.size <= 5 * 1024 * 1024,
+    );
+    const remaining = Math.max(0, 3 - photos.length);
+    if (valid.length === 0 && selected.length > 0) {
+      setFormError(
+        isAr
+          ? "اختاري صوراً بصيغة صحيحة وحجم أقل من ٥ ميغابايت."
+          : "Select JPEG, PNG, or WebP images under 5 MB.",
+      );
+    } else {
+      setFormError("");
+    }
+    setPhotos((previous) => [
+      ...previous,
+      ...valid.slice(0, remaining).map((file) => URL.createObjectURL(file)),
+    ]);
+    event.target.value = "";
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const resolvedTargetId = targetId ?? orderId;
+    if (!resolvedTargetId) {
+      setFormError(t.missingTarget);
+      return;
+    }
     if (!body.trim()) {
       setFormError(t.required);
       return;
     }
     setFormError("");
-    void (async () => {
-    const record = await submitReport({
-      kind,
-      targetId: targetId ?? orderId ?? "unknown",
-      targetLabelEn: kind === "listing" ? targetLabel : `Seller: ${targetLabel}`,
-      targetLabelAr: kind === "listing" ? targetLabel : `البائع: ${targetLabel}`,
-      reason,
-      body: body.trim(),
-      photos,
-    });
-    setSubmittedCase(record.caseNumber);
-    onSubmitted?.(record.caseNumber);
-    })();
+    setIsSubmitting(true);
+    try {
+      const record = await submitReport({
+        kind,
+        targetId: resolvedTargetId,
+        targetLabelEn: kind === "listing" ? targetLabel : `Seller: ${targetLabel}`,
+        targetLabelAr: kind === "listing" ? targetLabel : `البائع: ${targetLabel}`,
+        reason,
+        body: body.trim(),
+        photos,
+      });
+      setSubmittedCase(record.caseNumber);
+      onSubmitted?.(record.caseNumber);
+    } catch {
+      setFormError(
+        isAr
+          ? "تعذر إرسال البلاغ. حاولي مرة أخرى."
+          : "We could not submit the report. Try again.",
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (submittedCase) {
@@ -285,13 +319,29 @@ export const ReportView: React.FC<ReportViewProps> = ({
           <p className="text-[10px] text-on-surface-variant mt-1">
             {t.attachHelp}
           </p>
+          <input
+            id="report-photos"
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            multiple
+            className="sr-only"
+            onChange={handlePhotoChange}
+            aria-label={isAr ? "إضافة صورة" : "Add photo"}
+          />
           <div className="flex gap-sm flex-wrap">
             {photos.map((p, i) => (
               <div
                 key={i}
                 className="relative w-20 h-20 rounded-lg overflow-hidden border border-surface-container-high"
               >
-                <img alt="" src={p} className="w-full h-full object-cover" />
+                <AppImage
+                  alt=""
+                  src={p}
+                  width={80}
+                  height={80}
+                  sizes="80px"
+                  className="w-full h-full object-cover"
+                />
                 <button
                   type="button"
                   onClick={() => setPhotos(photos.filter((_, j) => j !== i))}
@@ -303,11 +353,11 @@ export const ReportView: React.FC<ReportViewProps> = ({
               </div>
             ))}
             {photos.length < 3 && (
-              <button
-                type="button"
-                onClick={handleAddPhoto}
+              <label
+                htmlFor="report-photos"
+                role="button"
                 aria-label={isAr ? "إضافة صورة" : "Add photo"}
-                className="w-20 h-20 rounded-lg border-2 border-dashed border-outline-variant flex items-center justify-center text-outline hover:border-primary hover:text-primary"
+                className="w-20 h-20 rounded-lg border-2 border-dashed border-outline-variant flex items-center justify-center text-outline hover:border-primary hover:text-primary cursor-pointer"
               >
                 <span
                   className="material-symbols-outlined text-[24px]"
@@ -315,16 +365,18 @@ export const ReportView: React.FC<ReportViewProps> = ({
                 >
                   add_a_photo
                 </span>
-              </button>
+              </label>
             )}
           </div>
         </section>
 
         <button
           type="submit"
+          disabled={isSubmitting}
+          aria-busy={isSubmitting}
           className="btn-primary py-4 rounded-xl text-label-md uppercase tracking-widest font-bold shadow-md active:scale-95 transition-transform"
         >
-          {t.submit}
+          {isSubmitting ? (isAr ? "جارٍ الإرسال..." : "Submitting...") : t.submit}
         </button>
       </form>
     </div>

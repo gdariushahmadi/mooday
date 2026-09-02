@@ -71,7 +71,7 @@ function makeContext(overrides: Partial<AppContextType> = {}): AppContextType {
     language: "en", setLanguage: vi.fn(), listings: [], addListing: vi.fn(),
     updateListing: vi.fn(), removeListing: vi.fn(), likes: [], toggleLike: vi.fn(),
     cart: [], addToCart: vi.fn(), removeFromCart: vi.fn(), updateQuantity: vi.fn(),
-    clearCart: vi.fn(), chats: [], sendChatMessage: vi.fn(),
+    clearCart: vi.fn(), chats: [], setActiveChats: vi.fn(), sendChatMessage: vi.fn(),
     createChatThread: vi.fn(() => "t1"),
     markChatRead: vi.fn(),
     setChatOfferStatus: vi.fn(),

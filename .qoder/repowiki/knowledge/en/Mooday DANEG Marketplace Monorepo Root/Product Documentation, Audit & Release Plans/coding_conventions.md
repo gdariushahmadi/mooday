@@ -1,0 +1,5 @@
+- Each Phase 1 screen area is documented as a self-contained section with four fixed subsections — Current state, Target, Acceptance criteria, Primary files — so reviewers can trace behavior back to source components.
+- Screenshots are captured at a fixed `393 × 852` viewport and stored alongside their screen documentation, with parallel English and Arabic variants used to validate RTL mirroring.
+- Feature and bug slices are tracked via numbered IDs (G-xx, U-xx, P1-xx) referenced consistently across audit tables, progress files, and plan handoffs.
+- Release readiness is recorded as a checklist split into Verified DoD (code-only checks like typecheck/lint/tests/build) and Operational DoD (infrastructure-dependent steps such as DB migration, Stripe keys, and beta sign-up).
+- Deferred or incomplete capabilities are explicitly marked with status labels (e.g., 'Rent is deliberately deferred', 'Phase 4 empty state') rather than hidden, keeping scope boundaries visible in the spec.

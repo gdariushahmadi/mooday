@@ -11,6 +11,7 @@ import {
 import { SIZES, SIZES_AR, COLOURS, type Size } from "@/data/attributes";
 import { ClickableCard } from "./ClickableCard";
 import { formatAEDLabel } from "@/lib/format";
+import { AppImage } from "@/components/AppImage";
 
 interface SearchFiltersViewProps {
   onSelectProduct: (product: Product) => void;
@@ -766,12 +767,13 @@ export const SearchFiltersView: React.FC<SearchFiltersViewProps> = ({
                       </span>
                     </button>
 
-                    <div className="aspect-[4/5] bg-surface-container-low overflow-hidden">
-                      <img
+                    <div className="relative aspect-[4/5] bg-surface-container-low overflow-hidden">
+                      <AppImage
                         alt={productTitle}
-                        src={product.image}
-                        loading="lazy"
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        src={product.image || "/products/placeholder.svg"}
+                        fill
+                        sizes="(min-width: 768px) 30vw, 50vw"
+                        className="object-cover transition-transform duration-500 group-hover:scale-105"
                       />
                     </div>
                     <div className="p-md flex flex-col gap-1">

@@ -1,0 +1,1 @@
+Next.js App Router (React Server Components + Client Components marked with `"use client"`), Supabase JS client for data access, Stripe SDK loaded lazily for webhook signature verification, Google Fonts (Hanken Grotesk, Bodoni Moda, Noto Sans Arabic, El Messiri) and Material Symbols Outlined for UI icons.

@@ -1,0 +1,1 @@
+Markdown-based specifications paired with PNG screenshot evidence captured at a fixed `393 × 852` viewport; references Next.js routes, Supabase migrations, Stripe webhook endpoints, and Sentry configuration as part of the delivery contracts.

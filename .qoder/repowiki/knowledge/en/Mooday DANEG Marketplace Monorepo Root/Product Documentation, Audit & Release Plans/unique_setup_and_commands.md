@@ -1,0 +1,1 @@
+Phase 1 completion gates require running `npm run typecheck`, `npm run lint`, `npm run test:ci`, and capturing bilingual EN/AR screenshots at `393 × 852`; operational DoD in `plans/HANDOFF.md` additionally requires `npx supabase db push`, `npm run test:phase2:smoke`, Playwright e2e runs, and `scripts/build-standalone.sh --upload` with production env vars.

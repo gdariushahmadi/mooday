@@ -37,7 +37,7 @@ export const LockScreen: React.FC = () => {
 
   const copy = isAr
     ? {
-        headline: "مودي مقفله",
+        headline: "دانق مقفل",
         sub: "برای ادامه، قفل رو باز کن",
         biometric: "باز کردن با اثر انگشت / چهره",
         pinPlaceholder: "رمز عبور",
@@ -48,7 +48,7 @@ export const LockScreen: React.FC = () => {
         unsupported: "این دستگاه از بیومتریک پشتیبانی نمی‌کند.",
       }
     : {
-        headline: "Mooday is locked",
+        headline: "DANEG is locked",
         sub: "Unlock to continue",
         biometric: "Unlock with Face ID / Touch ID / Fingerprint",
         pinPlaceholder: "Enter PIN",
@@ -138,7 +138,7 @@ export const LockScreen: React.FC = () => {
     >
       <div className="flex w-full max-w-sm flex-col items-center gap-lg">
         <h1 className="font-serif text-display-lg-mobile italic tracking-widest text-primary">
-          Mooday
+          DANEG
         </h1>
         <p className="text-center text-body-md text-on-surface-variant">
           <span className="block text-title-md font-bold text-on-surface">

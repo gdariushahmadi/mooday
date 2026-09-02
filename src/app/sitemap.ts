@@ -4,9 +4,10 @@
 
 import type { MetadataRoute } from "next";
 import { COPY } from "@/components/landing/copy";
+import { LEGAL_DOCUMENTS } from "@/app/legal/content";
+import { CANONICAL_SITE_URL } from "@/lib/feature-flags";
 
-const SITE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+const SITE_URL = CANONICAL_SITE_URL;
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const now = new Date();
@@ -28,5 +29,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
         },
       },
     },
+    // The legal documents are indexable on purpose: payment providers and
+    // app stores require a publicly reachable URL for each one.
+    ...LEGAL_DOCUMENTS.map((doc) => ({
+      url: `${SITE_URL}/legal/${doc.slug}`,
+      lastModified: now,
+      changeFrequency: "yearly" as const,
+      priority: 0.3,
+    })),
   ];
 }

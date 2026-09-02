@@ -1,0 +1,1 @@
+The OTP e2e test requires a running Mailpit SMTP server reachable at `http://127.0.0.1:54324` (overridable via `SUPABASE_LOCAL_MAILPIT_URL`); without it the authentication flow cannot retrieve confirmation codes.

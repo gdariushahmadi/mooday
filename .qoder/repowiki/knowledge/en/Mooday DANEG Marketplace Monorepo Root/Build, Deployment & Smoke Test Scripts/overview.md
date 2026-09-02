@@ -1,0 +1,1 @@
+Operational scripts and a Next.js standalone deployment bundle that build the app, seed demo data, apply Supabase migrations, and run phase-gated smoke tests against the running service.

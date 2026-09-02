@@ -30,12 +30,12 @@ insert into auth.users (
 
 insert into public.listings (
   id, seller_id, title_en, title_ar, price_minor,
-  condition_en, condition_ar, category, status
+  condition_en, condition_ar, category, status, approved_at
 ) values
   (
     'dddddddd-dddd-4ddd-8ddd-dddddddddddd',
     'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
-    'Item', 'عنصر', 5000, 'Good', 'جيد', 'Bags', 'active'
+    'Item', 'عنصر', 5000, 'Good', 'جيد', 'Bags', 'active', timezone('utc', now())
   );
 
 set local role authenticated;
@@ -134,22 +134,26 @@ select is(
 
 -- Reviews
 reset role;
-set local role authenticated;
-select set_config(
-  'request.jwt.claims',
-  '{"sub":"aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa","role":"authenticated"}',
-  true
-);
+select set_config('request.jwt.claims', '{"role":"service_role"}', true);
 
 insert into public.orders (
-  id, buyer_id, seller_id, shipping_address,
+  id, buyer_id, seller_id, status, payment_status, shipping_address,
   items_subtotal_minor, shipping_fee_minor, total_minor
 ) values (
   'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee',
   'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
   'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
-  '{"city_en":"Dubai"}'::jsonb,
+  'delivered', 'succeeded', '{"city_en":"Dubai"}'::jsonb,
   5000, 0, 5000
+);
+
+insert into public.order_items (
+  order_id, listing_id, title_en_at_purchase, title_ar_at_purchase,
+  image_url_at_purchase, price_minor_at_purchase, quantity
+) values (
+  'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee',
+  'dddddddd-dddd-4ddd-8ddd-dddddddddddd',
+  'Item', 'عنصر', 'https://cdn.example/item.jpg', 5000, 1
 );
 
 reset role;
@@ -162,11 +166,12 @@ select set_config(
 
 select lives_ok(
   $$insert into public.seller_reviews (
-      seller_id, buyer_id, order_id, rating, body_en, body_ar, tags
+      seller_id, buyer_id, order_id, listing_id, rating, body_en, body_ar, tags
     ) values (
       'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
       'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
       'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee',
+      'dddddddd-dddd-4ddd-8ddd-dddddddddddd',
       5, 'Great!', 'ممتاز', ARRAY['as_described']
     )$$,
   'buyer can review a seller they have a real order with'
@@ -182,11 +187,12 @@ select set_config(
 
 select throws_ok(
   $$insert into public.seller_reviews (
-      seller_id, buyer_id, order_id, rating, body_en, body_ar, tags
+      seller_id, buyer_id, order_id, listing_id, rating, body_en, body_ar, tags
     ) values (
       'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
       'cccccccc-cccc-4ccc-8ccc-cccccccccccc',
       'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee',
+      'dddddddd-dddd-4ddd-8ddd-dddddddddddd',
       4, 'Ok', 'حسن', '{}'
     )$$,
   '42501', null,

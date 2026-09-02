@@ -44,15 +44,15 @@ const COPY: Record<"en" | "ar", HelpCopy> = {
     orderLookupPh: "e.g. ord-0013",
     submit: "Find my order",
     submitted: "Order found — tap to open.",
-    notFound: "No order matches that id.",
+    notFound: "No real order matches that id. Demo receipts stay in this browser.",
     channelsHeading: "Other ways to reach us",
     channels: [
       {
         icon: "mail",
         titleEn: "Email",
         titleAr: "البريد",
-        bodyEn: "support@mooday.app · Replies in 4h",
-        bodyAr: "support@mooday.app · رد خلال ٤ ساعات",
+        bodyEn: "support@daneg.ae · Replies in 4h",
+        bodyAr: "support@daneg.ae · رد خلال ٤ ساعات",
       },
       {
         icon: "smartphone",
@@ -65,8 +65,8 @@ const COPY: Record<"en" | "ar", HelpCopy> = {
         icon: "forum",
         titleEn: "Community",
         titleAr: "المجتمع",
-        bodyEn: "Join other Mooday sellers & buyers in our Discord.",
-        bodyAr: "انضمي لبائعات ومشتريات مودي في Discord.",
+        bodyEn: "Join other DANEG sellers & buyers in our Discord.",
+        bodyAr: "انضمي لبائعات ومشتريات دانق في Discord.",
       },
     ],
   },
@@ -89,8 +89,8 @@ const COPY: Record<"en" | "ar", HelpCopy> = {
         icon: "mail",
         titleEn: "Email",
         titleAr: "البريد",
-        bodyEn: "support@mooday.app · Replies in 4h",
-        bodyAr: "support@mooday.app · رد خلال ٤ ساعات",
+        bodyEn: "support@daneg.ae · Replies in 4h",
+        bodyAr: "support@daneg.ae · رد خلال ٤ ساعات",
       },
       {
         icon: "smartphone",
@@ -103,8 +103,8 @@ const COPY: Record<"en" | "ar", HelpCopy> = {
         icon: "forum",
         titleEn: "Community",
         titleAr: "المجتمع",
-        bodyEn: "Join other Mooday sellers & buyers in our Discord.",
-        bodyAr: "انضمي لبائعات ومشتريات مودي في Discord.",
+        bodyEn: "Join other DANEG sellers & buyers in our Discord.",
+        bodyAr: "انضمي لبائعات ومشتريات دانق في Discord.",
       },
     ],
   },
@@ -113,8 +113,8 @@ const COPY: Record<"en" | "ar", HelpCopy> = {
 const FAQS_EN: { items: FaqItem[] } = {
   items: [
     {
-      qEn: "How do I sell on Mooday?",
-      qAr: "كيف أبيع على مودي؟",
+      qEn: "How do I sell on DANEG?",
+      qAr: "كيف أبيع على دانق؟",
       aEn: "Tap the Sell button in the bottom nav, pick Resell, then fill out the listing form with photos, title, price, and condition. You can save as draft and come back later.",
       aAr:
         "اضغطي على زر بيع في شريط التنقل السفلي، اختاري إعادة البيع، ثم املئي نموذج العرض بالصور والعنوان والسعر والحالة. يمكنكِ الحفظ كمسودة والعودة لاحقاً.",
@@ -122,23 +122,23 @@ const FAQS_EN: { items: FaqItem[] } = {
     {
       qEn: "When will I get paid?",
       qAr: "متى سأستلم المبلغ؟",
-      aEn: "Funds move into escrow when the buyer pays. We hold them for 3 days after delivery confirmation, then release to your bank account.",
+      aEn: "Payouts are not active in the public Demo. No payment is taken and no seller balance or payout is created.",
       aAr:
-        "تنتقل الأموال إلى الضمان عند دفع المشتري. نحتفظ بها لمدة ٣ أيام بعد تأكيد التسليم، ثم نحررها لحسابك البنكي.",
+        "تحويل أرباح البائعين غير مفعّل في النسخة التجريبية العامة. لا يتم خصم أي مبلغ ولا يتم إنشاء رصيد أو تحويل.",
     },
     {
       qEn: "What if the buyer doesn't receive the item?",
       qAr: "ماذا لو لم يستلم المشتري المنتج؟",
-      aEn: "Open a dispute from the order details screen within 7 days. Our support team reviews tracking and contacts the courier, then refunds or re-ships.",
+      aEn: "Shipping and returns are not active in the public Demo. A Demo order creates only a browser receipt; it does not create a shipment or refund.",
       aAr:
-        "افتحي نزاعاً من شاشة تفاصيل الطلب خلال ٧ أيام. يراجع فريق الدعم التتبع ويتواصل مع شركة الشحن، ثم يرد المبلغ أو يعيد الشحن.",
+        "الشحن والإرجاع غير مفعّلين في النسخة التجريبية العامة. ينشئ الطلب التجريبي إيصالاً في المتصفح فقط، ولا ينشئ شحنة أو استرداداً.",
     },
     {
       qEn: "Is every seller identity verified?",
       qAr: "هل كل بائع موثق؟",
-      aEn: "Yes. Every seller on Mooday passes a manual onboarding review before they can list. We spot-check authenticity within 30 days.",
+      aEn: "Seller verification and moderation are separate product controls. A public Demo label is not a payment, authenticity, or payout guarantee.",
       aAr:
-        "نعم. كل بائع على مودي يمر بمراجعة يدوية قبل إتاحة العرض. نتحقق عشوائياً خلال ٣٠ يوماً.",
+        "توثيق البائع والإشراف أدوات منفصلة في المنتج. لا تعني علامة النسخة التجريبية ضمان الدفع أو الأصالة أو تحويل الأرباح.",
     },
   ],
 };
@@ -183,7 +183,7 @@ export const HelpSupportView: React.FC<HelpSupportViewProps> = ({
       // Open the mail client via window assignment; an href anchor is
       // not a viable alternative inside an onClick handler.
       // eslint-disable-next-line react-hooks/immutability
-      window.location.href = "mailto:support@mooday.app";
+      window.location.href = "mailto:support@daneg.ae";
       return;
     }
     setChannelStatus(

@@ -4,7 +4,7 @@ import React from "react";
 import { useApp } from "@/context/AppContext";
 import type { Order } from "@/data/orders";
 import type { Dispute } from "@/data/disputes";
-import { formatAEDLabel } from "@/lib/format";
+import { AppImage } from "@/components/AppImage";
 
 interface DisputeViewProps {
   order: Order;
@@ -32,7 +32,7 @@ interface DisputeCopy {
   open: string;
   investigating: string;
   resolved: string;
-  pendingFunds: string;
+  demoPaymentNotice: string;
 }
 
 const COPY: Record<"en" | "ar", DisputeCopy> = {
@@ -49,11 +49,11 @@ const COPY: Record<"en" | "ar", DisputeCopy> = {
     chatWithSupport: "Chat with support",
     backToOrder: "Back to order",
     resolveHint:
-      "Once a dispute is resolved, funds are returned to your wallet within 2 business days.",
+      "Demo status only — no payment, refund, or seller payout exists.",
     open: "Open",
     investigating: "Investigating",
     resolved: "Resolved",
-    pendingFunds: "Pending refund",
+    demoPaymentNotice: "Demo status only — no payment or refund exists.",
   },
   ar: {
     title: "النزاع",
@@ -67,11 +67,12 @@ const COPY: Record<"en" | "ar", DisputeCopy> = {
     bodyPh: "أضف سياقاً جديداً لفريق الدعم.",
     chatWithSupport: "تواصل مع الدعم",
     backToOrder: "العودة للطلب",
-    resolveHint: "بعد حل النزاع، يتم إرجاع المبلغ إلى محفظتك خلال يومين عمل.",
+    resolveHint:
+      "الحالة تجريبية فقط — لا يوجد دفع أو استرداد أو تحويل أرباح للبائع.",
     open: "مفتوح",
     investigating: "قيد التحقيق",
     resolved: "تم الحل",
-    pendingFunds: "في انتظار الاسترداد",
+    demoPaymentNotice: "الحالة تجريبية فقط — لا يوجد دفع أو استرداد.",
   },
 };
 
@@ -172,7 +173,7 @@ export const DisputeView: React.FC<DisputeViewProps> = ({
             </span>
           </div>
           <p className="text-label-sm text-on-surface-variant mt-2">
-            {t.pendingFunds} {formatAEDLabel(order.total)}
+            {t.demoPaymentNotice}
           </p>
         </div>
       </section>
@@ -180,10 +181,13 @@ export const DisputeView: React.FC<DisputeViewProps> = ({
       {/* Order context */}
       <section className="bg-surface-container-lowest border border-surface-container-high rounded-xl p-md flex items-center gap-md">
         {first && (
-          <img
+          <AppImage
             alt={productLabel}
-            src={first.product.image}
-            className="w-14 h-14 rounded object-cover border border-outline-variant flex-shrink-0"
+            src={first.product.image || "/products/placeholder.svg"}
+            width={56}
+            height={56}
+            sizes="56px"
+            className="h-14 w-14 flex-shrink-0 rounded border border-outline-variant object-cover"
           />
         )}
         <div className="flex-grow min-w-0">

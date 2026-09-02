@@ -8,8 +8,8 @@
  * security item to fix).
  *
  * Pre-seeded login (for fast QA):
- *   email:    layla@mooday.app
- *   password: mooday123
+ *   email:    layla@daneg.app
+ *   password: daneg123
  */
 
 export interface User {
@@ -29,7 +29,7 @@ export const DEFAULT_USERS: User[] = [
     id: "user-seed-1",
     nameEn: "Layla Mansour",
     nameAr: "ليلى منصور",
-    email: "layla@mooday.app",
+    email: "layla@daneg.app",
     phone: "+971 50 123 4567",
     passwordSalt: "kvwLdmVXRJ49DenbaXAUWw==",
     passwordHash: "MOxNswaHQgpYfBe6VXzK9dYytNWSYMWOsFYHovuiLtI=",
@@ -38,11 +38,12 @@ export const DEFAULT_USERS: User[] = [
 ];
 
 /**
- * Mock OTP. Phase 1 accepts the universal code "000000" for any
- * email/in-memory user. Phase 3 will swap to a real SMS / email
- * challenge.
+ * Mock OTP. Demo mode only — production uses Supabase's real
+ * email/SMS challenge. Any email paired with this fixed code
+ * succeeds in mock-mode flows (OtpView, ForgotPasswordView, tests).
+ * See docs/audit-u1-mock-branches.md for the deprecation plan.
  */
-export const MOCK_OTP_CODE = process.env.MOCK_OTP_CODE || Math.floor(100000 + Math.random() * 900000).toString();
+export const MOCK_OTP_CODE = "000000";
 
 /**
  * Generate a cryptographically secure session token.

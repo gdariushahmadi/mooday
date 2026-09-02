@@ -8,14 +8,14 @@
  *
  * Phase 1 mock; phase 2 swaps for a real auth API.
  *
- * Pre-seeded QA login: layla@mooday.app / mooday123
+ * Pre-seeded QA login: layla@daneg.app / daneg123
  */
 
 import React, { useEffect, useState } from "react";
 import { useApp } from "@/context/AppContext";
 import { AUTH_ERROR_MESSAGE_EN, AUTH_ERROR_MESSAGE_AR } from "@/data/users";
 
-const REMEMBER_EMAIL_KEY = "mooday_remember_email";
+const REMEMBER_EMAIL_KEY = "daneg_remember_email";
 
 interface SignInViewProps {
   onBack: () => void;
@@ -28,7 +28,7 @@ interface SignInViewProps {
 const COPY = {
   en: {
     title: "Welcome back",
-    sub: "Sign in to your Mooday account.",
+    sub: "Sign in to your DANEG account.",
     email: "Email",
     emailPlaceholder: "you@example.com",
     password: "Password",
@@ -38,14 +38,14 @@ const COPY = {
     submitting: "Signing in…",
     back: "Back",
     forgot: "Forgot password?",
-    noAccount: "New to Mooday?",
+    noAccount: "New to DANEG?",
     createAccount: "Create an account",
     social: "Or continue with",
     google: "Google",
   },
   ar: {
     title: "مرحباً بعودتك",
-    sub: "سجّلي دخولك إلى حسابك في مودي.",
+    sub: "سجّلي دخولك إلى حسابك في دانق.",
     email: "البريد الإلكتروني",
     emailPlaceholder: "you@example.com",
     password: "كلمة المرور",
@@ -55,7 +55,7 @@ const COPY = {
     submitting: "جارٍ الدخول…",
     back: "رجوع",
     forgot: "نسيتِ كلمة المرور؟",
-    noAccount: "جديدة على مودي؟",
+    noAccount: "جديدة على دانق؟",
     createAccount: "إنشاء حساب",
     social: "أو متابعة عبر",
     google: "Google",

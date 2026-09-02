@@ -140,3 +140,71 @@ describe("useAppNavigation chat entry", () => {
     expect(result.current.selectedProduct).toEqual(PRODUCT);
   });
 });
+
+describe("useAppNavigation URL sync", () => {
+  function currentSearch(): string {
+    return new URL(window.location.href).search;
+  }
+
+  it("writes ?view= for non-home destinations and clears it on home", () => {
+    mocks.useApp.mockReturnValue(makeContext({}));
+    const { result } = renderHook(() => useAppNavigation());
+
+    act(() => {
+      result.current.setView("bag");
+    });
+    expect(currentSearch()).toBe("?view=bag");
+
+    act(() => {
+      result.current.setView("home");
+    });
+    expect(currentSearch()).toBe("");
+  });
+
+  it("mirrors open overlays into their query params and clears them on close", () => {
+    mocks.useApp.mockReturnValue(makeContext({}));
+    const { result } = renderHook(() => useAppNavigation());
+
+    act(() => {
+      result.current.selectProduct(PRODUCT);
+    });
+    expect(currentSearch()).toBe("?product=product-1");
+
+    act(() => {
+      result.current.closeProduct();
+    });
+    expect(currentSearch()).toBe("");
+  });
+
+  it("mirrors category state including sub-filter and non-default sort", () => {
+    mocks.useApp.mockReturnValue(makeContext({}));
+    const { result } = renderHook(() => useAppNavigation());
+
+    act(() => {
+      result.current.openCategory("Bags");
+      result.current.setSubCategory("handbags");
+      result.current.setCategorySort("price-asc");
+    });
+    expect(currentSearch()).toBe("?view=category&category=Bags&sub=handbags&sort=price-asc");
+
+    act(() => {
+      result.current.closeCategory();
+    });
+    expect(currentSearch()).toBe("");
+  });
+
+  it("preserves unrelated query params (e.g. ?lang=, ?q=) and the hash", () => {
+    window.history.replaceState({}, "", "/?lang=ar&q=dress#section");
+    mocks.useApp.mockReturnValue(makeContext({}));
+    const { result } = renderHook(() => useAppNavigation());
+
+    act(() => {
+      result.current.setView("bag");
+    });
+    const url = new URL(window.location.href);
+    expect(url.searchParams.get("lang")).toBe("ar");
+    expect(url.searchParams.get("q")).toBe("dress");
+    expect(url.searchParams.get("view")).toBe("bag");
+    expect(url.hash).toBe("#section");
+  });
+});

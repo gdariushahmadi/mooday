@@ -27,11 +27,11 @@ describe("ListingPhotoPicker (slice 7)", () => {
     );
     expect(screen.getByAltText("Photo 1")).toHaveAttribute(
       "src",
-      "/products/a.jpg",
+      expect.stringContaining("a.jpg"),
     );
     expect(screen.getByAltText("Photo 2")).toHaveAttribute(
       "src",
-      "/products/b.jpg",
+      expect.stringContaining("b.jpg"),
     );
     expect(screen.getByRole("button", { name: "Add" })).toBeInTheDocument();
     // The cover badge only renders on the first tile.

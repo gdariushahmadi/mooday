@@ -1,0 +1,1 @@
+Next.js App Router with React Server Components for routes and Client Components for interactive views; TypeScript across all layers; CSS Modules and global styles for theming; PWA service worker registration via `ServiceWorkerRegistrar.tsx`.

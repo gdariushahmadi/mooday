@@ -5,6 +5,7 @@ import { useApp, type Product } from "@/context/AppContext";
 import { ClickableCard } from "./ClickableCard";
 import { formatAEDLabel } from "@/lib/format";
 import { isOwnListing } from "@/lib/ownership";
+import { AppImage } from "@/components/AppImage";
 
 /** Per-listing status for the closet view. Phase 1 derives this from
  * what we know about each listing — sold ones have matches in the
@@ -293,7 +294,6 @@ export const MyClosetView: React.FC<MyClosetViewProps> = ({
               t={t}
               bulkMode={bulkMode}
               selected={selected.has(product.id)}
-              onToggleSelect={() => toggleSelect(product.id)}
               onOpen={() =>
                 bulkMode
                   ? toggleSelect(product.id)
@@ -320,13 +320,6 @@ const STATUS_TONE: Record<ClosetStatus, string> = {
   reserved: "bg-amber-100 text-amber-900",
 };
 
-const STATUS_LABEL: Record<ClosetStatus, keyof ClosetCopy> = {
-  active: "statusActive",
-  sold: "statusSold",
-  draft: "statusDraft",
-  reserved: "statusReserved",
-};
-
 /** Plain string map for rendering (avoids TS lookup of function props). */
 const STATUS_PLAIN: Record<"en" | "ar", Record<ClosetStatus, string>> = {
   en: {
@@ -350,7 +343,6 @@ const ClosetRow: React.FC<{
   t: ClosetCopy;
   bulkMode: boolean;
   selected: boolean;
-  onToggleSelect: () => void;
   onOpen: () => void;
   onEdit: () => void;
   onDelete: () => void;
@@ -361,7 +353,6 @@ const ClosetRow: React.FC<{
   t,
   bulkMode,
   selected,
-  onToggleSelect,
   onOpen,
   onEdit,
   onDelete,
@@ -398,11 +389,13 @@ const ClosetRow: React.FC<{
           {selected && "✓"}
         </span>
       )}
-      <img
+      <AppImage
         alt={productTitle}
-        src={product.image}
-        className="w-16 h-16 rounded object-cover border border-outline-variant flex-shrink-0"
-        loading="lazy"
+        src={product.image || "/products/placeholder.svg"}
+        width={64}
+        height={64}
+        sizes="64px"
+        className="h-16 w-16 flex-shrink-0 rounded border border-outline-variant object-cover"
       />
       <div className="flex-grow min-w-0">
         <div className="flex items-center gap-sm">

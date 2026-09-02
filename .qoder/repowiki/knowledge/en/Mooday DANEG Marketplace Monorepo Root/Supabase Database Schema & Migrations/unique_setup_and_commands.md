@@ -1,0 +1,1 @@
+Run `supabase db push` to apply migrations against the linked project referenced in `.temp/linked-project.json` (project ref `duchuarevedwqbmxctfx`). RLS test suites require pgtap installed in the `extensions` schema and must be executed against a live Supabase database instance because they insert directly into `auth.users` and rely on `auth.uid()` resolution.

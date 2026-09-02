@@ -1,0 +1,1 @@
+Provides a Supabase-backed backend client (with mock fallback) and server-side admin actions, plus seed datasets for users, products, listings, orders, and related domain entities.

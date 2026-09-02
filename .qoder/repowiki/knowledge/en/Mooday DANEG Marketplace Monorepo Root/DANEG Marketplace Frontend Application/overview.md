@@ -1,0 +1,1 @@
+Orchestrates the DANEG marketplace React/Next.js frontend by wiring App Router pages, shared views, admin panel, landing page, listing management, global context, and navigation hooks into a single client application.

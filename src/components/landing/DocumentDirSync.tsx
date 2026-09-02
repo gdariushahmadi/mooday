@@ -15,6 +15,7 @@ export function DocumentDirSync({ lang }: { lang: Lang }) {
     const root = document.documentElement;
     root.lang = lang;
     root.dir = lang === "ar" ? "rtl" : "ltr";
+    document.cookie = `daneg_language=${lang}; Path=/; Max-Age=31536000; SameSite=Lax`;
   }, [lang]);
   return null;
 }

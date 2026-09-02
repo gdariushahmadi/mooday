@@ -95,16 +95,16 @@ export function InstallPrompt() {
   return (
     <div
       role="dialog"
-      aria-label="Install Mooday"
+      aria-label="Install DANEG"
       dir="ltr"
       className="fixed left-1/2 -translate-x-1/2 bottom-24 z-[60] w-[min(94vw,420px)] rounded-2xl border border-surface-container-high bg-surface shadow-2xl p-4 flex items-center gap-3 backdrop-blur-md"
       style={{ paddingBottom: "max(16px, env(safe-area-inset-bottom))" }}
     >
-      <div className="w-12 h-12 rounded-xl shrink-0 bg-gradient-to-br from-[#673657] via-[#512443] to-[#3a0e2f] flex items-center justify-center text-[#ffd8ed] font-serif italic text-3xl leading-none">
+      <div className="w-12 h-12 rounded-xl shrink-0 bg-gradient-to-br from-[#154846] via-[#11302d] to-[#071714] flex items-center justify-center text-[#cfe9e2] font-serif italic text-3xl leading-none">
         M
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-on-surface font-semibold text-sm">Install Mooday</p>
+        <p className="text-on-surface font-semibold text-sm">Install DANEG</p>
         <p className="text-on-surface-variant text-xs mt-0.5">
           {isCurrentlyIOS
             ? "Tap the share button, then “Add to Home Screen”."

@@ -1,213 +1,96 @@
-# Mooday — Status Snapshot
+# DANEG delivery status
 
-> **Audit date**: today (post-phase-3/4 wiring).
-> Update this file at the end of every working session so the next
-> agent's hand-off stays honest.
+Status date: 2026-08-31.
 
----
+## Release target
 
-## TL;DR
+The target is a public Demo/Beta. This release is not a real payment release.
 
-- **Verification pipeline (`npm run verify`)**: ✅ GREEN (typecheck +
-  ESLint + **544** unit tests + production build).
-- **Phase 1 (frontend)**: ✅ complete — 36 screens built, tested, wired.
-- **Phase 2 (identity backend)**: ✅ wired — `AuthService`,
-  `ProfileService`, `AddressService` round-trip through Supabase
-  under `NEXT_PUBLIC_DATA_SOURCE=supabase`. RLS-verified.
-- **Phase 3 (marketplace backend)**: ✅ wired — `ListingService`,
-  `ListingMediaService`, `SellerCardService`, `LikeService`,
-  `CartService`, **`OrderService`**, **`ChatService`**,
-  **`SellerReviewService`**, **`ReportService`**, **`DisputeService`**,
-  **`NotificationService`** all reachable from the UI. 8 PGtest
-  pgTAP test files cover RLS for the Phase 3 tables.
-- **Phase 4 (M4 new services)**: ✅ wired — `PaymentMethodService`
-  and `BlockService` are first-class members of `Phase2Backend`.
-  2 new migrations + 2 pgTAP suites cover them.
-- **End-to-end smoke test**: ✅ `scripts/phase2-smoke-supabase.mjs`
-  exercises 23 cross-domain assertions (users, listings, orders,
-  chats, reports, disputes, notifications, reviews, payment methods,
-  blocks, RLS isolation). 23 passed, 0 failed.
-- **Mock mode**: unchanged. `NEXT_PUBLIC_DATA_SOURCE=mock` keeps
-  the Phase 1 demo running with no backend.
-- **Real showcase catalog**: ✅ 33 listings, 12 seller cards, and 34 public
-  image references are seeded in the hosted Supabase project. The deployed
-  `/app` surface renders these rows through the marketplace backend; it does
-  not fall back to local mock data.
+- `CHECKOUT_MODE=demo`
+- `PAYMENTS_ENABLED=false`
+- One listing per checkout, quantity `1`
+- Demo receipts are stored in the browser under an account-independent key
+- Demo receipts never enter `public.orders`
+- No card number or CVV input exists in the public checkout
+- `app.daneg.ae` is the canonical and only public domain
 
-This session shipped:
-- Wired 8 backend domains (orders/chats/notifications/reviews/reports/
-  disputes/paymentMethods/blocks) into `AppContext`. Every mutator
-  now branches on `phase2Backend` and routes reads/writes through the
-  Supabase adapter, with localStorage kept as the mock-mode fallback.
-- Added `src/services/backend/mappers-orders.ts` and
-  `mappers-social.ts` for the DB → view-model conversion.
-- 3 new SQL migrations: `202608060001_payment_methods.sql`,
-  `202608060002_blocked_users.sql`,
-  `202608060003_seller_reviews_snapshot.sql`.
-- 2 new pgTAP test files: `phase_4_payment_methods_rls.sql`,
-  `phase_4_blocked_users_rls.sql`.
-- Wired `PublicSellerProfile` to read reviews from
-  `phase2Backend.reviews.listForSeller(sellerId)` with reviewer
-  name + avatar snapshot.
-- Cleaned up `LeaveReviewView` to pass `product.sellerId` directly
-  (the AppContext no longer round-trips through `orders.listMineAsBuyer`
-  to discover the seller).
-- 12 new mapper round-trip tests; total tests: 532 → 544.
-- Smoke-test infrastructure: `scripts/phase2-smoke-supabase.mjs` and
-  `scripts/phase4-public-reviews-smoke.mjs`.
+## Code status
 
----
+Implemented in the repository:
 
-## 1. Backend wiring matrix
+- Separate `DemoOrder` and `recordDemoOrder` contract.
+- Demo checkout with explicit no-charge text and no payment form.
+- Payouts and saved payment methods show a Demo-disabled state.
+- Single-listing cart rule in mock and Supabase modes.
+- Server-only future payment route and disabled Stripe webhook route.
+- Atomic `create_single_listing_order` RPC for the future real-order path.
+- Separate payment status values: `pending`, `succeeded`, `failed`, `refunded`.
+- Listing visibility requires `status = 'active'` and non-null `approved_at`.
+- Saved items use account-scoped `saved_items` with owner RLS.
+- Trust fields, order financial fields, offer fields, reviews, disputes, block
+  checks, suspension checks, and public input limits have database controls.
+- Dedicated loading, error, not-found, health, canonical, and bilingual RTL
+  paths are present.
+- CSP is enforced in application code. `unsafe-eval` is not used by the app.
 
-| Domain | Service contract | Supabase adapter | AppContext wiring | pgTAP tests |
-|---|---|---|---|---|
-| Auth | ✅ | ✅ | ✅ | `phase_2_rls.sql` |
-| Profiles | ✅ | ✅ | ✅ | `phase_2_rls.sql` |
-| Addresses | ✅ | ✅ | ✅ | `phase_2_rls.sql` |
-| Listings | ✅ | ✅ | ✅ | `phase_3_listings_rls.sql` |
-| Listing media | ✅ | ✅ | ✅ | `phase_3_listing_media_rls.sql` |
-| Public seller profiles | ✅ | ✅ | ✅ | `phase_3_public_seller_profiles_rls.sql` |
-| Likes | ✅ | ✅ | ✅ | `phase_3_user_likes_rls.sql` |
-| Cart | ✅ | ✅ | ✅ | `phase_3_cart_items_rls.sql` |
-| **Orders** | ✅ | ✅ | ✅ | `phase_3_orders_rls.sql` |
-| **Chat** | ✅ | ✅ | ✅ | `phase_3_social_rls.sql` |
-| **Reviews** | ✅ | ✅ | ✅ | `phase_3_social_rls.sql` |
-| **Reports** | ✅ | ✅ | ✅ | `phase_3_social_rls.sql` |
-| **Disputes** | ✅ | ✅ | ✅ | `phase_3_social_rls.sql` |
-| **Notifications** | ✅ | ✅ | ✅ | `phase_3_social_rls.sql` |
-| **Payment methods** | ✅ | ✅ | ✅ | `phase_4_payment_methods_rls.sql` |
-| **Blocked users** | ✅ | ✅ | ✅ | `phase_4_blocked_users_rls.sql` |
-| Admin actions | ✅ Server Actions | ✅ | partial (UI uses mock) | `phase_3_5_admin_rls.sql` |
+## Local verification
 
----
-
-## 2. End-to-end verification
-
-`scripts/phase2-smoke-supabase.mjs` runs against a live local
-Supabase and verifies the full wiring:
-
-- Creates seller + buyer users.
-- Inserts a listing + order + order item.
-- Creates a chat thread + text message + offer message.
-- Submits a report + opens a dispute.
-- Creates a notification + review + payment method + block.
-- Verifies RLS isolation across all tables.
-
-Result: **23 passed, 0 failed**.
-
-`scripts/phase4-public-reviews-smoke.mjs` exercises the
-`addMyReview` flow with reviewer snapshot fields and asserts they
-are readable from the public profile surface.
-
-Result: **10 passed, 0 failed**.
-
----
-
-## 3. Run the smoke tests
+Run these commands from the repository root:
 
 ```bash
-# 1. Start local Supabase.
-npx supabase start -x studio
-
-# 2. Apply all migrations (10 files including the 3 new M4 ones).
-npx supabase db reset
-
-# 3. Run the smoke tests.
-SUPABASE_SERVICE_ROLE_KEY="<from supabase status -o env>" \
-  node scripts/phase2-smoke-supabase.mjs
-
-SUPABASE_SERVICE_ROLE_KEY="<from supabase status -o env>" \
-  node scripts/phase4-public-reviews-smoke.mjs
-
-# 4. Run pgTAP tests.
-npx supabase test db
+npm run typecheck
+npm run lint
+npm run test:ci
+npm run build
 ```
 
----
+Latest local result on 2026-08-31:
 
-## 4. Pages fully built
+- `npm run typecheck` passed.
+- `npm run lint` passed with zero errors and zero warnings.
+- `npm run test:ci` passed: 82 files, 639 tests.
+- `npm run build` passed with Next.js 16.2.9.
+- `git diff --check` passed.
+- The database suite could not start because local Postgres was not
+  available.
+- The Playwright suite could not launch because Chromium was not installed.
 
-(Phase 1 — unchanged. 36 screens, 100% built.)
+Database tests require local Docker/Supabase. Browser tests require an
+installed Playwright browser and a running target URL.
 
----
+## Infrastructure gates
 
-## 5. Known caveats
+The production domain wiring was updated and verified on 2026-08-31:
 
-1. **Chat unread is client-derived.** The `ChatService` contract has
-   no `unread` column; unread is computed from a per-thread
-   `chatLastRead` localStorage key. A future migration could add an
-   `unread_count` column to `chat_threads` so it survives cross-device
-   sign-in.
-2. **Notification fan-out is not server-triggered.** Phase 1 mock
-   seeded activity events; the backend table exists but no trigger
-   creates notifications from chat messages / offers / order
-   transitions yet. Real flows need either a server-side trigger
-   or explicit `notifications.insert` calls from the mutating RPCs.
-3. **Image upload bucket is passthrough.** `listing_images.storage_path`
-   stores either mock URLs (`/products/foo.jpg`) or real uploaded
-   objects; the actual S3-compatible storage path works but was not
-   exercised by the smoke test.
-4. **Admin panel still uses mock data.** `src/services/admin/actions.ts`
-   has the real Server Actions; `mockAdminService.ts` is still the
-   default path for the admin tabs. Wiring the admin tabs to the
-   real actions is Phase 5.
-5. **Pre-existing lint errors.** 238 errors in
-   `mockAdminService.ts` (prefers-const) and `admin/*Tab.tsx`
-   (no-explicit-any, no-unescaped-entities). Pre-existing, not
-   introduced by the Phase 3/4 wiring.
+- `app.daneg.ae` resolves to the target VPS with a valid TLS certificate.
+- Nginx sends application pages and `/auth/callback` to Next.js.
+- Nginx sends `/auth/v1/*`, `/rest/v1/*`, and `/storage/v1/*` to Kong.
+- Supabase Auth uses `app.daneg.ae` as its site URL and callback domain.
+- Production flags are `CHECKOUT_MODE=demo` and `PAYMENTS_ENABLED=false`.
 
----
+These remaining gates need a staging or production operator and are not
+confirmed by repository tests:
 
-## 6. Conventions
+- Apply the new migration in an isolated staging database.
+- Run all pgTAP tests and a real two-session reservation test.
+- Configure SMTP and Google OAuth, then test sign-up, OTP, recovery, and OAuth.
+- Confirm production and staging use different databases and secret files.
+- Enable Sentry release tracking, uptime alerts, backups, and a restore drill.
+- Replace legal entity placeholders and obtain UAE legal review.
 
-These were locked in across the previous sessions and still apply:
+The current public deployment was updated on 2026-08-31. The home page,
+`/app`, and `/auth/callback` returned `200`. `/api/health` returned `200` with
+Supabase reachable. `/auth/v1/settings` and `/rest/v1/` reached Kong and
+returned the expected unauthenticated `401`. The live response has an
+enforced CSP with a nonce, no `unsafe-eval`, and `connect-src` points to
+`app.daneg.ae`; the sitemap contains only `app.daneg.ae` URLs.
 
-- **Bilingual copy**: every component carries a `COPY = { en: {...}, ar: {...} } const`.
-- **Local storage rule**: components never read `localStorage` directly.
-  All persistence goes through `useLocalStorageState` or
-  `phase2Backend.{service}` (mock vs supabase).
-- **`useSyncExternalStore` snapshots are cached**.
-- **Keyboard-accessible cards** use `ClickableCard.tsx`.
-- **Test wrapper pattern**: `makeContext(...)` builds a typed
-  `AppContextType` and wraps with `<AppContext.Provider value={...}>`.
-- **Routes**: `ViewState` union lives in `src/types/navigation.ts`.
+The database RLS, pgTAP, browser, SMTP, OAuth, monitoring, backup/restore,
+and legal gates still need their own evidence before final acceptance.
 
----
+## Known repository condition
 
-*Last updated: end of the M4 wiring session.*
-
-
----
-
-## 7. Final delivery state (this session)
-
-End-to-end verification — all green:
-
-- **typecheck** ✅
-- **lint (src/)** ✅ 0 errors, 76 warnings
-- **unit tests** ✅ 544 passed
-- **build** ✅
-- **smoke tests** ✅ 55/55 across 5 scripts
-  - `scripts/phase2-smoke-supabase.mjs` (23 assertions)
-  - `scripts/phase4-public-reviews-smoke.mjs` (10 assertions)
-  - `scripts/phase4-notification-fanout-smoke.mjs` (7 assertions)
-  - `scripts/phase4-admin-actions-smoke.mjs` (8 assertions)
-  - `scripts/phase4-image-upload-smoke.mjs` (7 assertions)
-- **pgTAP tests** (the 2 new M4 suites + the pre-existing Phase 2/3):
-  - `phase_4_payment_methods_rls.sql`: 7 passed
-  - `phase_4_blocked_users_rls.sql`: 6 passed
-
-This session added:
-- 4 new SQL migrations (`202608060003`–`202608060006`).
-- 5 smoke-test scripts totalling 55 assertions.
-- 2 new pgTAP test files.
-- 1 new mapper module (`mappers-orders.ts`).
-- DB triggers for chat/offer/order/review → notifications fan-out.
-- Storage RLS policy rewritten to use `split_part` instead of
-  `storage.foldername` (the latter is not exposed through the PostgREST
-  API in local Supabase).
-- Admin user promotion migration.
-- 238 → 0 lint errors (preferred-const, no-explicit-any, no-unescaped-entities).
-- 3 new docs (`SMOKE_TESTS.md`, refreshed `STATUS.md`, updated
-  `EXTERNAL_SETUP_TODO.md`).
+The worktree contained pre-existing generated files and unrelated changes at
+the start of this task. No destructive reset was used. Build artifacts under
+`.deploy/.next` must be removed from Git tracking in a controlled cleanup
+commit after the owner reviews the existing index changes.

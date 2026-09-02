@@ -13,10 +13,17 @@ const eslintConfig = defineConfig([
     "build/**",
     ".deploy/**",
     "next-env.d.ts",
-    // Project-specific ignores: build scripts and the PWA service worker
-    // are not part of the application source.
-    "scripts/**",
-    "public/sw.js",
+    // Repository material outside the product source is not part of the
+    // application lint boundary. Deployment scripts remain in scope.
+    ".agents/**",
+    ".claude/**",
+    ".qoder/**",
+    ".github/**",
+    ".codex/**",
+    "archive/**",
+    "docs/**",
+    "public/**",
+    "test-oauth.mjs",
     // Vitest config is not application source.
     "vitest.config.mjs",
     "vitest.config.mts",

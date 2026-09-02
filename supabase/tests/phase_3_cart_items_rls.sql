@@ -26,17 +26,17 @@ insert into auth.users (
 
 insert into public.listings (
   id, seller_id, title_en, title_ar, price_minor,
-  condition_en, condition_ar, category, status
+  condition_en, condition_ar, category, status, approved_at
 ) values
   (
     '33333333-1111-4111-8111-111111111111',
     '11111111-1111-4111-8111-111111111111',
-    'Bag', 'حقيبة', 5000, 'Good', 'جيد', 'Bags', 'active'
+    'Bag', 'حقيبة', 5000, 'Good', 'جيد', 'Bags', 'active', timezone('utc', now())
   ),
   (
     '44444444-1111-4111-8111-111111111111',
     '11111111-1111-4111-8111-111111111111',
-    'Hat', 'قبعة', 3000, 'Good', 'جيد', 'Accessories', 'active'
+    'Hat', 'قبعة', 3000, 'Good', 'جيد', 'Accessories', 'active', timezone('utc', now())
   );
 
 set local role authenticated;
@@ -67,7 +67,7 @@ select lives_ok(
   $$select public.cart_items_increment(
     '33333333-1111-4111-8111-111111111111'::uuid, 1
   )$$,
-  'cart_items_increment is idempotent across calls'
+  'cart_items_increment keeps the existing row at quantity one'
 );
 
 select is(
@@ -76,33 +76,24 @@ select is(
     where user_id = '11111111-1111-4111-8111-111111111111'
       and listing_id = '33333333-1111-4111-8111-111111111111'
   ),
-  2,
-  'a second increment accumulates to quantity 2'
-);
-
-select lives_ok(
-  $$select public.cart_items_increment(
-    '33333333-1111-4111-8111-111111111111'::uuid, 98
-  )$$,
-  'cart_items_increment clamps overflow at the 99 ceiling'
-);
-
-select is(
-  (
-    select quantity from public.cart_items
-    where user_id = '11111111-1111-4111-8111-111111111111'
-      and listing_id = '33333333-1111-4111-8111-111111111111'
-  ),
-  99,
-  'clamp lands exactly on the 99 ceiling (no check violation)'
+  1,
+  'a second increment does not increase quantity'
 );
 
 select throws_ok(
   $$select public.cart_items_increment(
-    '44444444-1111-4111-8111-111111111111'::uuid, 200
+    '44444444-1111-4111-8111-111111111111'::uuid, 1
   )$$,
-  '23514', null,
-  'cart_items_increment fresh-row insert rejects quantity > 99 at the schema check'
+  'P0001', null,
+  'the cart rejects a second listing'
+);
+
+select throws_ok(
+  $$select public.cart_items_increment(
+    '33333333-1111-4111-8111-111111111111'::uuid, 2
+  )$$,
+  '22023', null,
+  'the cart rejects quantity greater than one'
 );
 
 reset role;
@@ -122,12 +113,11 @@ select is(
   'user B does not see user A cart items'
 );
 
-select throws_ok(
+select lives_ok(
   $$select public.cart_items_increment(
     '33333333-1111-4111-8111-111111111111'::uuid, 1
   )$$,
-  '42501', null,
-  'cart_items_increment is auth-gated'
+  'user B can add an approved listing to their own cart'
 );
 
 select throws_ok(

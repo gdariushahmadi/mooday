@@ -48,6 +48,7 @@ function makeContext(
     updateQuantity: vi.fn(),
     clearCart: vi.fn(),
     chats: [],
+    setActiveChats: vi.fn(),
     sendChatMessage: vi.fn(),
     createChatThread: vi.fn(() => "t1"),
     markChatRead: vi.fn(),
@@ -147,6 +148,7 @@ describe("EditListingView (D-21)", () => {
     expect(ctx.updateListing).toHaveBeenCalledWith(
       "edit-me",
       expect.objectContaining({ titleEn: "Editable Bag" }),
+      expect.any(Map),
     );
     expect(onSuccess).toHaveBeenCalled();
   });

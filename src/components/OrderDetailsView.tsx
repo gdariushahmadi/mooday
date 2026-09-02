@@ -11,6 +11,8 @@ import {
 import { formatAEDLabel } from "@/lib/format";
 import { ClickableCard } from "./ClickableCard";
 import type { Product } from "@/context/AppContext";
+import { AppImage } from "@/components/AppImage";
+import { isPaymentsEnabled } from "@/lib/feature-flags";
 
 interface OrderDetailsViewProps {
   order: Order;
@@ -18,7 +20,7 @@ interface OrderDetailsViewProps {
   /** Tap on a line item product to open ProductDetailsView. */
   onSelectProduct: (product: Product) => void;
   /** "Mark as received" — moves the order from shipped → delivered. */
-  onMarkReceived?: (orderId: string) => void;
+  onMarkReceived?: (orderId: string) => void | Promise<void>;
   /** "Contact seller" for this order's primary product. */
   onContactSeller?: (product: Product) => void;
   /** H-39 Leave a review (delivered orders only). */
@@ -43,12 +45,15 @@ interface OrderCopy {
   itemsHeading: string;
   shippingHeading: string;
   paymentHeading: string;
+  paidWith: string;
+  demoPaymentStatus: string;
   summaryHeading: string;
   total: string;
   subtotal: string;
   shippingLabel: string;
   markReceived: string;
   contactSeller: string;
+  updateError: string;
   notFound: string;
   backToPurchases: string;
   trackingLabel: string;
@@ -70,13 +75,16 @@ const COPY: Record<"en" | "ar", OrderCopy> = {
     statusLabel: "Status",
     itemsHeading: "Items",
     shippingHeading: "Shipping to",
-    paymentHeading: "Paid with",
+    paymentHeading: "Payment status",
+    paidWith: "Paid with",
+    demoPaymentStatus: "Demo only — no payment was taken.",
     summaryHeading: "Order summary",
     total: "Total",
     subtotal: "Subtotal",
     shippingLabel: "Shipping",
     markReceived: "I received it",
     contactSeller: "Contact seller",
+    updateError: "Could not update this Demo status. Please try again.",
     notFound: "Order not found",
     backToPurchases: "Back to my purchases",
     trackingLabel: "Tracking number",
@@ -95,13 +103,16 @@ const COPY: Record<"en" | "ar", OrderCopy> = {
     statusLabel: "الحالة",
     itemsHeading: "المنتجات",
     shippingHeading: "التوصيل إلى",
-    paymentHeading: "الدفع بواسطة",
+    paymentHeading: "حالة الدفع",
+    paidWith: "الدفع بواسطة",
+    demoPaymentStatus: "نسخة تجريبية فقط — لم يتم خصم أي مبلغ.",
     summaryHeading: "ملخص الطلب",
     total: "الإجمالي",
     subtotal: "المجموع الفرعي",
     shippingLabel: "الشحن",
     markReceived: "استلمت الطلب",
     contactSeller: "تواصل مع البائع",
+    updateError: "تعذر تحديث حالة الطلب التجريبي. حاولي مرة أخرى.",
     notFound: "الطلب غير موجود",
     backToPurchases: "العودة إلى مشترياتي",
     trackingLabel: "رقم التتبع",
@@ -142,9 +153,21 @@ export const OrderDetailsView: React.FC<OrderDetailsViewProps> = ({
   const { language } = useApp();
   const isAr = language === "ar";
   const t = isAr ? COPY.ar : COPY.en;
+  const paymentsEnabled = isPaymentsEnabled();
+  const [actionError, setActionError] = React.useState<string | null>(null);
 
   const statusText = statusLabel(order.status, isAr);
   const firstItemProduct = order.lineItems[0]?.product;
+
+  const handleMarkReceived = async () => {
+    if (!onMarkReceived) return;
+    setActionError(null);
+    try {
+      await onMarkReceived(order.id);
+    } catch {
+      setActionError(t.updateError);
+    }
+  };
 
   return (
     <div dir={isAr ? "rtl" : "ltr"} className="w-full flex flex-col gap-md">
@@ -168,6 +191,12 @@ export const OrderDetailsView: React.FC<OrderDetailsViewProps> = ({
         </h1>
         <div className="w-8 h-8" aria-hidden="true" />
       </div>
+
+      {actionError && (
+        <p role="alert" className="rounded-lg bg-error-container px-md py-sm text-label-sm font-bold text-on-error-container">
+          {actionError}
+        </p>
+      )}
 
       {/* Status hero */}
       <div className="bg-surface-container-lowest border border-surface-container-high rounded-xl p-lg shadow-sm flex items-start gap-md">
@@ -265,13 +294,19 @@ export const OrderDetailsView: React.FC<OrderDetailsViewProps> = ({
         </section>
         <section className="bg-surface-container-lowest border border-surface-container-high rounded-xl p-md">
           <h3 className="text-[10px] uppercase tracking-wider text-primary font-bold">
-            {t.paymentHeading}
+            {paymentsEnabled ? t.paidWith : t.paymentHeading}
           </h3>
-          <p className="text-label-md text-on-surface mt-1">
-            {isAr ? order.paymentBrandAr : order.paymentBrandEn}
-            {" •••• "}
-            {order.paymentLast4}
-          </p>
+          {paymentsEnabled ? (
+            <p className="text-label-md text-on-surface mt-1">
+              {isAr ? order.paymentBrandAr : order.paymentBrandEn}
+              {" •••• "}
+              {order.paymentLast4}
+            </p>
+          ) : (
+            <p className="text-label-sm text-on-surface-variant mt-1">
+              {t.demoPaymentStatus}
+            </p>
+          )}
         </section>
       </div>
 
@@ -309,7 +344,7 @@ export const OrderDetailsView: React.FC<OrderDetailsViewProps> = ({
           {order.status === "shipped" && onMarkReceived && (
             <button
               type="button"
-              onClick={() => onMarkReceived(order.id)}
+              onClick={() => void handleMarkReceived()}
               className="flex-1 btn-primary py-3 rounded-xl text-label-sm uppercase tracking-widest font-bold shadow-md active:scale-95 transition-transform"
             >
               {t.markReceived}
@@ -435,11 +470,13 @@ const LineItemRow: React.FC<{
       ariaLabel={title}
       className="flex gap-sm p-sm border border-surface-container-high rounded-xl bg-surface-container-lowest hover:shadow-sm transition-shadow"
     >
-      <img
+      <AppImage
         alt={title}
-        src={line.product.image}
-        className="w-16 h-16 rounded object-cover border border-outline-variant flex-shrink-0"
-        loading="lazy"
+        src={line.product.image || "/products/placeholder.svg"}
+        width={64}
+        height={64}
+        sizes="64px"
+        className="h-16 w-16 flex-shrink-0 rounded border border-outline-variant object-cover"
       />
       <div className="flex-grow min-w-0">
         <p className="font-serif text-label-sm text-on-surface line-clamp-1">

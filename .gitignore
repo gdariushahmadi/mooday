@@ -23,6 +23,8 @@
 
 # production
 /build
+/.deploy/
+*.tar.gz
 
 # misc
 .DS_Store
@@ -52,4 +54,3 @@ next-env.d.ts
 /.github/skills/
 
 # Local archives
-mooday_project.tar.gz

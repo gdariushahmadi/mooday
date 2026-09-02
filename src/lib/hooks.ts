@@ -5,6 +5,38 @@ import { useCallback, useRef, useSyncExternalStore } from "react";
 const noopSubscribe = () => () => {};
 
 /**
+ * Read-side migration helper for the Mooday → DANEG rebrand.
+ *
+ * When the DANEG app first boots on a device that previously stored data
+ * under the old `mooday_*` localStorage keys, this helper copies the
+ * value across to the new `daneg_*` key and returns it. After the copy
+ * runs once, subsequent reads hit the new key directly.
+ *
+ * The migration only fires for keys prefixed with `daneg_`; other keys
+ * pass through unchanged. SSR-safe (returns null when `window` is
+ * undefined) and ignores quota / private-mode errors.
+ */
+export function readMigratedStorage(key: string): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const direct = window.localStorage.getItem(key);
+    if (direct !== null) return direct;
+    if (!key.startsWith("daneg_")) return null;
+    const legacyKey = `mooday_${key.slice("daneg_".length)}`;
+    const legacy = window.localStorage.getItem(legacyKey);
+    if (legacy === null) return null;
+    try {
+      window.localStorage.setItem(key, legacy);
+    } catch {
+      // Quota / private mode — return the legacy value without copying.
+    }
+    return legacy;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Returns `false` during SSR and the first client render, then `true`
  * after hydration. Use this to guard client-only reads (localStorage,
  * URL params, matchMedia) without causing hydration mismatches or
@@ -56,7 +88,7 @@ export function useLocalStorageState<T>(
 
   const getSnapshot = useCallback((): T => {
     try {
-      const raw = window.localStorage.getItem(key);
+      const raw = readMigratedStorage(key);
       const cached = cacheRef.current;
       if (cached && cached.raw === raw) {
         return cached.value;

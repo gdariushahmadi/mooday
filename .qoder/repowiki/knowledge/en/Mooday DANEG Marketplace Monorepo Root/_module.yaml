@@ -1,0 +1,31 @@
+schema_version: 1
+module_path: ""
+title: Mooday DANEG Marketplace Monorepo Root
+scope:
+    - README.md
+    - ROADMAP.md
+    - AGENTS.md
+    - CLAUDE.md
+    - .gitignore
+    - .vercelignore
+    - package.json
+    - package-lock.json
+    - next.config.ts
+    - tsconfig.json
+    - eslint.config.mjs
+    - postcss.config.mjs
+    - vitest.config.mts
+    - vitest.setup.ts
+    - playwright.config.ts
+    - sentry.client.config.ts
+    - sentry.edge.config.ts
+    - sentry.server.config.ts
+    - .github/
+    - .impeccable/
+    - .env.example
+    - .tmp-appbar.mjs
+    - mooday-deploy.tar.gz
+    - test-oauth.mjs
+source_files: []
+depends_on: []
+related_to: []

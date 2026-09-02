@@ -82,6 +82,7 @@ function makeContext(overrides: Partial<AppContextType> = {}): AppContextType {
     updateQuantity: vi.fn(),
     clearCart: vi.fn(),
     chats: [],
+    setActiveChats: vi.fn(),
     sendChatMessage: vi.fn(),
     createChatThread: vi.fn(() => "t1"),
     markChatRead: vi.fn(),
@@ -170,13 +171,12 @@ describe("MySalesView (D-22)", () => {
     ).toBeInTheDocument();
   });
 
-  it("shows the balance card with available + pending", () => {
+  it("shows that seller payouts are disabled in the public Demo", () => {
     renderSales();
-    expect(screen.getByText(/Available balance/i)).toBeInTheDocument();
-    // Pending + Paid out appear in two contexts (balance card and
-    // payout-badge labels); assert presence not uniqueness.
-    expect(screen.getAllByText(/Pending/i).length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByText(/Paid out/i).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByRole("status")).toHaveTextContent(
+      /Seller payouts are not active in the public Demo/i,
+    );
+    expect(screen.queryByText(/Available balance/i)).not.toBeInTheDocument();
   });
 
   it("renders one row per sale (3 orders → 3 sales)", () => {

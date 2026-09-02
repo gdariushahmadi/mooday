@@ -3,7 +3,7 @@
 import { useCallback, useState } from "react";
 import { useHydrated } from "@/lib/hooks";
 
-const WELCOME_SEEN_KEY = "mooday_has_seen_welcome";
+const WELCOME_SEEN_KEY = "daneg_has_seen_welcome";
 
 /**
  * Subscribes the welcome-screen state to localStorage.

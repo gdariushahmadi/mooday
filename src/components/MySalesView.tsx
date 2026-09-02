@@ -6,6 +6,8 @@ import { type Sale, shipmentLabel, payoutLabel } from "@/data/sales";
 import { deriveSalesFromOrders } from "@/data/sales";
 import { formatAEDLabel } from "@/lib/format";
 import { isOwnListing } from "@/lib/ownership";
+import { AppImage } from "@/components/AppImage";
+import { isPaymentsEnabled } from "@/lib/feature-flags";
 
 interface SalesCopy {
   title: string;
@@ -27,6 +29,8 @@ interface SalesCopy {
   payoutPaidOut: string;
   emptyTitle: string;
   emptyBody: string;
+  demoPayoutDisabled: string;
+  actionError: string;
 }
 
 const COPY: Record<"en" | "ar", SalesCopy> = {
@@ -50,7 +54,10 @@ const COPY: Record<"en" | "ar", SalesCopy> = {
     payoutPaidOut: "Paid out",
     emptyTitle: "No sales yet",
     emptyBody:
-      "Once a buyer purchases one of your listings, you'll see it here with shipment tracking and your payout breakdown.",
+      "The public Demo does not create real sales or payouts. Sample shipment status is shown only for flow testing.",
+    demoPayoutDisabled:
+      "Seller payouts are not active in the public Demo. Shipment status below is sample data only.",
+    actionError: "Could not update the shipment status. Please try again.",
   },
   ar: {
     title: "مبيعاتي",
@@ -72,7 +79,10 @@ const COPY: Record<"en" | "ar", SalesCopy> = {
     payoutPaidOut: "تم التحويل",
     emptyTitle: "لا مبيعات بعد",
     emptyBody:
-      "بمجرد أن يشتري أحد منتجاتك، ستجدها هنا مع تفاصيل الشحن وتوزيع المبلغ.",
+      "لا تنشئ النسخة العامة مبيعات أو تحويلات حقيقية. تعرض حالة الشحن التجريبية لاختبار المسار فقط.",
+    demoPayoutDisabled:
+      "تحويل أرباح البائعين غير مفعّل في النسخة العامة. حالة الشحن أدناه بيانات تجريبية فقط.",
+    actionError: "تعذر تحديث حالة الشحن. حاولي مرة أخرى.",
   },
 };
 
@@ -133,7 +143,9 @@ export const MySalesView: React.FC<MySalesViewProps> = ({
   } = useApp();
   const isAr = language === "ar";
   const t = isAr ? COPY.ar : COPY.en;
+  const paymentsEnabled = isPaymentsEnabled();
   const [filter, setFilter] = React.useState<FilterId>("all");
+  const [actionError, setActionError] = React.useState<string | null>(null);
 
   const sales: Sale[] = useMemo(() => {
     const ownedListingIds = listings
@@ -164,9 +176,14 @@ export const MySalesView: React.FC<MySalesViewProps> = ({
     return sales.filter((s) => s.shipment === filter);
   }, [sales, filter]);
 
-  const handleMarkShipped = (sale: Sale) => {
+  const handleMarkShipped = async (sale: Sale): Promise<void> => {
     if (sale.shipment !== "awaiting_pickup") return;
-    updateOrderStatus(sale.id, "shipped");
+    setActionError(null);
+    try {
+      await updateOrderStatus(sale.id, "shipped");
+    } catch {
+      setActionError(t.actionError);
+    }
   };
 
   return (
@@ -192,8 +209,20 @@ export const MySalesView: React.FC<MySalesViewProps> = ({
         <div className="w-8 h-8" aria-hidden="true" />
       </div>
 
+      {!paymentsEnabled && (
+        <p className="rounded-lg border border-outline-variant bg-surface-container-low px-md py-sm text-label-sm text-on-surface-variant" role="status">
+          {t.demoPayoutDisabled}
+        </p>
+      )}
+
+      {actionError && (
+        <p role="alert" className="rounded-lg bg-error-container px-md py-sm text-label-sm font-bold text-on-error-container">
+          {actionError}
+        </p>
+      )}
+
       {/* Balance card */}
-      <section className="bg-gradient-to-br from-primary to-primary/70 text-on-primary rounded-2xl p-lg shadow-md">
+      {paymentsEnabled && <section className="bg-gradient-to-br from-primary to-primary/70 text-on-primary rounded-2xl p-lg shadow-md">
         <div className="text-[10px] uppercase tracking-[0.2em] font-bold opacity-80">
           {t.availableLabel}
         </div>
@@ -214,7 +243,7 @@ export const MySalesView: React.FC<MySalesViewProps> = ({
             </div>
           </div>
         </div>
-      </section>
+      </section>}
 
       {/* Filter chips */}
       <div
@@ -270,6 +299,7 @@ export const MySalesView: React.FC<MySalesViewProps> = ({
               sale={sale}
               isAr={isAr}
               t={t}
+              paymentsEnabled={paymentsEnabled}
               onMarkShipped={() => handleMarkShipped(sale)}
               onOpenOrder={() => onOpenOrder?.(sale.id)}
             />
@@ -284,9 +314,10 @@ const SaleCard: React.FC<{
   sale: Sale;
   isAr: boolean;
   t: SalesCopy;
-  onMarkShipped: () => void;
+  paymentsEnabled: boolean;
+  onMarkShipped: () => Promise<void>;
   onOpenOrder: () => void;
-}> = ({ sale, isAr, t, onMarkShipped, onOpenOrder }) => {
+}> = ({ sale, isAr, t, paymentsEnabled, onMarkShipped, onOpenOrder }) => {
   const first = sale.lineItems[0]?.product;
   const productTitle = first
     ? isAr
@@ -299,11 +330,13 @@ const SaleCard: React.FC<{
     <div className="bg-surface-container-lowest border border-surface-container-high rounded-xl p-md hover:shadow-sm transition-shadow">
       <div className="flex gap-sm items-start">
         {first && (
-          <img
+          <AppImage
             alt={productTitle}
-            src={first.image}
-            className="w-16 h-16 rounded object-cover border border-outline-variant flex-shrink-0"
-            loading="lazy"
+            src={first.image || "/products/placeholder.svg"}
+            width={64}
+            height={64}
+            sizes="64px"
+            className="h-16 w-16 flex-shrink-0 rounded border border-outline-variant object-cover"
           />
         )}
         <div className="flex-grow min-w-0">
@@ -323,32 +356,41 @@ const SaleCard: React.FC<{
               tone={sale.shipment === "delivered" ? "success" : "info"}
               label={shipmentLabel(sale.shipment, isAr)}
             />
-            <PayoutBadge
-              tone={
-                sale.payout === "paid_out"
-                  ? "success"
-                  : sale.payout === "available"
-                    ? "warning"
-                    : "info"
-              }
-              label={payoutLabel(sale.payout, isAr)}
-            />
+            {paymentsEnabled ? (
+              <PayoutBadge
+                tone={
+                  sale.payout === "paid_out"
+                    ? "success"
+                    : sale.payout === "available"
+                      ? "warning"
+                      : "info"
+                }
+                label={payoutLabel(sale.payout, isAr)}
+              />
+            ) : (
+              <PayoutBadge
+                tone="neutral"
+                label={isAr ? "لا يوجد تحويل" : "No payout"}
+              />
+            )}
           </div>
         </div>
-        <div className="text-end">
-          <div className="text-label-md font-bold text-primary">
-            {formatAEDLabel(sale.payoutAmount)}
+        {paymentsEnabled && (
+          <div className="text-end">
+            <div className="text-label-md font-bold text-primary">
+              {formatAEDLabel(sale.payoutAmount)}
+            </div>
+            <div className="text-[10px] text-outline">
+              −{formatAEDLabel(sale.commission)} {isAr ? "عمولة" : "fee"}
+            </div>
           </div>
-          <div className="text-[10px] text-outline">
-            −{formatAEDLabel(sale.commission)} {isAr ? "عمولة" : "fee"}
-          </div>
-        </div>
+        )}
       </div>
       <div className="flex gap-sm justify-end mt-3">
         {sale.shipment === "awaiting_pickup" && (
           <button
             type="button"
-            onClick={onMarkShipped}
+            onClick={() => void onMarkShipped()}
             className="px-3 py-2 rounded-full bg-primary text-on-primary text-label-sm font-bold uppercase tracking-wider active:scale-95 transition-transform"
           >
             {t.markShipped}

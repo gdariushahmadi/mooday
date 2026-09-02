@@ -86,6 +86,7 @@ function makeContext(overrides: Partial<AppContextType> = {}): AppContextType {
     updateQuantity: vi.fn(),
     clearCart: vi.fn(),
     chats: [],
+    setActiveChats: vi.fn(),
     sendChatMessage: vi.fn(),
     createChatThread: vi.fn(() => "t1"),
     markChatRead: vi.fn(),
@@ -205,12 +206,13 @@ describe("OrderDetailsView (C-17)", () => {
     expect(screen.getAllByText(/1,200/).length).toBeGreaterThanOrEqual(2);
   });
 
-  it("renders the shipping + payment summary cards", () => {
+  it("renders the shipping + Demo payment summary cards without card data", () => {
     renderDetails();
     expect(screen.getByText(/Shipping to/i)).toBeInTheDocument();
     expect(screen.getByText("Dubai")).toBeInTheDocument();
-    expect(screen.getByText(/Paid with/i)).toBeInTheDocument();
-    expect(screen.getByText(/Visa/)).toBeInTheDocument();
+    expect(screen.getByText(/Payment status/i)).toBeInTheDocument();
+    expect(screen.getByText(/no payment was taken/i)).toBeInTheDocument();
+    expect(screen.queryByText(/Visa/)).not.toBeInTheDocument();
   });
 
   it("renders the order summary with subtotal + total", () => {

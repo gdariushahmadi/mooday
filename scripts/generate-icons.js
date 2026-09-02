@@ -1,12 +1,5 @@
 // Generate PWA icons from the master SVG.
 // Run with: node scripts/generate-icons.js
-const sharp = require("sharp");
-const path = require("path");
-const fs = require("fs");
-
-const ROOT = path.resolve(__dirname, "..");
-const SVG_PATH = path.join(ROOT, "public", "icons", "icon-source.svg");
-
 const outputs = [
   // Standard PWA icons
   { file: "public/icons/icon-192x192.png", size: 192, purpose: "any" },
@@ -24,6 +17,12 @@ const outputs = [
 ];
 
 async function generate() {
+  const { default: sharp } = await import("sharp");
+  const path = await import("node:path");
+  const fs = await import("node:fs");
+  const ROOT = path.resolve(process.cwd());
+  const SVG_PATH = path.join(ROOT, "public", "icons", "icon-source.svg");
+
   const svg = fs.readFileSync(SVG_PATH);
   for (const out of outputs) {
     const target = path.join(ROOT, out.file);

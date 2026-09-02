@@ -8,7 +8,7 @@ import {
   readDarkModePreference,
 } from "@/components/ThemeSync";
 
-const PREF_PUSH_KEY = "mooday-pref-push";
+const PREF_PUSH_KEY = "daneg-pref-push";
 
 function readPref(key: string, fallback: boolean): boolean {
   if (typeof window === "undefined") return fallback;
@@ -69,6 +69,19 @@ interface SettingsCopy {
   clearCache: string;
   clearCacheHint: string;
   versionLabel: string;
+  legal: string;
+  terms: string;
+  privacy: string;
+  refunds: string;
+}
+
+/**
+ * Legal documents live outside the SPA shell, so they open in a new tab —
+ * the reader keeps their place in the app instead of losing in-memory
+ * state to a full navigation.
+ */
+function openLegal(slug: "terms" | "privacy" | "refunds"): void {
+  window.open(`/legal/${slug}`, "_blank", "noopener,noreferrer");
 }
 
 const COPY: Record<"en" | "ar", SettingsCopy> = {
@@ -88,10 +101,14 @@ const COPY: Record<"en" | "ar", SettingsCopy> = {
     blockedUsers: "Blocked users",
     blockedUsersValue: "Manage the people you've blocked",
     signOut: "Log Out",
-    signOutHint: "Sign out of your Mooday account",
+    signOutHint: "Sign out of your DANEG account",
     clearCache: "Clear cached images",
     clearCacheHint: "Frees up ~3 MB on your device",
     versionLabel: "Version",
+    legal: "Legal",
+    terms: "Terms of Service",
+    privacy: "Privacy Policy",
+    refunds: "Returns & Refunds Policy",
   },
   ar: {
     title: "الإعدادات والحساب",
@@ -103,16 +120,20 @@ const COPY: Record<"en" | "ar", SettingsCopy> = {
     preferences: "التفضيلات",
     privacySafety: "الخصوصية والأمان",
     security: "الأمان",
-    appLock: "قفل برنامه",
-    appLockValue: "قفل خودکار با رمز یا اثر انگشت",
+    appLock: "قفل التطبيق",
+    appLockValue: "قفل تلقائي ببصمة أو رمز",
     about: "حول",
     blockedUsers: "المحظورون",
     blockedUsersValue: "إدارة من حظرتهم",
     signOut: "تسجيل الخروج",
-    signOutHint: "تسجيل الخروج من حسابك في مودي",
+    signOutHint: "تسجيل الخروج من حسابك في دانق",
     clearCache: "مسح الصور المخزنة",
     clearCacheHint: "يحرر ~٣ ميجابايت",
     versionLabel: "الإصدار",
+    legal: "قانوني",
+    terms: "شروط الخدمة",
+    privacy: "سياسة الخصوصية",
+    refunds: "سياسة الإرجاع والاسترداد",
   },
 };
 
@@ -273,8 +294,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           onNavigate: onOpenBlockedUsers,
         },
         {
-          labelEn: "Mooday Safe Escrow Policy",
-          labelAr: "سياسة ضمان مودي الآمن",
+          labelEn: "Demo payment status",
+          labelAr: "حالة الدفع التجريبي",
           icon: "shield",
           onNavigate: () => {
             if (onOpenHelp) {
@@ -283,10 +304,34 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             }
             window.alert(
               isAr
-                ? "مودي تحتفظ بالمبلغ في الضمان حتى يؤكد المشتري الاستلام. بعد التأكيد بثلاثة أيام يتم تحويل المبلغ للبائع."
-                : "Mooday holds payment in escrow until the buyer confirms delivery. Funds are released to the seller 3 days after confirmation.",
+                ? "هذه نسخة تجريبية. لا يتم خصم أي مبلغ ولا يتم إنشاء رصيد أو تحويل أرباح للبائع."
+                : "This is a public Demo. No payment is taken, and no seller balance or payout is created.",
             );
           },
+        },
+      ],
+    },
+    {
+      titleEn: t.legal,
+      titleAr: t.legal,
+      items: [
+        {
+          labelEn: t.terms,
+          labelAr: t.terms,
+          icon: "gavel",
+          onNavigate: () => openLegal("terms"),
+        },
+        {
+          labelEn: t.privacy,
+          labelAr: t.privacy,
+          icon: "policy",
+          onNavigate: () => openLegal("privacy"),
+        },
+        {
+          labelEn: t.refunds,
+          labelAr: t.refunds,
+          icon: "assignment_return",
+          onNavigate: () => openLegal("refunds"),
         },
       ],
     },
@@ -328,8 +373,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           labelEn: t.versionLabel,
           labelAr: t.versionLabel,
           icon: "info",
-          valueEn: "Mooday 1.0.0",
-          valueAr: "مودي 1.0.0",
+          valueEn: "DANEG 1.0.0",
+          valueAr: "دانق 1.0.0",
         },
       ],
     },

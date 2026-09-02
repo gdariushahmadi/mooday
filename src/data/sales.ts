@@ -2,12 +2,13 @@
  * Mock "sales" data — seller-side of an order. Local-first.
  *
  * For Phase 1 every sale is paired with an Order from `src/data/orders.ts`,
- * with the seller being the entity that fulfils it. Payouts are pre-baked
- * across three states:
+ * with the seller being the entity that fulfils it. The legacy fixture keeps
+ * three future payout states for tests; the public Demo does not display or
+ * create any of them:
  *
- *  - `pending`     — money is in escrow, not yet released
- *  - `available`   — buyer received the item; funds are releasable
- *  - `paid_out`    — payout has been issued to the seller's bank
+ *  - `pending`     — future payment is not settled
+ *  - `available`   — future payout is eligible
+ *  - `paid_out`    — future payout was issued
  *
  * Each sale also has a shipment status that mirrors the order:
  *  - `awaiting_pickup` → `in_transit` → `delivered`.
@@ -67,19 +68,31 @@ export interface Sale {
   buyerNameAr: string;
   /** The buyer’s masked payment last-4 (for the payouts summary). */
   buyerPaymentLast4: string;
-  buyerPaymentBrandEn: "Visa" | "Mastercard" | "Amex" | "Apple Pay" | "Cash";
-  buyerPaymentBrandAr: "فيزا" | "ماستركارد" | "أمريكان إكسبريس" | "آبل باي" | "نقداً";
+  buyerPaymentBrandEn:
+    | "Visa"
+    | "Mastercard"
+    | "Amex"
+    | "Apple Pay"
+    | "Cash"
+    | "Demo";
+  buyerPaymentBrandAr:
+    | "فيزا"
+    | "ماستركارد"
+    | "أمريكان إكسبريس"
+    | "آبل باي"
+    | "نقداً"
+    | "تجريبي";
   /** Snapshot of the line item(s) being sold (mirrors Order.lineItems). */
   orderId: string;
   lineItems: Order["lineItems"];
   subtotal: number;
-  /** Mooday’s commission (10 % for Phase 1). */
+  /** DANEG's commission (10 % for Phase 1). */
   commission: number;
   /** Subtotal − commission. */
   payoutAmount: number;
   shipment: ShipmentStatus;
   payout: PayoutStatus;
-  /** Days the funds stay in escrow before becoming available (e.g. 3). */
+  /** Future hold duration before a payout can become available. */
   holdDays: number;
   /** Buyer’s city (snapshot). */
   shipToCityEn: string;

@@ -156,7 +156,7 @@ export function AdminDisputesTab({
                         : "bg-surface border-surface-container-high text-on-surface-variant"
                     }`}
                   >
-                    {isAr ? "قبول النزاع (إعادة المبلغ)" : "Resolve & Refund Buyer"}
+                    {isAr ? "تسوية النزاع (تجريبي فقط)" : "Resolve Demo dispute"}
                   </button>
                   <button
                     type="button"

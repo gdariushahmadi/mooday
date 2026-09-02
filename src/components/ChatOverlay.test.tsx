@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import {
   AppContext,
@@ -159,15 +159,28 @@ describe("ChatOverlay (F-29/F-30)", () => {
     expect(ctx.sendChatMessage).toHaveBeenCalledWith("t1", "Hello!");
   });
 
-
-
-  it("inserts a Phase 1 photo stub message when Attach image is clicked", async () => {
+  it("opens the offer form and sends a structured offer", async () => {
     const user = userEvent.setup();
     const { ctx } = renderChat();
+
+    await user.click(screen.getByRole("button", { name: "Make an offer" }));
+    await user.type(screen.getByLabelText("Your offer (AED)"), "950");
+    await user.click(screen.getByRole("button", { name: "Send offer" }));
+
+    expect(ctx.sendChatMessage).toHaveBeenCalledWith(
+      "t1",
+      "OFFER:950.00:Send an offer",
+    );
+  });
+
+
+
+  it("does not create a fake message while image upload is unavailable", () => {
+    const { ctx } = renderChat();
     const button = screen.getByRole("button", { name: /Attach image/i });
-    expect(button).toBeEnabled();
-    await user.click(button);
-    expect(ctx.sendChatMessage).toHaveBeenCalledWith("t1", "📷 Photo");
+    expect(button).toBeDisabled();
+    expect(button).toHaveAttribute("title", "Available after media upload is connected");
+    expect(ctx.sendChatMessage).not.toHaveBeenCalled();
   });
 
 

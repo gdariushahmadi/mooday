@@ -1,117 +1,94 @@
-# Mooday — external setup backlog
+# DANEG external release gates
 
-This file is the single checklist for work that cannot be completed only from
-the repository. Do these items in a staging environment first. Never paste a
-service-role key, database password, SMTP password, or OAuth client secret into
-a `NEXT_PUBLIC_*` variable or commit it to Git.
+This checklist contains work that needs a staging or production operator.
+Complete it in staging first. Never commit a service-role key, database
+password, SMTP password, OAuth secret, or Stripe secret.
 
-## 1. Hosted Supabase staging
+## 1. Staging database
 
-- [ ] Create a dedicated Supabase **staging** project in the UAE/nearest
-  available region and record the project reference in the team password
-  manager.
-- [ ] Link the repository to staging with the Supabase CLI.
-- [ ] Review all pending migrations, take a staging backup, then apply
-  identity through admin migrations in order:
-  `202607150001_phase_2_identity.sql`,
-  `202607150002_phase_3_listings.sql`,
-  `202607150003_phase_3_listing_media.sql`,
-  `202607150004_phase_3_public_seller_profiles.sql`,
-  `202607150005_phase_3_user_likes_and_cart.sql`,
-  `202607150006_phase_3_orders.sql`,
-  `202607150007_phase_3_social.sql`,
-  `202607150008_phase_3_5_admin.sql`,
-  `202608060001_payment_methods.sql`,
-  `202608060002_blocked_users.sql`,
-  `202608060003_seller_reviews_snapshot.sql`,
-  `202608060004_notification_fanout.sql`,
-  `202608060005_seed_admin.sql`,
-  `202608060006_fix_storage_foldername.sql`.
-- [ ] Confirm that `profiles`, `addresses`, `set_default_address`, triggers,
-  grants, and all RLS policies exist.
-- [ ] Confirm that `listings` and `listing_images` exist and that anonymous
-  access returns **active + approved** listings only (`approved_at IS NOT NULL`).
-- [ ] Confirm likes (`user_likes`), cart (`cart_items`), orders, and social
-  tables (chats / notifications / reports / disputes) exist with RLS.
-- [ ] Confirm that the private `listing-media` bucket has a 10 MB limit,
-  JPEG/PNG/WebP allow-list, and the expected Storage RLS policies.
-- [ ] Run the database/RLS tests against an isolated staging test database
-  (`supabase/tests/phase_2_*.sql` and `phase_3_*.sql`).
-- [ ] Copy `supabase/templates/confirmation.html` and `recovery.html` into the
-  matching Supabase Auth email templates. Keep `{{ .Token }}` intact so the UI
-  receives a six-digit code rather than a confirmation link.
-- [ ] Set the Auth Site URL to the staging web URL.
-- [ ] Allow only the required callback URLs, including
-  `https://<staging-domain>/auth/callback` and the final production callback.
+- [ ] Create a staging Supabase project or isolated self-hosted database.
+- [ ] Confirm staging and production use different database URLs and secret
+      files.
+- [ ] Apply all migrations in order.
+- [ ] Review and apply
+      `supabase/migrations/202608310002_delivery_integrity.sql`.
+- [ ] Confirm listings use `approved_at = null` until moderation approval.
+- [ ] Confirm public listing, image, storage, seller-count, and search reads
+      return active approved listings only.
+- [ ] Confirm direct client inserts into `orders` and `order_items` fail.
+- [ ] Confirm the atomic single-listing RPC reads the database price, checks
+      address ownership, blocks self-purchase, locks the listing, stores
+      snapshots, and creates quantity `1`.
+- [ ] Run all pgTAP tests against the isolated staging database.
+- [ ] Run a real two-session concurrent reservation test.
+- [ ] Test block, suspension, trust-field, offer, review, dispute, report,
+      affiliate, and owner-isolation rules.
+- [ ] Test backup and restore before production promotion.
 
-## 2. Transactional email / SMTP
+## 2. Auth and email
 
-- [ ] Choose and create the production email provider account.
-- [ ] Verify the sending domain and publish its SPF, DKIM, and DMARC records.
-- [ ] Configure the provider SMTP credentials in Supabase Auth secrets.
-- [ ] Set a branded sender name/address and a monitored reply-to/support
-  address.
-- [ ] Test sign-up confirmation, resend, password recovery, expiry, spam
-  placement, Arabic rendering, and delivery failure handling.
-- [ ] Configure bounce/complaint monitoring and provider rate alerts.
+- [x] Set the Auth Site URL for the environment.
+- [x] Allow only the required callback URL:
+      `https://app.daneg.ae/auth/callback`, and the staging callback.
+- [ ] Configure SMTP with a verified sending domain.
+- [ ] Publish SPF, DKIM, and DMARC records.
+- [ ] Test sign-up, OTP, resend, recovery, expiry, Arabic rendering, spam
+      placement, and failure handling.
+- [ ] Configure Google OAuth with separate staging and production credentials.
+- [ ] Test new user, returning user, cancelled consent, duplicate email, and
+      callback error paths.
 
-## 3. Google sign-in
+## 3. DNS, TLS, and routing
 
-- [ ] Create separate Google OAuth credentials for staging and production.
-- [ ] Add the exact Supabase callback URL and Mooday web origins in Google
-Cloud, then store the client secret in Supabase.
-- [ ] Enable the Google provider in Supabase and test new-user, returning-user,
-  cancelled-consent, duplicate-email, and callback-error paths.
-- [ ] Review the consent-screen/app-verification requirements before launch.
+- [x] Point `app.daneg.ae` to the target host.
+- [x] Issue and test the TLS certificate for `app.daneg.ae`.
+- [x] Connect `app.daneg.ae` to the Nginx Next.js upstream.
+- [x] Send `/`, `/app`, `/api/*`, and `/auth/callback` to Next.js.
+- [x] Send `/auth/v1/*`, `/rest/v1/*`, and `/storage/v1/*` to Kong.
+- [x] Confirm `app.daneg.ae` is used for canonical, sitemap, and generated
+      links.
+- [ ] Confirm staging is not indexed by search engines.
 
-## 4. Web staging and production environments
+## 4. Public Demo controls
 
-- [ ] Create the staging and production web projects/deployments.
-- [ ] Set these values separately in each environment:
-  `NEXT_PUBLIC_DATA_SOURCE=supabase`,
-  `NEXT_PUBLIC_MARKETPLACE_DATA_SOURCE=supabase` (optional; listings/likes/cart),
-  `NEXT_PUBLIC_SUPABASE_URL`,
-  `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, and `NEXT_PUBLIC_SITE_URL`.
-  Server-only: `SUPABASE_SERVICE_ROLE_KEY` for admin actions.
-- [ ] Confirm that preview deployments do not accidentally use the production
-  database.
-- [ ] Configure the custom domains, TLS, redirects, and DNS records.
-- [ ] Protect staging from public indexing and unauthorized access.
-- [ ] Run `npm run test:phase2`, the browser Auth journey, and a manual mobile
-  smoke test against staging before promoting the release.
+- [x] Set `CHECKOUT_MODE=demo` and `PAYMENTS_ENABLED=false` in production.
+- [ ] Confirm no public page requests card number, expiry, CVV, Apple Pay, or
+      cash-on-delivery data.
+- [ ] Confirm a Demo receipt has a `demo-...` id and remains in the browser
+      after refresh.
+- [ ] Confirm no Demo checkout request reaches `public.orders`.
+- [ ] Confirm Payouts and saved payment methods show the Demo-disabled state.
+- [ ] Confirm Demo copy and legal pages do not claim real escrow, refunds, or
+      seller payouts.
 
-## 5. Production security controls
+Stripe and real payout are a separate future release. Do not configure them
+as part of this Demo acceptance gate.
 
-- [ ] Choose and configure CAPTCHA/bot protection for sign-up, sign-in,
-  resend, and recovery flows.
-- [ ] Tune Supabase Auth email/OTP rate limits using staging traffic results.
-- [ ] Review Auth session duration, refresh-token rotation, password policy,
-  leaked-password protection, and MFA roadmap.
-- [ ] Verify that all private tables have RLS enabled and re-run the owner
-  isolation checks after every migration.
-- [ ] Review CSP violation reports, remove required violations, then move the
-  policy from report-only to enforced mode.
-- [ ] Resolve or formally accept the two moderate transitive PostCSS/Next.js
-  audit findings when a non-breaking upstream fix is available. Do not use the
-  current forced audit fix because it downgrades Next.js.
+## 5. Monitoring and operations
 
-## 6. Monitoring, support, and launch readiness
+- [ ] Configure Sentry browser/server releases with the deployed commit id.
+- [ ] Add uptime checks for `/`, `/app`, `/api/health`, Auth, and the OAuth
+      callback on `app.daneg.ae`.
+- [ ] Add alerts for health failures, Auth failures, database errors, and
+      quota/rate-limit events.
+- [ ] Enable database and storage backups with documented retention.
+- [ ] Complete and record a restore drill.
+- [ ] Confirm logs redact tokens, OTP codes, card data, and personal data.
+- [ ] Prepare support steps for missing OTP, recovery, blocked accounts, and
+      callback failure.
 
-- [ ] Connect error monitoring for browser errors and Auth callback failures;
-  ensure logs redact tokens, email codes, and personal data.
-- [ ] Add uptime checks for the web app, Supabase Auth, and the callback route.
-- [ ] Create alerts for elevated sign-in failures, OTP delivery delays,
-  database errors, and provider quota/rate-limit exhaustion.
-- [ ] Define data retention/deletion, account deletion, privacy-request, backup,
-  and restore procedures with the product/legal owners.
-- [ ] Prepare a customer-support runbook for missing OTPs, locked accounts,
-  provider-login conflicts, and recovery failures.
-- [ ] Perform a staging restore drill and document the production rollback:
-  disable the Supabase feature flag/deploy mock only for an emergency preview;
-  do not roll back the additive identity migration destructively.
+## 6. Legal and support
 
-## Completion evidence
+- [ ] Replace every `PLACEHOLDER` in `src/app/legal/content.ts` with the real
+      registered entity, office address, and trade licence number.
+- [ ] Confirm support and privacy email addresses are monitored.
+- [ ] Have a UAE-qualified lawyer review Terms, Privacy, and the Demo return
+      boundary in English and Arabic.
+- [ ] Have a native Arabic speaker check that both language versions match.
+- [ ] Set the effective date after legal approval.
 
-For every checked item, add the date, owner, environment, and a link to the
-ticket or screenshot in the team tracker. No credentials should be copied into
+## Evidence
+
+For each completed item, record the date, owner, environment, and a link to
+the log, test result, or screenshot in the team tracker. Do not put secrets in
 this file.

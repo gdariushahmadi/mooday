@@ -25,7 +25,7 @@ export const MobileFrame: React.FC<MobileFrameProps> = ({
   src,
   width = 390,
   height = 844,
-  title = "Mooday preview",
+  title = "DANEG preview",
 }) => {
   const [scale, setScale] = useState(1);
   const wrapperRef = React.useRef<HTMLDivElement>(null);

@@ -1,0 +1,6 @@
+- Migrations are named `<YYYYMMDDHHMMSS>_phase_<N>_<feature>.sql` and wrapped in explicit `begin; ... commit;` transactions.
+- DDL is idempotent using `create or replace function`, `create table if not exists`, `drop trigger if exists`, and `drop policy if exists` before recreation.
+- Security-sensitive functions use `security definer` with an explicit `set search_path = ''` (or `public`) to prevent path injection.
+- Row Level Security policies are defined per operation (select/insert/update/delete) and gated on `auth.uid()` equality with the owning user column.
+- Notification fan-out is implemented as AFTER INSERT/UPDATE triggers that call dedicated `fanout_*` functions inserting into a single `notifications` table with bilingual `title_en/title_ar` and `body_en/body_ar` columns.
+- RLS tests use pgtap (`plan`, `is`, `throws_ok`, `lives_ok`, `is_empty`, `finish()`) inside a transaction that ends with `rollback` to keep the test database clean.

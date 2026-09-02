@@ -1,0 +1,1 @@
+Language switching is achieved purely via URL query params (`?lang=ar` / `?lang=en`); there is no runtime i18n framework — toggling navigates to the same pathname with the updated `lang` param so the server can prerender the correct direction and strings for share previews.

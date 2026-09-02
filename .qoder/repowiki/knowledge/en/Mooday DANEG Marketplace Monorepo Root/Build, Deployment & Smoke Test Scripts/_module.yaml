@@ -1,0 +1,11 @@
+schema_version: 1
+module_path: scripts_and_deploy
+title: Build, Deployment & Smoke Test Scripts
+scope:
+    - scripts/
+    - .deploy/
+source_files: []
+depends_on: []
+related_to:
+    - path: backend_client
+    - path: database_schema

@@ -20,6 +20,7 @@ function makeContext(overrides: Partial<AppContextType> = {}): AppContextType {
     updateQuantity: vi.fn(),
     clearCart: vi.fn(),
     chats: [],
+    setActiveChats: vi.fn(),
     sendChatMessage: vi.fn(),
     createChatThread: vi.fn(() => "test-thread"),
     markChatRead: vi.fn(),
@@ -139,7 +140,7 @@ describe("SettingsView (G-37) — auth affordances", () => {
 
   it("shows a Log out button when there is a current user", () => {
     renderSettings({
-      currentUser: { email: "layla@mooday.app", name: "Layla" },
+      currentUser: { email: "layla@daneg.app", name: "Layla" },
     });
     expect(
       screen.getByRole("button", { name: /^log out$/i }),
@@ -158,7 +159,7 @@ describe("SettingsView (G-37) — auth affordances", () => {
   it("calls onSignOut when the Log out button is clicked (signed-in state)", async () => {
     const user = userEvent.setup();
     const { onSignOut } = renderSettings({
-      currentUser: { email: "layla@mooday.app", name: "Layla" },
+      currentUser: { email: "layla@daneg.app", name: "Layla" },
     });
     await user.click(
       screen.getByRole("button", { name: /^log out$/i }),
@@ -206,10 +207,10 @@ describe("SettingsView (G-37) — auth affordances", () => {
  await user.click(darkModeToggle);
 
  expect(document.documentElement).toHaveClass("dark");
- expect(localStorage.getItem("mooday-pref-dark")).toBe("1");
+ expect(localStorage.getItem("daneg-pref-dark")).toBe("1");
 
  await user.click(darkModeToggle);
  expect(document.documentElement).not.toHaveClass("dark");
- expect(localStorage.getItem("mooday-pref-dark")).toBe("0");
+ expect(localStorage.getItem("daneg-pref-dark")).toBe("0");
  });
 });

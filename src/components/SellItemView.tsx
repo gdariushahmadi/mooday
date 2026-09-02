@@ -41,7 +41,10 @@ export const SellItemView: React.FC<SellItemViewProps> = ({
   const { language, addListing, userProfile } = useApp();
   const isAr = language === "ar";
   const t = isAr ? COPY.ar : COPY.en;
-  const stagedFilesRef = useRef<File[]>([]);
+  // Same `url → File` map the form maintains. Holding the reference
+  // here lets us hand it untouched to `addListing`, which pairs
+  // staged files with the URLs in `data.images` at the right index.
+  const stagedFilesRef = useRef<Map<string, File>>(new Map());
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
 
@@ -88,7 +91,7 @@ export const SellItemView: React.FC<SellItemViewProps> = ({
         <ListingForm
           isAr={isAr}
           user={user}
-          draftKey="mooday_listing_form_draft"
+          draftKey="daneg_listing_form_draft"
           onStagedFiles={(files) => {
             stagedFilesRef.current = files;
           }}
@@ -100,7 +103,7 @@ export const SellItemView: React.FC<SellItemViewProps> = ({
                 await addListing(data, stagedFilesRef.current, {
                   status: "active",
                 });
-                stagedFilesRef.current = [];
+                stagedFilesRef.current = new Map();
                 onSuccess();
               } catch {
                 setError(t.saveError);

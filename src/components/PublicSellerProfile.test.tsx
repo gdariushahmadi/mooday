@@ -40,6 +40,7 @@ function makeContext(language: "en" | "ar" = "en"): AppContextType {
     updateQuantity: vi.fn(),
     clearCart: vi.fn(),
     chats: [],
+    setActiveChats: vi.fn(),
     sendChatMessage: vi.fn(),
     createChatThread: vi.fn(() => "thread-1"),
     markChatRead: vi.fn(),

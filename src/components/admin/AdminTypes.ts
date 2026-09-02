@@ -1,9 +1,13 @@
 export type AdminTab =
   | "overview"
   | "listings"
+  | "categories"
   | "orders"
   | "users"
   | "disputes"
   | "reports"
   | "broadcast"
-  | "audit";
+  | "audit"
+  | "affiliate";
+
+export type AffiliateSubTab = "partners" | "links" | "reports";

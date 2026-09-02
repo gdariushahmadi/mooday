@@ -20,6 +20,7 @@ function makeContext(overrides: Partial<AppContextType> = {}): AppContextType {
     updateQuantity: vi.fn(),
     clearCart: vi.fn(),
     chats: [],
+    setActiveChats: vi.fn(),
     sendChatMessage: vi.fn(),
     createChatThread: vi.fn(() => "test-thread"),
     markChatRead: vi.fn(),
@@ -144,12 +145,12 @@ describe("SocialLoginView (A-06)", () => {
     await user.click(screen.getByRole("button", { name: /google/i }));
     expect(ctx.signUp).toHaveBeenCalledWith({
       name: "Google User",
-      email: "user.google@mooday.app",
+      email: "user.google@daneg.app",
       phone: "",
       password: "social-1234",
     });
     expect(ctx.signIn).toHaveBeenCalledWith({
-      email: "user.google@mooday.app",
+      email: "user.google@daneg.app",
       password: "social-1234",
     });
     expect(onSuccess).toHaveBeenCalledTimes(1);

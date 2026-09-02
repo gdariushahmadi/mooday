@@ -39,6 +39,13 @@ export interface AdminProfileSummary {
   createdAt: string;
 }
 
+export type ListingStatus =
+  | "draft"
+  | "active"
+  | "reserved"
+  | "sold"
+  | "archived";
+
 export interface AdminListingSummary {
   id: string;
   sellerId: string;
@@ -53,6 +60,17 @@ export interface AdminListingSummary {
   approvedAt: string | null;
   createdAt: string;
   reportCount: number;
+}
+
+export interface AdminCategorySummary {
+  id: string;
+  slug: string;
+  nameEn: string;
+  nameAr: string;
+  sortOrder: number;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface AdminOrderSummary {
@@ -114,10 +132,19 @@ export interface AdminDashboardStats {
 
 // ---------- helpers ----------
 
+export type AdminAuthReason =
+  | "signed-out"
+  | "not-admin"
+  | "suspended"
+  | "misconfigured";
+
 class AdminAuthError extends Error {
-  constructor(message: string) {
+  readonly reason: AdminAuthReason;
+
+  constructor(reason: AdminAuthReason, message: string) {
     super(message);
     this.name = "AdminAuthError";
+    this.reason = reason;
   }
 }
 
@@ -129,6 +156,7 @@ function getAdminClient(): SupabaseClient {
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
   if (!url || !key) {
     throw new AdminAuthError(
+      "misconfigured",
       "Admin operations require NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY",
     );
   }
@@ -138,17 +166,21 @@ function getAdminClient(): SupabaseClient {
   return cachedAdminClient;
 }
 
-async function getAuthenticatedAdmin(): Promise<{
-  client: SupabaseClient;
-  adminId: string;
-  adminEmail: string;
-}> {
-  const client = getAdminClient();
-  // Re-derive the caller identity from the access_token cookie that the
-  // browser-publishable client wrote during sign-in. The service-role
-  // client itself does not have a session; we manually verify the user's
-  // JWT to extract their user id, then check `is_admin` against the
-  // profiles table.
+/**
+ * Resolve the caller's access token.
+ *
+ * The browser Supabase client persists its session in localStorage, not
+ * in cookies, so the token has to be handed to the action explicitly.
+ * We still fall back to the Supabase auth cookies for any surface that
+ * does set them (e.g. a future `@supabase/ssr` migration), which keeps
+ * this helper correct under both storage strategies.
+ */
+async function resolveAccessToken(
+  accessToken?: string,
+): Promise<string | null> {
+  const supplied = accessToken?.trim();
+  if (supplied) return supplied;
+
   const cookieStore = await cookies();
   const projectRef = (() => {
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -159,17 +191,32 @@ async function getAuthenticatedAdmin(): Promise<{
       return null;
     }
   })();
-  const token =
+  return (
     cookieStore.get("sb-access-token")?.value ||
     (projectRef
       ? cookieStore.get(`sb-${projectRef}-auth-token`)?.value
-      : undefined);
+      : undefined) ||
+    null
+  );
+}
+
+async function getAuthenticatedAdmin(accessToken?: string): Promise<{
+  client: SupabaseClient;
+  adminId: string;
+  adminEmail: string;
+}> {
+  const client = getAdminClient();
+  // The service-role client has no session of its own. We verify the
+  // caller's JWT against Supabase to derive their user id — the token is
+  // never decoded locally and no caller-supplied id is trusted — then
+  // check `is_admin` against the profiles table.
+  const token = await resolveAccessToken(accessToken);
   if (!token) {
-    throw new AdminAuthError("Not signed in.");
+    throw new AdminAuthError("signed-out", "Not signed in.");
   }
   const { data, error } = await client.auth.getUser(token);
   if (error || !data.user) {
-    throw new AdminAuthError("Session is invalid.");
+    throw new AdminAuthError("signed-out", "Session is invalid or expired.");
   }
   const { data: profile, error: profileError } = await client
     .from("profiles")
@@ -177,13 +224,22 @@ async function getAuthenticatedAdmin(): Promise<{
     .eq("id", data.user.id)
     .single();
   if (profileError) {
-    throw new AdminAuthError("Unable to load admin profile.");
+    throw new AdminAuthError(
+      "misconfigured",
+      "Unable to load the admin profile.",
+    );
   }
   if (!profile?.is_admin) {
-    throw new AdminAuthError("Your account does not have admin privileges.");
+    throw new AdminAuthError(
+      "not-admin",
+      "Your account does not have admin privileges.",
+    );
   }
   if (profile.is_suspended) {
-    throw new AdminAuthError("Your admin account has been suspended.");
+    throw new AdminAuthError(
+      "suspended",
+      "Your admin account has been suspended.",
+    );
   }
   return {
     client,
@@ -217,10 +273,46 @@ async function writeAudit(
   }
 }
 
+// ---------- identity ----------
+
+export type AdminIdentityResult =
+  | { ok: true; id: string; email: string }
+  | { ok: false; reason: AdminAuthReason; message: string };
+
+/**
+ * Server-verified identity probe. The admin panel calls this before it
+ * renders anything, so a non-admin never sees the dashboard shell.
+ *
+ * This returns a result object instead of throwing because Next.js
+ * redacts Server Action error messages in production builds — a thrown
+ * `AdminAuthError` would reach the browser as an opaque digest and the
+ * panel could not tell "not signed in" from "not an admin".
+ */
+export async function adminWhoAmI(
+  accessToken: string,
+): Promise<AdminIdentityResult> {
+  try {
+    const { adminId, adminEmail } = await getAuthenticatedAdmin(accessToken);
+    return { ok: true, id: adminId, email: adminEmail };
+  } catch (err: unknown) {
+    if (err instanceof AdminAuthError) {
+      return { ok: false, reason: err.reason, message: err.message };
+    }
+    return {
+      ok: false,
+      reason: "misconfigured",
+      message:
+        err instanceof Error ? err.message : "Admin verification failed.",
+    };
+  }
+}
+
 // ---------- read actions ----------
 
-export async function adminDashboardStats(): Promise<AdminDashboardStats> {
-  const { client } = await getAuthenticatedAdmin();
+export async function adminDashboardStats(
+  accessToken: string,
+): Promise<AdminDashboardStats> {
+  const { client } = await getAuthenticatedAdmin(accessToken);
   const [
     pendingListings,
     openDisputes,
@@ -281,10 +373,10 @@ export async function adminDashboardStats(): Promise<AdminDashboardStats> {
   };
 }
 
-export async function adminListPendingListings(): Promise<
-  AdminListingSummary[]
-> {
-  const { client } = await getAuthenticatedAdmin();
+export async function adminListPendingListings(
+  accessToken: string,
+): Promise<AdminListingSummary[]> {
+  const { client } = await getAuthenticatedAdmin(accessToken);
   const { data, error } = await client
     .from("listings")
     .select(
@@ -327,8 +419,10 @@ export async function adminListPendingListings(): Promise<
   });
 }
 
-export async function adminListOrders(): Promise<AdminOrderSummary[]> {
-  const { client } = await getAuthenticatedAdmin();
+export async function adminListOrders(
+  accessToken: string,
+): Promise<AdminOrderSummary[]> {
+  const { client } = await getAuthenticatedAdmin(accessToken);
   const { data, error } = await client
     .from("orders")
     .select(
@@ -366,8 +460,10 @@ export async function adminListOrders(): Promise<AdminOrderSummary[]> {
   }));
 }
 
-export async function adminListDisputes(): Promise<AdminDisputeSummary[]> {
-  const { client } = await getAuthenticatedAdmin();
+export async function adminListDisputes(
+  accessToken: string,
+): Promise<AdminDisputeSummary[]> {
+  const { client } = await getAuthenticatedAdmin(accessToken);
   const { data, error } = await client
     .from("disputes")
     .select(
@@ -395,8 +491,10 @@ export async function adminListDisputes(): Promise<AdminDisputeSummary[]> {
   }));
 }
 
-export async function adminListReports(): Promise<AdminReportSummary[]> {
-  const { client } = await getAuthenticatedAdmin();
+export async function adminListReports(
+  accessToken: string,
+): Promise<AdminReportSummary[]> {
+  const { client } = await getAuthenticatedAdmin(accessToken);
   const { data, error } = await client
     .from("reports")
     .select(
@@ -424,8 +522,10 @@ export async function adminListReports(): Promise<AdminReportSummary[]> {
   }));
 }
 
-export async function adminListUsers(): Promise<AdminProfileSummary[]> {
-  const { client } = await getAuthenticatedAdmin();
+export async function adminListUsers(
+  accessToken: string,
+): Promise<AdminProfileSummary[]> {
+  const { client } = await getAuthenticatedAdmin(accessToken);
   const { data, error } = await client
     .from("profiles")
     .select(
@@ -453,10 +553,11 @@ export async function adminListUsers(): Promise<AdminProfileSummary[]> {
 }
 
 export async function adminListAuditLog(
+  accessToken: string,
   targetKind?: string,
   targetId?: string,
 ): Promise<AdminAuditLogEntry[]> {
-  const { client } = await getAuthenticatedAdmin();
+  const { client } = await getAuthenticatedAdmin(accessToken);
   let query = client
     .from("audit_log")
     .select(
@@ -491,10 +592,34 @@ export async function adminListAuditLog(
   }));
 }
 
+export async function adminListCategories(
+  accessToken: string,
+): Promise<AdminCategorySummary[]> {
+  const { client } = await getAuthenticatedAdmin(accessToken);
+  const { data, error } = await client
+    .from("categories")
+    .select("id, slug, name_en, name_ar, sort_order, is_active, created_at, updated_at")
+    .order("sort_order", { ascending: true });
+  if (error) throw new Error(error.message);
+  return (data ?? []).map((row) => ({
+    id: String(row.id),
+    slug: String(row.slug),
+    nameEn: String(row.name_en),
+    nameAr: String(row.name_ar),
+    sortOrder: Number(row.sort_order ?? 0),
+    isActive: Boolean(row.is_active),
+    createdAt: String(row.created_at),
+    updatedAt: String(row.updated_at),
+  }));
+}
+
 // ---------- write actions ----------
 
-export async function adminApproveListing(listingId: string): Promise<void> {
-  const { client, adminId } = await getAuthenticatedAdmin();
+export async function adminApproveListing(
+  accessToken: string,
+  listingId: string,
+): Promise<void> {
+  const { client, adminId } = await getAuthenticatedAdmin(accessToken);
   const now = new Date().toISOString();
   const { error } = await client
     .from("listings")
@@ -507,10 +632,11 @@ export async function adminApproveListing(listingId: string): Promise<void> {
 }
 
 export async function adminRejectListing(
+  accessToken: string,
   listingId: string,
   reason: string,
 ): Promise<void> {
-  const { client, adminId } = await getAuthenticatedAdmin();
+  const { client, adminId } = await getAuthenticatedAdmin(accessToken);
   const { error } = await client
     .from("listings")
     .update({ status: "archived" })
@@ -527,13 +653,98 @@ export async function adminRejectListing(
   );
 }
 
+export async function adminUpdateListingStatus(
+  accessToken: string,
+  listingId: string,
+  status: ListingStatus,
+): Promise<void> {
+  const { client, adminId } = await getAuthenticatedAdmin(accessToken);
+  const { error } = await client
+    .from("listings")
+    .update({ status })
+    .eq("id", listingId);
+  if (error) throw new Error(error.message);
+  await writeAudit(client, adminId, "listing.status", "listing", listingId, {
+    status,
+  });
+}
+
+export async function adminCreateCategory(
+  accessToken: string,
+  input: { slug: string; nameEn: string; nameAr: string; sortOrder: number },
+): Promise<void> {
+  const { client, adminId } = await getAuthenticatedAdmin(accessToken);
+  const { data, error } = await client
+    .from("categories")
+    .insert({
+      slug: input.slug,
+      name_en: input.nameEn,
+      name_ar: input.nameAr,
+      sort_order: input.sortOrder,
+    })
+    .select("id")
+    .single();
+  if (error) throw new Error(error.message);
+  await writeAudit(
+    client,
+    adminId,
+    "category.create",
+    "category",
+    String(data.id),
+    { slug: input.slug, name_en: input.nameEn, name_ar: input.nameAr },
+  );
+}
+
+export async function adminUpdateCategory(
+  accessToken: string,
+  categoryId: string,
+  input: {
+    nameEn: string;
+    nameAr: string;
+    sortOrder: number;
+    isActive: boolean;
+  },
+): Promise<void> {
+  const { client, adminId } = await getAuthenticatedAdmin(accessToken);
+  const { error } = await client
+    .from("categories")
+    .update({
+      name_en: input.nameEn,
+      name_ar: input.nameAr,
+      sort_order: input.sortOrder,
+      is_active: input.isActive,
+    })
+    .eq("id", categoryId);
+  if (error) throw new Error(error.message);
+  await writeAudit(client, adminId, "category.update", "category", categoryId, {
+    name_en: input.nameEn,
+    name_ar: input.nameAr,
+    sort_order: input.sortOrder,
+    is_active: input.isActive,
+  });
+}
+
+export async function adminDeleteCategory(
+  accessToken: string,
+  categoryId: string,
+): Promise<void> {
+  const { client, adminId } = await getAuthenticatedAdmin(accessToken);
+  const { error } = await client
+    .from("categories")
+    .delete()
+    .eq("id", categoryId);
+  if (error) throw new Error(error.message);
+  await writeAudit(client, adminId, "category.delete", "category", categoryId);
+}
+
 export async function adminFeatureListing(
+  accessToken: string,
   listingId: string,
   sortOrder: number,
   noteEn: string,
   noteAr: string,
 ): Promise<void> {
-  const { client, adminId } = await getAuthenticatedAdmin();
+  const { client, adminId } = await getAuthenticatedAdmin(accessToken);
   const { error } = await client.from("featured_listings").upsert(
     {
       listing_id: listingId,
@@ -550,8 +761,11 @@ export async function adminFeatureListing(
   });
 }
 
-export async function adminUnfeatureListing(listingId: string): Promise<void> {
-  const { client, adminId } = await getAuthenticatedAdmin();
+export async function adminUnfeatureListing(
+  accessToken: string,
+  listingId: string,
+): Promise<void> {
+  const { client, adminId } = await getAuthenticatedAdmin(accessToken);
   const { error } = await client
     .from("featured_listings")
     .delete()
@@ -561,10 +775,11 @@ export async function adminUnfeatureListing(listingId: string): Promise<void> {
 }
 
 export async function adminSuspendUser(
+  accessToken: string,
   userId: string,
   reason: string,
 ): Promise<void> {
-  const { client, adminId } = await getAuthenticatedAdmin();
+  const { client, adminId } = await getAuthenticatedAdmin(accessToken);
   const now = new Date().toISOString();
   const { error } = await client
     .from("profiles")
@@ -581,8 +796,11 @@ export async function adminSuspendUser(
   });
 }
 
-export async function adminUnsuspendUser(userId: string): Promise<void> {
-  const { client, adminId } = await getAuthenticatedAdmin();
+export async function adminUnsuspendUser(
+  accessToken: string,
+  userId: string,
+): Promise<void> {
+  const { client, adminId } = await getAuthenticatedAdmin(accessToken);
   const { error } = await client
     .from("profiles")
     .update({
@@ -598,12 +816,13 @@ export async function adminUnsuspendUser(userId: string): Promise<void> {
 }
 
 export async function adminResolveDispute(
+  accessToken: string,
   disputeId: string,
   status: "resolved" | "rejected",
   noteEn: string,
   noteAr: string,
 ): Promise<void> {
-  const { client, adminId } = await getAuthenticatedAdmin();
+  const { client, adminId } = await getAuthenticatedAdmin(accessToken);
   const now = new Date().toISOString();
   // Read the existing timeline so we can append rather than overwrite.
   const { data: current, error: loadError } = await client
@@ -632,11 +851,12 @@ export async function adminResolveDispute(
 }
 
 export async function adminTriageReport(
+  accessToken: string,
   reportId: string,
   status: "investigating" | "resolved" | "dismissed",
   note?: string,
 ): Promise<void> {
-  const { client, adminId } = await getAuthenticatedAdmin();
+  const { client, adminId } = await getAuthenticatedAdmin(accessToken);
   const { error } = await client
     .from("reports")
     .update({ status })
@@ -653,15 +873,18 @@ export async function adminTriageReport(
   );
 }
 
-export async function adminBroadcastNotification(input: {
-  kind: "system" | "order" | "price_drop";
-  titleEn: string;
-  titleAr: string;
-  bodyEn: string;
-  bodyAr: string;
-  expiresAt?: string;
-}): Promise<void> {
-  const { client, adminId } = await getAuthenticatedAdmin();
+export async function adminBroadcastNotification(
+  accessToken: string,
+  input: {
+    kind: "system" | "order" | "price_drop";
+    titleEn: string;
+    titleAr: string;
+    bodyEn: string;
+    bodyAr: string;
+    expiresAt?: string;
+  },
+): Promise<void> {
+  const { client, adminId } = await getAuthenticatedAdmin(accessToken);
   const { error } = await client.from("broadcast_notifications").insert({
     author_id: adminId,
     kind: input.kind,

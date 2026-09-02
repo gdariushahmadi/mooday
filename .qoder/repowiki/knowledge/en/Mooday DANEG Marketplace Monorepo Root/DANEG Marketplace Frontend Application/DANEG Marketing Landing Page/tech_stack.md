@@ -1,0 +1,1 @@
+Next.js server components with selective `'use client'` boundaries; CSS Modules for scoped styles; IntersectionObserver for reveal animations; Web App Install Prompt API for PWA install flow; Material Symbols Outlined for icons; Tailwind utility classes mixed into the install prompt dialog.

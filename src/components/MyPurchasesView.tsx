@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useMemo } from "react";
-import { useApp } from "@/context/AppContext";
+import { useApp, type DemoOrder } from "@/context/AppContext";
 import {
   type Order,
   type OrderStatus,
@@ -12,6 +12,8 @@ import {
 } from "@/data/orders";
 import { ClickableCard } from "./ClickableCard";
 import { formatAEDLabel } from "@/lib/format";
+import { AppImage } from "@/components/AppImage";
+import { isPaymentsEnabled } from "@/lib/feature-flags";
 
 interface MyPurchasesViewProps {
   onBack: () => void;
@@ -31,6 +33,7 @@ interface PurchasesCopy {
   back: string;
   review: string;
   reorder: string;
+  reorderUnavailable: string;
   contact: string;
   totalLabel: string;
   itemLabel: (n: number) => string;
@@ -38,6 +41,9 @@ interface PurchasesCopy {
   filterActive: string;
   filterCompleted: string;
   filterCancelled: string;
+  demoNotice: string;
+  demoLabel: string;
+  demoReceipt: string;
 }
 
 const COPY: Record<"en" | "ar", PurchasesCopy> = {
@@ -51,6 +57,7 @@ const COPY: Record<"en" | "ar", PurchasesCopy> = {
     back: "Back",
     review: "Leave a review",
     reorder: "Reorder",
+    reorderUnavailable: "Unavailable in Demo",
     contact: "Contact seller",
     totalLabel: "Total",
     itemLabel: (n) => `${n} item${n === 1 ? "" : "s"}`,
@@ -58,6 +65,10 @@ const COPY: Record<"en" | "ar", PurchasesCopy> = {
     filterActive: "Active",
     filterCompleted: "Completed",
     filterCancelled: "Cancelled",
+    demoNotice:
+      "Demo checkout saves a browser-only receipt. No payment, shipment, or seller payout is created.",
+    demoLabel: "Demo",
+    demoReceipt: "Browser-only receipt. No payment was taken.",
   },
   ar: {
     title: "مشترياتي",
@@ -69,6 +80,7 @@ const COPY: Record<"en" | "ar", PurchasesCopy> = {
     back: "رجوع",
     review: "اترك تقييم",
     reorder: "إعادة الطلب",
+    reorderUnavailable: "غير متاح في النسخة التجريبية",
     contact: "تواصل مع البائع",
     totalLabel: "الإجمالي",
     itemLabel: (n) => `${n} منتج${n === 1 ? "" : "ات"}`,
@@ -76,6 +88,10 @@ const COPY: Record<"en" | "ar", PurchasesCopy> = {
     filterActive: "نشطة",
     filterCompleted: "مكتملة",
     filterCancelled: "ملغية",
+    demoNotice:
+      "يحفظ الدفع التجريبي إيصالاً في المتصفح فقط. لا يتم إنشاء دفع أو شحن أو تحويل للبائع.",
+    demoLabel: "تجريبي",
+    demoReceipt: "إيصال في المتصفح فقط. لم يتم خصم أي مبلغ.",
   },
 };
 
@@ -88,9 +104,8 @@ type FilterId = "all" | "active" | "completed" | "cancelled";
  * cards, filterable by status bucket. Tapping a card opens C-17 Order
  * Tracking. Empty state when the user has no orders. Bilingual EN/AR.
  *
- * Re-uses `ClickableCard` for keyboard-accessible cards. The "Reorder"
- * and "Contact seller" CTAs on delivered orders are present but no-op
- * for Phase 1 (they'll wire to the appropriate screens in later phases).
+ * Re-uses `ClickableCard` for keyboard-accessible cards. Demo receipts are
+ * read-only and stay separate from the real order collection.
  */
 export const MyPurchasesView: React.FC<MyPurchasesViewProps> = ({
   onBack,
@@ -98,9 +113,10 @@ export const MyPurchasesView: React.FC<MyPurchasesViewProps> = ({
   onContactSeller,
   onLeaveReview,
 }) => {
-  const { language, orders } = useApp();
+  const { language, orders, demoOrders = [] } = useApp();
   const isAr = language === "ar";
   const t = isAr ? COPY.ar : COPY.en;
+  const paymentsEnabled = isPaymentsEnabled();
   const [filter, setFilter] = React.useState<FilterId>("all");
 
   const filtered = useMemo(() => {
@@ -122,6 +138,14 @@ export const MyPurchasesView: React.FC<MyPurchasesViewProps> = ({
         return o.status === "cancelled";
       });
   }, [orders, filter]);
+
+  const visibleDemoOrders = filter === "all"
+    ? demoOrders.slice().sort(
+        (a, b) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+      )
+    : [];
+  const hasVisibleOrders = filtered.length > 0 || visibleDemoOrders.length > 0;
 
   return (
     <div dir={isAr ? "rtl" : "ltr"} className="w-full flex flex-col gap-md">
@@ -145,6 +169,12 @@ export const MyPurchasesView: React.FC<MyPurchasesViewProps> = ({
         </h1>
         <div className="w-8 h-8" aria-hidden="true" />
       </div>
+
+      {!paymentsEnabled && (
+        <p role="status" className="rounded-lg border border-outline-variant bg-surface-container-low px-md py-sm text-label-sm text-on-surface-variant">
+          {t.demoNotice}
+        </p>
+      )}
 
       {/* Filter strip */}
       <div
@@ -176,7 +206,7 @@ export const MyPurchasesView: React.FC<MyPurchasesViewProps> = ({
         ))}
       </div>
 
-      {filtered.length === 0 ? (
+      {!hasVisibleOrders ? (
         <div className="flex flex-col items-center justify-center py-12 gap-md text-center">
           <span
             className="material-symbols-outlined text-[64px] text-outline no-mirror"
@@ -200,6 +230,9 @@ export const MyPurchasesView: React.FC<MyPurchasesViewProps> = ({
         </div>
       ) : (
         <div className="flex flex-col gap-sm">
+          {visibleDemoOrders.map((order) => (
+            <DemoReceiptCard key={order.id} order={order} isAr={isAr} t={t} />
+          ))}
           {filtered.map((order) => (
             <OrderCard
               key={order.id}
@@ -251,11 +284,13 @@ const OrderCard: React.FC<{
     >
       <div className="flex gap-sm p-md">
         {first && (
-          <img
+          <AppImage
             alt={productTitle}
-            src={first.image}
-            className="w-20 h-20 rounded object-cover border border-outline-variant flex-shrink-0"
-            loading="lazy"
+            src={first.image || "/products/placeholder.svg"}
+            width={80}
+            height={80}
+            sizes="80px"
+            className="h-20 w-20 flex-shrink-0 rounded border border-outline-variant object-cover"
           />
         )}
         <div className="flex-grow min-w-0">
@@ -307,9 +342,68 @@ const OrderCard: React.FC<{
           >
             {t.contact}
           </button>
+          <button
+            type="button"
+            disabled
+            aria-disabled="true"
+            aria-label={`${t.reorder}: ${t.reorderUnavailable}`}
+            title={t.reorderUnavailable}
+            className="text-label-sm text-outline font-bold cursor-not-allowed"
+          >
+            {t.reorder} · {t.reorderUnavailable}
+          </button>
         </div>
       )}
     </ClickableCard>
+  );
+};
+
+const DemoReceiptCard: React.FC<{
+  order: DemoOrder;
+  isAr: boolean;
+  t: PurchasesCopy;
+}> = ({ order, isAr, t }) => {
+  const productTitle = isAr ? order.product.titleAr : order.product.titleEn;
+  return (
+    <article
+      aria-label={`${t.demoLabel} — ${productTitle}`}
+      className="bg-surface-container-lowest border border-dashed border-primary/50 rounded-xl overflow-hidden"
+    >
+      <div className="flex gap-sm p-md">
+        <AppImage
+          alt={productTitle}
+          src={order.product.image || "/products/placeholder.svg"}
+          width={80}
+          height={80}
+          sizes="80px"
+          className="h-20 w-20 flex-shrink-0 rounded border border-outline-variant object-cover"
+        />
+        <div className="min-w-0 flex-grow">
+          <div className="flex items-center justify-between mb-1 gap-sm">
+            <span className="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full font-bold bg-primary/10 text-primary">
+              {t.demoLabel}
+            </span>
+            <span className="text-[10px] text-outline">
+              {formatOrderDate(order.createdAt, isAr)}
+            </span>
+          </div>
+          <h3 className="font-serif text-label-md text-on-surface line-clamp-1">
+            {productTitle}
+          </h3>
+          <p className="text-[10px] text-on-surface-variant mt-1">
+            {t.demoReceipt}
+          </p>
+          <div className="flex items-center justify-between mt-1">
+            <span className="text-[10px] text-outline uppercase tracking-wider">
+              {order.id}
+            </span>
+            <span className="text-label-sm font-bold text-primary">
+              {t.totalLabel}: {formatAEDLabel(order.total)}
+            </span>
+          </div>
+        </div>
+      </div>
+    </article>
   );
 };
 

@@ -20,9 +20,9 @@ double_confirm_changes = true
 enable_confirmations = true
 
 [auth.email.template.confirmation]
-subject = "{{ .Token }} — Confirm your Mooday account"
+subject = "{{ .Token }} — Confirm your DANEG account"
 content_path = "./supabase/templates/confirmation.html"
 
 [auth.email.template.recovery]
-subject = "{{ .Token }} — Reset your Mooday password"
+subject = "{{ .Token }} — Reset your DANEG password"
 content_path = "./supabase/templates/recovery.html"

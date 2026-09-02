@@ -4,7 +4,7 @@ import React, { useEffect, useState } from "react";
 import { ClickableCard } from "./ClickableCard";
 import { useApp } from "@/context/AppContext";
 import { mapPublicReviewFromRemote } from "@/services/backend/mappers-social";
-import { getSellerProfile } from "@/data/seller-profile";
+import { getSellerProfile, type FullSellerProfile } from "@/data/seller-profile";
 import {
   REVIEWS,
   QUICK_TAGS_EN,
@@ -14,6 +14,9 @@ import {
 } from "@/data/reviews";
 import type { Product } from "@/context/AppContext";
 import { formatAEDLabel } from "@/lib/format";
+import type { SellerCardRecord } from "@/services/backend";
+import { AppImage } from "@/components/AppImage";
+import { CANONICAL_SITE_URL } from "@/lib/feature-flags";
 
 interface PublicSellerProfileProps {
   sellerId: string;
@@ -27,6 +30,26 @@ interface PublicSellerProfileProps {
 
 type ProfileTab = "listings" | "reviews";
 type ReviewFilter = 0 | 1 | 2 | 3 | 4 | 5; // 0 = All
+
+function mapRemoteSeller(record: SellerCardRecord): FullSellerProfile {
+  return {
+    nameEn: record.displayNameEn || "Seller",
+    nameAr: record.displayNameAr || "بائع",
+    avatar: record.avatarUrl || "/sellers/placeholder.svg",
+    typeEn: record.typeEn || "Seller",
+    typeAr: record.typeAr || "بائع",
+    joinedAt: record.joinedAt,
+    isVerified: record.isVerified,
+    responseRate: record.responseRate ?? 0,
+    responseTimeHours: record.responseTimeHours ?? 0,
+    bioEn: record.bioEn,
+    bioAr: record.bioAr,
+    styleTagsEn: record.styleTagsEn,
+    styleTagsAr: record.styleTagsAr,
+    cityEn: record.cityEn,
+    cityAr: record.cityAr,
+  };
+}
 
 const COPY = {
   en: {
@@ -95,20 +118,53 @@ export const PublicSellerProfile: React.FC<PublicSellerProfileProps> = ({
   onReport,
   listings,
 }) => {
-  const { language, toggleLike, likes, blockUser, submitReport } = useApp();
+  const {
+    language,
+    toggleLike,
+    likes,
+    blockUser,
+    submitReport,
+    phase2Backend,
+  } = useApp();
   const isAr = language === "ar";
   const t = isAr ? COPY.ar : COPY.en;
 
-  const seller = getSellerProfile(sellerId);
+  const localSeller = getSellerProfile(sellerId);
 
   const [tab, setTab] = useState<ProfileTab>("listings");
   const [reviewFilter, setReviewFilter] = useState<ReviewFilter>(0);
   const [following, setFollowing] = useState(false);
   const [actionHint, setActionHint] = useState<string | null>(null);
 
-  // All hooks above must precede any conditional return.
-  const phase2Backend = useApp().phase2Backend;
   const [remoteReviews, setRemoteReviews] = useState<Review[]>([]);
+  const [remoteSeller, setRemoteSeller] = useState<FullSellerProfile | null>(null);
+  const [sellerLoading, setSellerLoading] = useState(Boolean(phase2Backend));
+  useEffect(() => {
+    if (!phase2Backend) {
+      return;
+    }
+    let active = true;
+    queueMicrotask(() => {
+      if (active) setSellerLoading(true);
+    });
+    void phase2Backend.sellerCards
+      .getById(sellerId)
+      .then((record) => {
+        if (!active) return;
+        setRemoteSeller(record ? mapRemoteSeller(record) : null);
+      })
+      .catch(() => {
+        if (active) setRemoteSeller(null);
+      })
+      .finally(() => {
+        if (active) setSellerLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [phase2Backend, sellerId]);
+
+  const seller = phase2Backend ? remoteSeller : localSeller;
   useEffect(() => {
     if (!phase2Backend) return;
     let active = true;
@@ -129,6 +185,14 @@ export const PublicSellerProfile: React.FC<PublicSellerProfileProps> = ({
       active = false;
     };
   }, [phase2Backend, sellerId]);
+
+  if (sellerLoading) {
+    return (
+      <div className="w-full max-w-[800px] mx-auto py-20 text-center text-body-md text-on-surface-variant" role="status">
+        {isAr ? "جارٍ تحميل ملف البائع..." : "Loading seller profile..."}
+      </div>
+    );
+  }
 
   if (!seller) {
     return (
@@ -151,7 +215,10 @@ export const PublicSellerProfile: React.FC<PublicSellerProfileProps> = ({
   }
 
   const sellerListings = listings.filter(
-    (l) => l.sellerNameEn === seller.nameEn || l.sellerNameAr === seller.nameAr,
+    (l) =>
+      l.sellerId === sellerId ||
+      l.sellerNameEn === seller.nameEn ||
+      l.sellerNameAr === seller.nameAr,
   );
 
   const sellerReviews: Review[] = phase2Backend
@@ -173,8 +240,15 @@ export const PublicSellerProfile: React.FC<PublicSellerProfileProps> = ({
   const followingCount = 40 + sellerListings.length * 12;
 
   const handleShare = async () => {
-    const url =
-      typeof window !== "undefined" ? window.location.href : "https://mooday.app";
+    const url = (() => {
+      if (typeof window === "undefined") return CANONICAL_SITE_URL;
+      const current = new URL(window.location.href);
+      const canonical = new URL(CANONICAL_SITE_URL);
+      return new URL(
+        `${current.pathname}${current.search}${current.hash}`,
+        canonical,
+      ).toString();
+    })();
     try {
       if (typeof navigator !== "undefined" && navigator.share) {
         await navigator.share({ title: sellerDisplayName, url });
@@ -212,16 +286,21 @@ export const PublicSellerProfile: React.FC<PublicSellerProfileProps> = ({
     })();
   };
 
-  const handleBlock = () => {
-    blockUser({
-      nameEn: seller.nameEn,
-      nameAr: seller.nameAr,
-      avatar: seller.avatar,
-      reasonEn: "Blocked from seller profile",
-      reasonAr: "تم الحظر من ملف البائع",
-    });
-    setActionHint(isAr ? "تم حظر البائع" : "Seller blocked");
-    onBack();
+  const handleBlock = async () => {
+    try {
+      await blockUser({
+        userId: sellerId,
+        nameEn: seller.nameEn,
+        nameAr: seller.nameAr,
+        avatar: seller.avatar,
+        reasonEn: "Blocked from seller profile",
+        reasonAr: "تم الحظر من ملف البائع",
+      });
+      setActionHint(isAr ? "تم حظر البائع" : "Seller blocked");
+      onBack();
+    } catch {
+      setActionHint(isAr ? "تعذر حظر البائع" : "Seller could not be blocked");
+    }
   };
 
   const filterStars = [0, 5, 4, 3, 2, 1] as const;
@@ -247,12 +326,15 @@ export const PublicSellerProfile: React.FC<PublicSellerProfileProps> = ({
 
       {/* Hero card */}
       <section className="bg-surface-container-low border border-surface-container-high rounded-2xl p-lg flex flex-col sm:flex-row items-center gap-lg shadow-sm">
-        <img
-          alt={sellerDisplayName}
-          src={seller.avatar}
-          loading="lazy"
-          className="w-24 h-24 sm:w-32 sm:h-32 rounded-full object-cover border-4 border-primary-fixed-dim"
-        />
+        <div className="relative h-24 w-24 flex-shrink-0 overflow-hidden rounded-full border-4 border-primary-fixed-dim sm:h-32 sm:w-32">
+          <AppImage
+            alt={sellerDisplayName}
+            src={seller.avatar || "/sellers/placeholder.svg"}
+            fill
+            sizes="(min-width: 640px) 128px, 96px"
+            className="object-cover"
+          />
+        </div>
 
         <div className="flex-1 flex flex-col items-center sm:items-start text-center sm:text-start gap-xs">
           <div className="flex items-center gap-sm">
@@ -294,15 +376,13 @@ export const PublicSellerProfile: React.FC<PublicSellerProfileProps> = ({
         <StatCell
           value={String(sellerListings.length)}
           label={t.listings}
-          isAr={isAr}
         />
         <StatCell
           value={String(sellerReviews.length)}
           label={t.reviews}
-          isAr={isAr}
         />
-        <StatCell value={followersCount.toLocaleString()} label={t.followers} isAr={isAr} />
-        <StatCell value={followingCount.toLocaleString()} label={t.following} isAr={isAr} />
+        <StatCell value={followersCount.toLocaleString()} label={t.followers} />
+        <StatCell value={followingCount.toLocaleString()} label={t.following} />
       </section>
 
       {/* Style tags */}
@@ -387,7 +467,7 @@ export const PublicSellerProfile: React.FC<PublicSellerProfileProps> = ({
       {tab === "listings" ? (
         <section role="tabpanel" aria-label={t.listings}>
           {sellerListings.length === 0 ? (
-            <EmptyState icon="apparel" message={t.noListings} isAr={isAr} />
+            <EmptyState icon="apparel" message={t.noListings} />
           ) : (
             <div className="grid grid-cols-2 md:grid-cols-3 gap-md">
               {sellerListings.map((product) => {
@@ -400,12 +480,13 @@ export const PublicSellerProfile: React.FC<PublicSellerProfileProps> = ({
                       ariaLabel={productTitle}
                       className="bg-surface-container-lowest rounded-xl border border-surface-container-high overflow-hidden group cursor-pointer hover:shadow-md transition-all"
                     >
-                      <div className="aspect-[4/5] bg-surface-container-low overflow-hidden">
-                        <img
+                      <div className="relative aspect-[4/5] bg-surface-container-low overflow-hidden">
+                        <AppImage
                           alt={productTitle}
-                          src={product.image}
-                          loading="lazy"
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                          src={product.image || "/products/placeholder.svg"}
+                          fill
+                          sizes="(min-width: 768px) 30vw, 50vw"
+                          className="object-cover transition-transform duration-500 group-hover:scale-105"
                         />
                       </div>
                       <div className="p-md flex flex-col gap-1">
@@ -478,7 +559,6 @@ export const PublicSellerProfile: React.FC<PublicSellerProfileProps> = ({
             <EmptyState
               icon="rate_review"
               message={t.noReviews(reviewFilter)}
-              isAr={isAr}
             />
           ) : (
             <div className="flex flex-col gap-sm">
@@ -495,10 +575,9 @@ export const PublicSellerProfile: React.FC<PublicSellerProfileProps> = ({
 
 // ---------- Sub-components ----------
 
-const StatCell: React.FC<{ value: string; label: string; isAr: boolean }> = ({
+const StatCell: React.FC<{ value: string; label: string }> = ({
   value,
   label,
-  isAr,
 }) => (
   <div className="bg-surface-container-low border border-surface-container-high rounded-xl p-md text-center">
     <span className="block font-serif text-headline-sm text-primary font-bold">
@@ -530,8 +609,7 @@ const IconAction: React.FC<{
 const EmptyState: React.FC<{
   icon: string;
   message: string;
-  isAr: boolean;
-}> = ({ icon, message, isAr }) => (
+}> = ({ icon, message }) => (
   <div className="flex flex-col items-center justify-center py-16 gap-md text-center">
     <span
       className="material-symbols-outlined text-[48px] text-outline opacity-40"

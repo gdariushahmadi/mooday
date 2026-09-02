@@ -13,6 +13,8 @@ export type ReviewRating = 1 | 2 | 3 | 4 | 5;
 export interface MyReview {
   id: string;
   orderId: string;
+  /** Listing id used for the verified purchase link when available. */
+  listingId?: string;
   sellerKey: string;
   rating: ReviewRating;
   title: string;

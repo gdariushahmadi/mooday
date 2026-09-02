@@ -1,30 +1,15 @@
 import type { NextConfig } from "next";
 import { withSentryConfig } from "@sentry/nextjs";
 
-const supabaseOrigin = (() => {
+const supabaseImageHostname = (() => {
+  const raw = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  if (!raw) return null;
   try {
-    return process.env.NEXT_PUBLIC_SUPABASE_URL
-      ? new URL(process.env.NEXT_PUBLIC_SUPABASE_URL).origin
-      : null;
+    return new URL(raw).hostname;
   } catch {
     return null;
   }
 })();
-
-const contentSecurityPolicy = [
-  "default-src 'self'",
-  "base-uri 'self'",
-  "frame-ancestors 'self'",
-  "form-action 'self'",
-  "object-src 'none'",
-  "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
-  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-  "font-src 'self' https://fonts.gstatic.com data:",
-  "img-src 'self' data: blob: https:",
-  `connect-src 'self'${supabaseOrigin ? ` ${supabaseOrigin} wss://${new URL(supabaseOrigin).host}` : ""}`,
-  "worker-src 'self' blob:",
-  "manifest-src 'self'",
-].join("; ");
 
 const securityHeaders = [
   { key: "X-Content-Type-Options", value: "nosniff" },
@@ -33,10 +18,6 @@ const securityHeaders = [
   {
     key: "Permissions-Policy",
     value: "camera=(), microphone=(), geolocation=(), interest-cohort=()",
-  },
-  {
-    key: "Content-Security-Policy-Report-Only",
-    value: contentSecurityPolicy,
   },
   ...(process.env.NODE_ENV === "production"
     ? [
@@ -55,6 +36,15 @@ const nextConfig: NextConfig = {
   // memory budget. We still keep `public/` and `.next/static/` next to the
   // standalone output so the Next.js server can serve them.
   output: "standalone",
+  images: {
+    remotePatterns: [
+      { protocol: "https", hostname: "**.supabase.co", pathname: "/**" },
+      { protocol: "https", hostname: "**.supabase.in", pathname: "/**" },
+      ...(supabaseImageHostname
+        ? [{ protocol: "https" as const, hostname: supabaseImageHostname, pathname: "/**" }]
+        : []),
+    ],
+  },
   // Pin the workspace root so Turbopack doesn't pick up lockfiles from
   // parent directories in a monorepo checkout.
   turbopack: {

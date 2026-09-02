@@ -16,7 +16,7 @@ describe("useWelcomeGuard", () => {
   });
 
   it("returns shouldShow: false when hasSeenWelcome is already set", () => {
-    localStorage.setItem("mooday_has_seen_welcome", "true");
+    localStorage.setItem("daneg_has_seen_welcome", "true");
 
     const { result } = renderHook(() => useWelcomeGuard());
 
@@ -34,7 +34,7 @@ describe("useWelcomeGuard", () => {
     });
 
     expect(result.current.shouldShow).toBe(false);
-    expect(localStorage.getItem("mooday_has_seen_welcome")).toBe("true");
+    expect(localStorage.getItem("daneg_has_seen_welcome")).toBe("true");
   });
 
   it("markSeen() is idempotent", () => {
@@ -47,11 +47,11 @@ describe("useWelcomeGuard", () => {
     });
 
     expect(result.current.shouldShow).toBe(false);
-    expect(localStorage.getItem("mooday_has_seen_welcome")).toBe("true");
+    expect(localStorage.getItem("daneg_has_seen_welcome")).toBe("true");
   });
 
   it("reset() clears the flag and flips shouldShow back to true", () => {
-    localStorage.setItem("mooday_has_seen_welcome", "true");
+    localStorage.setItem("daneg_has_seen_welcome", "true");
 
     const { result } = renderHook(() => useWelcomeGuard());
     expect(result.current.shouldShow).toBe(false);
@@ -61,7 +61,7 @@ describe("useWelcomeGuard", () => {
     });
 
     expect(result.current.shouldShow).toBe(true);
-    expect(localStorage.getItem("mooday_has_seen_welcome")).toBeNull();
+    expect(localStorage.getItem("daneg_has_seen_welcome")).toBeNull();
   });
 
   it("survives a localStorage quota error when writing", () => {

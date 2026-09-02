@@ -1,0 +1,1 @@
+Supabase JS client (`@supabase/supabase-js`) for Postgres RLS, Storage, and Realtime; Next.js Server Actions for admin operations using a service-role key; environment-driven mode switching via `NEXT_PUBLIC_DATA_SOURCE` / `NEXT_PUBLIC_MARKETPLACE_DATA_SOURCE`.

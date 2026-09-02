@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { useApp } from "@/context/AppContext";
 import type { Order } from "@/data/orders";
+import { AppImage } from "@/components/AppImage";
 import {
   type DisputeReason,
   DISPUTE_REASONS_EN,
@@ -26,7 +27,7 @@ interface ReturnCopy {
   bodyPh: string;
   photoHelp: string;
   submit: string;
-  escrowHint: string;
+  policyHint: string;
   cancel: string;
   successTitle: string;
   successBody: string;
@@ -40,19 +41,19 @@ const COPY: Record<"en" | "ar", ReturnCopy> = {
     title: "Return / Refund",
     back: "Back",
     intro:
-      "Tell us why. Funds stay in escrow until the seller accepts the return or our team resolves it within 48 hours.",
+      "This is a Demo request. It is saved only in this browser; no refund or payment is created.",
     productLine: "Return for:",
     reasonHeading: "Reason",
     bodyHeading: "Details",
     bodyPh: "What was wrong with the item?",
-    photoHelp: "Photos of the issue help us approve refunds faster.",
+    photoHelp: "Select up to 3 real photos of the issue. The product image is not used as evidence.",
     submit: "Submit return request",
-    escrowHint:
-      "Your money stays protected — the seller is paid only after we confirm the return.",
+    policyHint:
+      "We review return requests under the published return policy.",
     cancel: "Cancel",
     successTitle: "Return request submitted",
     successBody:
-      "The seller has 48 hours to respond. We'll email you with next steps.",
+      "The Demo request was saved in this browser. No refund or seller payout was created.",
     backToOrder: "Back to order",
     required: "Please choose a reason and add a short description.",
     openedFor: "Opened for:",
@@ -61,19 +62,19 @@ const COPY: Record<"en" | "ar", ReturnCopy> = {
     title: "إرجاع / استرداد",
     back: "رجوع",
     intro:
-      "أخبرنا بسبب الإرجاع. يبقى المال في الضمان حتى يقبل البائع الإرجاع أو يحل فريقنا خلال ٤٨ ساعة.",
+      "هذا طلب تجريبي. يُحفظ في هذا المتصفح فقط، ولا يتم إنشاء دفع أو استرداد.",
     productLine: "إرجاع:",
     reasonHeading: "السبب",
     bodyHeading: "التفاصيل",
     bodyPh: "ما المشكلة في المنتج؟",
-    photoHelp: "صور المشكلة تساعدنا في الموافقة على الاسترداد بسرعة.",
+    photoHelp: "اختاري حتى ٣ صور حقيقية للمشكلة. لا تُستخدم صورة المنتج كدليل.",
     submit: "إرسال طلب الإرجاع",
-    escrowHint:
-      "أموالك محمية — لن يحصل البائع على المبلغ إلا بعد تأكيد الإرجاع.",
+    policyHint:
+      "نراجع طلبات الإرجاع وفق سياسة الإرجاع المنشورة.",
     cancel: "إلغاء",
     successTitle: "تم إرسال طلب الإرجاع",
     successBody:
-      "لدى البائع ٤٨ ساعة للرد. سنرسل لك بريداً بالخطوات التالية.",
+      "تم حفظ الطلب التجريبي في هذا المتصفح. لم يتم إنشاء استرداد أو تحويل للبائع.",
     backToOrder: "العودة للطلب",
     required: "يرجى اختيار سبب ووصف قصير.",
     openedFor: "مفتوح لـ:",
@@ -84,10 +85,9 @@ const COPY: Record<"en" | "ar", ReturnCopy> = {
  * H-41 — Return / Refund request.
  *
  * Reachable from a delivered order's details screen. The user picks a
- * reason and explains the issue; a submit opens a new dispute on the
- * order, transitions its status to "returned", and flips the seller's
- * payout back to "pending". For Phase 1 only the dispute is opened (no
- * actual fund reversal yet).
+ * reason and explains the issue; a submit opens a new local dispute on the
+ * demo order and transitions its sample status to "returned". No payment,
+ * refund, or seller payout is created.
  */
 export const ReturnRequestView: React.FC<ReturnRequestViewProps> = ({
   order,
@@ -110,31 +110,50 @@ export const ReturnRequestView: React.FC<ReturnRequestViewProps> = ({
   const [photos, setPhotos] = useState<string[]>([]);
   const [submitted, setSubmitted] = useState(false);
   const [formError, setFormError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleAddPhoto = () => {
-    if (photos.length >= 3) return;
-    const sample =
-      first?.product.image ?? "/products/placeholder.jpg";
-    setPhotos([...photos, sample]);
+  const handlePhotoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const selected = Array.from(event.target.files ?? []);
+    const valid = selected.filter(
+      (file) => file.type.startsWith("image/") && file.size <= 5 * 1024 * 1024,
+    );
+    const remaining = Math.max(0, 3 - photos.length);
+    if (valid.length === 0 && selected.length > 0) {
+      setFormError(isAr ? "اختاري صوراً صالحة بحجم أقل من ٥ ميغابايت." : "Select valid image files under 5 MB.");
+    } else {
+      setFormError("");
+    }
+    setPhotos((previous) => [
+      ...previous,
+      ...valid.slice(0, remaining).map((file) => URL.createObjectURL(file)),
+    ]);
+    event.target.value = "";
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!body.trim()) {
       setFormError(t.required);
       return;
     }
     setFormError("");
-    // Open the dispute (H-44), then flip the order status to "returned".
-    openDispute({
-      orderId: order.id,
-      reason,
-      body: body.trim(),
-      photos,
-    });
-    updateOrderStatus(order.id, "returned");
-    setSubmitted(true);
-    onSubmitted?.();
+    setIsSubmitting(true);
+    try {
+      // Open the dispute (H-44), then flip the order status to "returned".
+      await openDispute({
+        orderId: order.id,
+        reason,
+        body: body.trim(),
+        photos,
+      });
+      await updateOrderStatus(order.id, "returned");
+      setSubmitted(true);
+      onSubmitted?.();
+    } catch {
+      setFormError(isAr ? "تعذر إرسال طلب الإرجاع. حاولي مرة أخرى." : "We could not submit the return request. Try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (submitted) {
@@ -189,9 +208,11 @@ export const ReturnRequestView: React.FC<ReturnRequestViewProps> = ({
 
       <div className="bg-surface-container-low border border-surface-container-high rounded-xl p-md flex items-center gap-md">
         {first && (
-          <img
+          <AppImage
             alt={productLabel}
             src={first.product.image}
+            width={56}
+            height={56}
             className="w-14 h-14 rounded object-cover border border-outline-variant flex-shrink-0"
           />
         )}
@@ -244,13 +265,28 @@ export const ReturnRequestView: React.FC<ReturnRequestViewProps> = ({
             className="p-md bg-surface border border-outline-variant rounded-lg text-body-md focus:border-primary outline-none"
           />
           <p className="text-[10px] text-on-surface-variant mt-1">{t.photoHelp}</p>
+          <input
+            id="return-photos"
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            multiple
+            className="sr-only"
+            onChange={handlePhotoChange}
+            aria-label={isAr ? "إضافة صورة" : "Add photo"}
+          />
           <div className="flex gap-sm flex-wrap">
             {photos.map((p, i) => (
               <div
                 key={i}
                 className="relative w-20 h-20 rounded-lg overflow-hidden border border-surface-container-high"
               >
-                <img alt="" src={p} className="w-full h-full object-cover" />
+                <AppImage
+                  alt=""
+                  src={p}
+                  fill
+                  sizes="80px"
+                  className="object-cover"
+                />
                 <button
                   type="button"
                   onClick={() => setPhotos(photos.filter((_, j) => j !== i))}
@@ -262,11 +298,11 @@ export const ReturnRequestView: React.FC<ReturnRequestViewProps> = ({
               </div>
             ))}
             {photos.length < 3 && (
-              <button
-                type="button"
-                onClick={handleAddPhoto}
+              <label
+                htmlFor="return-photos"
+                role="button"
                 aria-label={isAr ? "إضافة صورة" : "Add photo"}
-                className="w-20 h-20 rounded-lg border-2 border-dashed border-outline-variant flex items-center justify-center text-outline hover:border-primary hover:text-primary"
+                className="w-20 h-20 rounded-lg border-2 border-dashed border-outline-variant flex items-center justify-center text-outline hover:border-primary hover:text-primary cursor-pointer"
               >
                 <span
                   className="material-symbols-outlined text-[24px]"
@@ -274,20 +310,22 @@ export const ReturnRequestView: React.FC<ReturnRequestViewProps> = ({
                 >
                   add_a_photo
                 </span>
-              </button>
+              </label>
             )}
           </div>
         </section>
 
         <div className="bg-primary/5 border border-primary/20 rounded-xl p-md text-label-sm text-on-surface">
-          <strong className="text-primary">{t.escrowHint}</strong>
+          <strong className="text-primary">{t.policyHint}</strong>
         </div>
 
         <button
           type="submit"
+          disabled={isSubmitting}
+          aria-busy={isSubmitting}
           className="btn-primary py-4 rounded-xl text-label-md uppercase tracking-widest font-bold shadow-md active:scale-95 transition-transform"
         >
-          {t.submit}
+          {isSubmitting ? (isAr ? "جارٍ الإرسال..." : "Submitting...") : t.submit}
         </button>
         <button
           type="button"

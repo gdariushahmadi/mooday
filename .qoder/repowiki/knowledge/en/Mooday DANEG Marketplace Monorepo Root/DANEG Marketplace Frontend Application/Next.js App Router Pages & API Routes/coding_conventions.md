@@ -1,0 +1,6 @@
+- Route handlers export `runtime = "nodejs"` and `dynamic = "force-dynamic"` so they execute per-request on the Node runtime rather than statically.
+- Server-rendered pages expose `generateMetadata` (or a default `metadata` export) to define title, description, OpenGraph, Twitter card, and language alternates for SEO.
+- Client components are opt-in via the `"use client"` directive at the top of files that use React state, hooks, or browser APIs (e.g., `auth/callback`, `admin`, `app`, `preview`).
+- Language switching toggles `document.documentElement.dir` and `lang` between `ltr`/`en` and `rtl`/`ar`, with copy strings selected from a `COPY` dictionary keyed by language.
+- Admin actions are abstracted behind a dual implementation pattern: real functions imported from `@/services/admin/actions` and parallel `mock*` functions from `@/services/admin/mockAdminService`, selected at runtime via `isLiveMode` / `isDemoMode` flags.
+- API routes validate required secrets and headers early and return structured JSON error responses with appropriate HTTP status codes (400 for bad requests, 500 for missing config, 503 for degraded backend).

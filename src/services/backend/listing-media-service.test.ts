@@ -246,4 +246,48 @@ describe("SupabaseListingMediaService", () => {
     expect(record.url).toBe("https://signed.example/image");
     expect(record.signedUrlExpiresAt).toBeGreaterThan(Date.now() - 5000);
   });
+
+  describe("attachPublicUrl", () => {
+    it("persists the URL as a listing_images row without touching storage", async () => {
+      const client = makeClient();
+      const backend = await buildBackend(client);
+      const record = await backend.media.attachPublicUrl(
+        "listing-1",
+        "/products/silk-scarf.jpg",
+        0,
+      );
+      expect(record.url).toBe("/products/silk-scarf.jpg");
+      expect(record.storagePath).toBe("/products/silk-scarf.jpg");
+      // The bucket should never see a request — this is the bug that
+      // produced the 415 "mime type application/octet-stream is not
+      // supported" error when the seller picked a mock-library image.
+      expect(client.storage.from("listing-media").upload).not.toHaveBeenCalled();
+    });
+
+    it("preserves sort_order and alt text on the metadata row", async () => {
+      const client = makeClient();
+      const backend = await buildBackend(client);
+      const record = await backend.media.attachPublicUrl(
+        "listing-1",
+        "https://cdn.example/foo.jpg",
+        3,
+        "Front of the dress",
+        "الكامل",
+      );
+      expect(record.sortOrder).toBe(3);
+      expect(record.altEn).toBe("Front of the dress");
+      expect(record.altAr).toBe("الكامل");
+    });
+
+    it("rejects non-public URLs so storage paths cannot bypass the bucket", async () => {
+      const backend = await buildBackend(makeClient());
+      await expect(
+        backend.media.attachPublicUrl(
+          "listing-1",
+          "user-1/listing-1/private.jpg",
+          0,
+        ),
+      ).rejects.toThrow(/public URL/);
+    });
+  });
 });

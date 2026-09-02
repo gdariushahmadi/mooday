@@ -1,0 +1,1 @@
+Next.js 16.2.9 standalone output; Supabase JS client v2 for auth/database smoke tests and migration execution; Playwright for E2E; Vitest for unit tests; Tailwind CSS v4; Sentry `@sentry/nextjs` for error tracking; cPanel/Passenger hosting via SSH upload.

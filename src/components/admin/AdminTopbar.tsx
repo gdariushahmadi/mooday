@@ -3,41 +3,20 @@
 interface AdminTopbarProps {
   lang: "en" | "ar";
   onToggleLang: () => void;
-  isLiveMode: boolean;
-  isDemoMode?: boolean;
+  /** Server-verified admin email. The panel only renders once this exists. */
+  adminEmail: string;
+  mode: "demo" | "live";
+  onSignOut: () => void | Promise<void>;
 }
 
 export function AdminTopbar({
   lang,
   onToggleLang,
-  isLiveMode,
-  isDemoMode = false,
+  adminEmail,
+  mode,
+  onSignOut,
 }: AdminTopbarProps) {
   const isAr = lang === "ar";
-
-  const statusLabel = isLiveMode
-    ? isAr
-      ? "متصل بالخادم (Live)"
-      : "Live Supabase"
-    : isDemoMode
-      ? isAr
-        ? "وضع العرض (Demo Mode)"
-        : "Demo / Mock Mode"
-      : isAr
-        ? "غير متصل"
-        : "Not connected";
-
-  const statusClass = isLiveMode
-    ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
-    : isDemoMode
-      ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20"
-      : "bg-surface-container-high text-on-surface-variant border border-surface-container-high";
-
-  const statusDot = isLiveMode
-    ? "bg-emerald-500 animate-pulse"
-    : isDemoMode
-      ? "bg-amber-500"
-      : "bg-outline";
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-surface-container-high bg-surface/95 backdrop-blur-md shadow-sm">
@@ -51,14 +30,37 @@ export function AdminTopbar({
         </div>
 
         <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2">
+          <span
+            className={
+              "inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium " +
+              (mode === "demo"
+                ? "border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-300"
+                : "border-emerald-500/20 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400")
+            }
+          >
             <span
-              className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium ${statusClass}`}
-            >
-              <span className={`h-2 w-2 rounded-full ${statusDot}`} />
-              {statusLabel}
-            </span>
-          </div>
+              className={
+                "h-2 w-2 rounded-full " +
+                (mode === "demo"
+                  ? "bg-amber-500"
+                  : "animate-pulse bg-emerald-500")
+              }
+            />
+            {mode === "demo"
+              ? isAr
+                ? "وضع تجريبي"
+                : "Demo data"
+              : isAr
+                ? "متصل بالخادم (Live)"
+                : "Live Supabase"}
+          </span>
+
+          <span
+            className="hidden md:inline text-xs font-medium text-on-surface-variant"
+            title={adminEmail}
+          >
+            {adminEmail}
+          </span>
 
           <span className="h-6 w-px bg-surface-container-high" aria-hidden="true" />
 
@@ -69,6 +71,13 @@ export function AdminTopbar({
           >
             <span className="material-symbols-outlined text-[18px]">translate</span>
             <span>{isAr ? "English" : "العربية"}</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => void onSignOut()}
+            className="rounded-xl border border-surface-container-high px-3 py-1.5 text-sm font-medium text-on-surface hover:bg-surface-container-low transition"
+          >
+            {isAr ? "تسجيل الخروج" : "Sign out"}
           </button>
         </div>
       </div>

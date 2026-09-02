@@ -7,6 +7,8 @@ import { CATEGORIES_AR } from "@/data/categories";
 import { deriveSubCategory } from "@/data/sub-categories";
 import { formatAED } from "@/lib/format";
 import { isOwnListing } from "@/lib/ownership";
+import { AffiliatePartnersCard } from "@/components/affiliate/AffiliatePartnersCard";
+import { AppImage } from "@/components/AppImage";
 
 interface ProductDetailsViewProps {
   product: Product;
@@ -36,7 +38,7 @@ interface ProductDetailsCopy {
   report: string;
   home: string;
   retail: string;
-  mooday: string;
+  daneg: string;
   saveOff: (orig: number, price: number) => string;
   description: string;
   size: string;
@@ -50,11 +52,22 @@ interface ProductDetailsCopy {
   addToBagShort: string;
   chat: string;
   addedAlert: string;
+  oneListingOnly: string;
   viewBag: string;
   zoomClose: string;
   prev: string;
   next: string;
   oneSize: string;
+}
+
+function isSingleListingCartError(error: unknown): boolean {
+  if (error instanceof Error) return error.message.toLowerCase().includes("one listing");
+  if (typeof error === "object" && error !== null && "message" in error) {
+    return String((error as { message?: unknown }).message ?? "")
+      .toLowerCase()
+      .includes("one listing");
+  }
+  return false;
 }
 
 const COPY: Record<"en" | "ar", ProductDetailsCopy> = {
@@ -65,23 +78,24 @@ const COPY: Record<"en" | "ar", ProductDetailsCopy> = {
     report: "Report this listing",
     home: "Home",
     retail: "Retail Price:",
-    mooday: "Mooday Price:",
+    daneg: "DANEG Price:",
     saveOff: (orig: number, price: number) => {
       const pct = Math.round(((orig - price) / orig) * 100);
       return `${pct}% off`;
     },
     description: "Description",
     size: "Size",
-    shippingTitle: "Shipping & Returns",
-    shipsWithin: "Ships within 24h from Dubai, UAE",
-    freeShip: "Free shipping on orders over AED 1,000",
-    returnsAccepted: "Returns accepted within 7 days of delivery",
-    buyNow: "Buy Now (Escrow Pay)",
+    shippingTitle: "Demo order information",
+    shipsWithin: "Demo orders are saved in this browser only",
+    freeShip: "No payment or shipment is created",
+    returnsAccepted: "Real returns will be available in a later phase",
+    buyNow: "Buy Now (Demo)",
     buyNowShort: "Buy Now",
     addToBag: "Add to Shopping Bag",
     addToBagShort: "Bag",
     chat: "Chat",
     addedAlert: "Product successfully added to your shopping bag!",
+    oneListingOnly: "Only one listing can be in the bag at a time.",
     viewBag: "View Bag",
     zoomClose: "Close zoom",
     prev: "Previous image",
@@ -95,23 +109,24 @@ const COPY: Record<"en" | "ar", ProductDetailsCopy> = {
     report: "إبلاغ عن هذه القطعة",
     home: "الرئيسية",
     retail: "سعر التجزئة الأصلي:",
-    mooday: "سعر مودي:",
+    daneg: "سعر دانق:",
     saveOff: (orig: number, price: number) => {
       const pct = Math.round(((orig - price) / orig) * 100);
       return `${pct}٪ خصم`;
     },
     description: "الوصف",
     size: "المقاس",
-    shippingTitle: "الشحن والإرجاع",
-    shipsWithin: "يُشحن خلال ٢٤ ساعة من دبي، الإمارات",
-    freeShip: "شحن مجاني للطلبات فوق ١٠٠٠ درهم",
-    returnsAccepted: "يمكن الإرجاع خلال ٧ أيام من الاستلام",
-    buyNow: "اشترِ الآن (دفع آمن)",
+    shippingTitle: "معلومات الطلب التجريبي",
+    shipsWithin: "تُحفظ الطلبات التجريبية في هذا المتصفح فقط",
+    freeShip: "لا يتم إنشاء دفع أو شحن حقيقي",
+    returnsAccepted: "سيُفعّل الإرجاع الحقيقي في مرحلة لاحقة",
+    buyNow: "اشترِ الآن (تجريبي)",
     buyNowShort: "اشترِ الآن",
     addToBag: "إضافة إلى حقيبة التسوق",
     addToBagShort: "الحقيبة",
     chat: "محادثة",
     addedAlert: "تمت إضافة المنتج إلى حقيبة التسوق بنجاح!",
+    oneListingOnly: "يمكن أن تحتوي الحقيبة على قطعة واحدة فقط في كل مرة.",
     viewBag: "عرض الحقيبة",
     zoomClose: "إغلاق التكبير",
     prev: "الصورة السابقة",
@@ -130,12 +145,22 @@ export const ProductDetailsView: React.FC<ProductDetailsViewProps> = ({
   onOpenSeller,
   onReportListing,
 }) => {
-  const { language, toggleLike, likes, addToCart, currentUserId } = useApp();
+  const {
+    language,
+    toggleLike,
+    likes,
+    cart,
+    cartError,
+    clearCartError,
+    addToCart,
+    currentUserId,
+  } = useApp();
   const [activeImageIdx, setActiveImageIdx] = useState(0);
   const [addedAlert, setAddedAlert] = useState(false);
   const [showZoom, setShowZoom] = useState(false);
   const [showShipping, setShowShipping] = useState(false);
   const [showOverflow, setShowOverflow] = useState(false);
+  const [cartActionError, setCartActionError] = useState("");
 
   const isAr = language === "ar";
   const t = isAr ? COPY.ar : COPY.en;
@@ -157,10 +182,37 @@ export const ProductDetailsView: React.FC<ProductDetailsViewProps> = ({
   // Show size row only when the product carries a non-"OS" size.
   const showSizeRow = !!product.size && product.size !== "OS";
 
-  const handleAddToCart = () => {
-    addToCart(product);
-    setAddedAlert(true);
-    setTimeout(() => setAddedAlert(false), 2500);
+  const handleAddToCart = async () => {
+    clearCartError?.();
+    setCartActionError("");
+    if (cart.some((item) => item.product.id !== product.id)) {
+      try {
+        await addToCart(product);
+        setCartActionError(t.oneListingOnly);
+      } catch (error) {
+        setCartActionError(
+          isSingleListingCartError(error)
+            ? t.oneListingOnly
+            : isAr
+            ? "تعذر إضافة المنتج. حاولي مرة أخرى."
+            : "Could not add this listing. Please try again.",
+        );
+      }
+      return;
+    }
+    try {
+      await addToCart(product);
+      setAddedAlert(true);
+      window.setTimeout(() => setAddedAlert(false), 2500);
+    } catch (error) {
+      setCartActionError(
+        isSingleListingCartError(error)
+          ? t.oneListingOnly
+          : isAr
+          ? "تعذر إضافة المنتج. حاولي مرة أخرى."
+          : "Could not add this listing. Please try again.",
+      );
+    }
   };
 
   // Close the overflow menu on outside click / Esc.
@@ -291,6 +343,11 @@ export const ProductDetailsView: React.FC<ProductDetailsViewProps> = ({
           </button>
         </div>
       )}
+      {(cartActionError || cartError) && (
+        <p role="alert" className="rounded-lg bg-error-container px-4 py-3 text-label-sm font-bold text-on-error-container">
+          {cartActionError || cartError}
+        </p>
+      )}
 
       <main className="flex-grow flex flex-col md:grid md:grid-cols-12 gap-lg mt-md">
         {/* Left Column: Image Gallery */}
@@ -301,11 +358,13 @@ export const ProductDetailsView: React.FC<ProductDetailsViewProps> = ({
             aria-label={isAr ? `تكبير ${productTitle}` : `Zoom ${productTitle}`}
             className="relative w-full aspect-[4/5] bg-surface-container-low rounded-xl overflow-hidden shadow-lg cursor-zoom-in block"
           >
-            <img
+            <AppImage
               alt={productTitle}
-              className="w-full h-full object-cover transition-all duration-500"
-              src={product.images[activeImageIdx] || product.image}
-              loading="eager"
+              className="object-cover transition-all duration-500"
+              src={product.images[activeImageIdx] || product.image || "/products/placeholder.svg"}
+              fill
+              sizes="(min-width: 768px) 58vw, 100vw"
+              priority
             />
             {product.isAuthentic && (
               <div className="absolute top-4 left-4 bg-primary text-on-primary font-bold text-label-md px-3 py-1.5 rounded-lg shadow-md flex items-center gap-1.5 backdrop-blur-sm bg-opacity-90">
@@ -341,17 +400,18 @@ export const ProductDetailsView: React.FC<ProductDetailsViewProps> = ({
                   onClick={() => setActiveImageIdx(idx)}
                   aria-label={isAr ? `صورة ${idx + 1}` : `Image ${idx + 1}`}
                   aria-pressed={idx === activeImageIdx}
-                  className={`w-24 h-24 flex-shrink-0 rounded-lg overflow-hidden border-2 cursor-pointer transition-all ${
+                  className={`relative w-24 h-24 flex-shrink-0 rounded-lg overflow-hidden border-2 cursor-pointer transition-all ${
                     idx === activeImageIdx
                       ? "border-primary ring-offset-2 ring-1 ring-primary/20"
                       : "border-outline-variant grayscale-[0.5] hover:grayscale-0"
                   }`}
                 >
-                  <img
+                  <AppImage
                     alt=""
                     className="w-full h-full object-cover"
                     src={img}
-                    loading="lazy"
+                    fill
+                    sizes="96px"
                   />
                 </button>
               ))}
@@ -407,13 +467,14 @@ export const ProductDetailsView: React.FC<ProductDetailsViewProps> = ({
               </div>
               <div className="flex items-baseline gap-sm text-primary">
                 <span className="text-label-md uppercase tracking-widest font-bold">
-                  {t.mooday}
+                  {t.daneg}
                 </span>
                 <span className="text-headline-md font-bold">
                   AED {formatAED(product.price)}
                 </span>
               </div>
             </div>
+            <AffiliatePartnersCard listingId={product.id} />
           </div>
 
           {/* Size row (read-only — the listing is one size) */}
@@ -630,12 +691,18 @@ const ImageZoomModal: React.FC<{
         </button>
       )}
 
-      <img
-        src={images[idx]}
-        alt={alt}
-        className="max-w-[92vw] max-h-[88vh] object-contain"
+      <div
+        className="relative h-[88vh] w-[92vw] max-w-[1200px]"
         onClick={(e) => e.stopPropagation()}
-      />
+      >
+        <AppImage
+          src={images[idx]}
+          alt={alt}
+          fill
+          sizes="92vw"
+          className="object-contain"
+        />
+      </div>
 
       {/* Next */}
       {images.length > 1 && (
@@ -685,12 +752,15 @@ function SellerCard({
 
   const sellerInfo = (
     <div className="flex items-center gap-3 min-w-0">
-      <img
-        alt={isAr ? product.sellerNameAr : product.sellerNameEn}
-        className="w-12 h-12 rounded-full object-cover border-2 border-primary-fixed-dim"
-        src={product.sellerAvatar}
-        loading="lazy"
-      />
+      <div className="relative h-12 w-12 flex-shrink-0 overflow-hidden rounded-full border-2 border-primary-fixed-dim">
+        <AppImage
+          alt={isAr ? product.sellerNameAr : product.sellerNameEn}
+          className="object-cover"
+          src={product.sellerAvatar || "/sellers/placeholder.svg"}
+          fill
+          sizes="48px"
+        />
+      </div>
       <div className="min-w-0">
         <h4 className="text-label-md text-on-surface font-bold truncate">
           {isAr ? product.sellerNameAr : product.sellerNameEn}
@@ -704,9 +774,9 @@ function SellerCard({
 
   return (
     <div className="bg-surface-container-low p-md rounded-xl border border-surface-container-high flex items-center justify-between gap-md">
-      {onOpenSeller && sellerKey ? (
+      {onOpenSeller && (product.sellerId || sellerKey) ? (
         <button
-          onClick={() => onOpenSeller(sellerKey)}
+          onClick={() => onOpenSeller(product.sellerId ?? sellerKey ?? "")}
           aria-label={
             isAr
               ? `عرض ملف ${product.sellerNameAr}`

@@ -20,6 +20,7 @@ function makeContext(overrides: Partial<AppContextType> = {}): AppContextType {
  updateQuantity: vi.fn(),
  clearCart: vi.fn(),
  chats: [],
+ setActiveChats: vi.fn(),
  sendChatMessage: vi.fn(),
  createChatThread: vi.fn(() => "test-thread"),
  markChatRead: vi.fn(),
@@ -100,7 +101,7 @@ describe("LockScreen", () => {
  <LockScreen />
  </AppContext.Provider>,
  );
- expect(screen.getByText(/Mooday is locked/i)).toBeInTheDocument();
+ expect(screen.getByText(/DANEG is locked/i)).toBeInTheDocument();
  expect(screen.getByTestId("lock-pin-input")).toBeInTheDocument();
  });
 
@@ -165,6 +166,6 @@ describe("LockScreen", () => {
  <LockScreen />
  </AppContext.Provider>,
  );
- expect(screen.getByText(/مودي مقفله/i)).toBeInTheDocument();
+ expect(screen.getByText(/دانق مقفل/i)).toBeInTheDocument();
  });
 });

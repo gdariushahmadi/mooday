@@ -53,7 +53,7 @@ export interface ReportRecord {
 
 let _seq = 1;
 function makeCase(): string {
-  return `MOODAY-${String(_seq++).padStart(5, "0")}`;
+  return `DANEG-${String(_seq++).padStart(5, "0")}`;
 }
 
 function isoDaysAgo(d: number): string {

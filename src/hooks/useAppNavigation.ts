@@ -11,7 +11,6 @@ import {
   viewFromTab,
 } from "@/types/navigation";
 import { CATEGORIES } from "@/data/categories";
-import { getSellerProfile } from "@/data/seller-profile";
 import { isOwnListing } from "@/lib/ownership";
 
 export type CategorySort = "newest" | "price-asc" | "price-desc" | "saves";
@@ -163,6 +162,7 @@ export function useProductNav(
   setActiveOrderId: React.Dispatch<React.SetStateAction<string | null>>,
   setActiveListingId: React.Dispatch<React.SetStateAction<string | null>>,
   listings: Product[],
+  chats: ChatThread[],
   changeTab: (tab: TabId) => void,
   goHome: () => void,
 ) {
@@ -238,7 +238,7 @@ export function useProductNav(
   const checkoutFromActiveChat = useCallback(() => {
     setActiveChatThreadId((threadId) => {
       if (!threadId) return null;
-      const productId = threadId.replace(/^chat-/, "");
+      const productId = chats.find((thread) => thread.id === threadId)?.productId;
       const product = listings.find((p) => p.id === productId);
       if (product) {
         setCheckoutProduct(product);
@@ -248,7 +248,7 @@ export function useProductNav(
       }
       return null;
     });
-  }, [listings, setActiveChatThreadId, setCheckoutProduct, setCurrentView]);
+  }, [chats, listings, setActiveChatThreadId, setCheckoutProduct, setCurrentView]);
 
   const checkoutBack = useCallback(() => {
     setCheckoutProduct((product) => {
@@ -693,6 +693,7 @@ export function useChatNav(
       createChatThread,
       currentUserId,
       language,
+      chatOriginProductRef,
       setActiveChats,
       setActiveChatThreadId,
       setSelectedProduct,
@@ -709,49 +710,13 @@ export function useChatNav(
   const startChatWithSeller = useCallback(
     (sellerId: string) => {
       if (sellerId === currentUserId) return;
-      const seller = getSellerProfile(sellerId);
-      const match =
-        listings.find(
-          (l) =>
-            l.sellerId === sellerId ||
-            (seller != null &&
-              (l.sellerNameEn === seller.nameEn ||
-                l.sellerNameAr === seller.nameAr)),
-        ) ?? null;
+      const match = listings.find((l) => l.sellerId === sellerId) ?? null;
 
       if (match) {
         openChatThread(match);
-        return;
       }
-
-      const synthetic: Product = {
-        id: `seller-${sellerId}`,
-        titleEn: seller?.nameEn ? `Chat with ${seller.nameEn}` : "Seller chat",
-        titleAr: seller?.nameAr ? `محادثة مع ${seller.nameAr}` : "محادثة البائع",
-        price: 0,
-        originalPrice: 0,
-        conditionEn: "Good",
-        conditionAr: "جيد",
-        sellerNameEn: seller?.nameEn ?? sellerId,
-        sellerNameAr: seller?.nameAr ?? sellerId,
-        sellerAvatar: seller?.avatar ?? "/sellers/sarah.jpg",
-        sellerTypeEn: seller?.typeEn ?? "Seller",
-        sellerTypeAr: seller?.typeAr ?? "بائع",
-        saves: 0,
-        image: seller?.avatar ?? "/sellers/sarah.jpg",
-        images: [seller?.avatar ?? "/sellers/sarah.jpg"],
-        descriptionEn: "",
-        descriptionAr: "",
-        category: "All",
-        sellerId,
-      };
-      openChatThread(synthetic);
     },
-    [
-      currentUserId,
-      listings,
-      openChatThread,
-    ],
+    [currentUserId, listings, openChatThread],
   );
   const closeChat = useCallback(() => {
     setActiveChatThreadId(null);
@@ -762,7 +727,7 @@ export function useChatNav(
       setSelectedProduct(origin);
       setCurrentView("home");
     }
-  }, [setActiveChatThreadId, setSelectedProduct, setCurrentView]);
+  }, [chatOriginProductRef, setActiveChatThreadId, setSelectedProduct, setCurrentView]);
 
   const openChat = useCallback(
     (threadId: string) => {
@@ -944,6 +909,49 @@ export function useAppNavigation(): AppNavigation {
     }
   }, [listings]);
 
+  // Mirror navigation state into the URL so a page refresh restores
+  // wherever the user was (active view, open overlays, and view-scoped
+  // context like the active category, sub-filter, sort, order, and
+  // listing being edited). `replaceState` (not `pushState`) keeps the
+  // browser back button free of intermediate SPA transitions; matches
+  // the pattern already used by DiscoverFeedView, SearchFiltersView,
+  // and CategoryLandingView. Other query params (e.g. ?lang=, ?q=,
+  // ?tab=) and the hash are preserved by working off `location.href`.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const url = new URL(window.location.href);
+    const params = url.searchParams;
+    const setOrDelete = (key: string, value: string | null) => {
+      if (value) params.set(key, value);
+      else params.delete(key);
+    };
+    setOrDelete("view", currentView === "home" ? null : currentView);
+    setOrDelete("product", selectedProduct?.id ?? null);
+    setOrDelete("checkout", checkoutProduct?.id ?? null);
+    setOrDelete("chat", activeChatThreadId);
+    setOrDelete("seller", activeSellerId);
+    setOrDelete("category", activeCategory);
+    setOrDelete("sub", activeSubCategory);
+    setOrDelete("order", activeOrderId);
+    setOrDelete("edit", activeListingId);
+    setOrDelete(
+      "sort",
+      activeCategorySort === "newest" ? null : activeCategorySort,
+    );
+    window.history.replaceState(null, "", url.toString());
+  }, [
+    currentView,
+    selectedProduct,
+    checkoutProduct,
+    activeChatThreadId,
+    activeSellerId,
+    activeCategory,
+    activeSubCategory,
+    activeCategorySort,
+    activeOrderId,
+    activeListingId,
+  ]);
+
   const changeTab = useCallback((tab: TabId) => {
     setSelectedProduct(null);
     setActiveSellerId(null);
@@ -972,6 +980,7 @@ export function useAppNavigation(): AppNavigation {
   const closeCategory = useCallback(() => {
     setActiveCategory(null);
     setActiveSubCategoryState(null);
+    setActiveCategorySortState("newest");
     setCurrentView("home");
     setActiveTab("home");
   }, []);
@@ -994,6 +1003,7 @@ export function useAppNavigation(): AppNavigation {
     setActiveOrderId,
     setActiveListingId,
     listings,
+    chats,
     changeTab,
     goHome,
   );

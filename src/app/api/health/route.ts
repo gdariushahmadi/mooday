@@ -10,10 +10,23 @@
  */
 
 import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
+async function fetchWithTimeout(
+  input: string,
+  init: RequestInit,
+  timeoutMs = 3000,
+): Promise<Response> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(input, { ...init, signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
 
 export async function GET() {
   const startedAt = Date.now();
@@ -24,15 +37,23 @@ export async function GET() {
   if (url && key) {
     try {
       const pingStart = Date.now();
-      const supabase = createClient(url, key, {
-        auth: { persistSession: false, autoRefreshToken: false },
-      });
-      const { error } = await supabase
-        .from("listings")
-        .select("id", { count: "exact", head: true })
-        .limit(1);
+      const baseUrl = new URL(url.replace(/\/+$/, ""));
+      const basePath = baseUrl.pathname.replace(/\/+$/, "");
+      const headers = {
+        apikey: key,
+        Authorization: `Bearer ${key}`,
+      };
+      const [restResponse, authResponse] = await Promise.all([
+        fetchWithTimeout(
+          `${baseUrl.origin}${basePath}/rest/v1/listings?select=id&limit=1`,
+          { headers },
+        ),
+        fetchWithTimeout(`${baseUrl.origin}${basePath}/auth/v1/settings`, {
+          headers,
+        }),
+      ]);
       supabaseLatencyMs = Date.now() - pingStart;
-      supabaseOk = !error;
+      supabaseOk = restResponse.ok && authResponse.ok;
     } catch {
       supabaseOk = false;
     }

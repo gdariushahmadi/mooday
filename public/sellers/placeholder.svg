@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-labelledby="title desc">
+  <title id="title">DANEG seller placeholder</title>
+  <desc id="desc">Neutral placeholder avatar for a seller without a photo.</desc>
+  <rect width="256" height="256" rx="128" fill="#eadbd3"/>
+  <circle cx="128" cy="96" r="42" fill="#b8907d"/>
+  <path d="M48 222c8-50 39-76 80-76s72 26 80 76" fill="#b8907d"/>
+  <text x="128" y="242" text-anchor="middle" fill="#6d4c5c" font-family="Georgia,serif" font-size="20">DANEG</text>
+</svg>

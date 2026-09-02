@@ -31,7 +31,7 @@ const COPY = {
     next1: "Send code",
     title2: "Enter the code",
     sub2: "Use",
-    sub2Suffix: "in the Phase 1 preview, or the code we just sent.",
+    sub2Suffix: "in demo mode, or the code we just sent.",
     emailSentTo: "Code sent to",
     resend: "Resend",
     verify: "Verify",
@@ -46,6 +46,7 @@ const COPY = {
     back: "Back",
     backToSignIn: "Back to sign in",
     codePlaceholder: "6-digit code",
+    checkInbox: "the code we just emailed you",
   },
   ar: {
     title1: "إعادة تعيين كلمة المرور",
@@ -54,7 +55,7 @@ const COPY = {
     next1: "إرسال الرمز",
     title2: "أدخلي الرمز",
     sub2: "استخدمي",
-    sub2Suffix: "في معاينة المرحلة الأولى، أو الرمز الذي أرسلناه للتو.",
+    sub2Suffix: "في وضع العرض التجريبي، أو الرمز الذي أرسلناه للتو.",
     emailSentTo: "أرسلنا الرمز إلى",
     resend: "إعادة إرسال",
     verify: "تحقق",
@@ -69,6 +70,7 @@ const COPY = {
     back: "رجوع",
     backToSignIn: "العودة لتسجيل الدخول",
     codePlaceholder: "رمز من ٦ أرقام",
+    checkInbox: "الرمز الذي أرسلناه إلى بريدك",
   },
 } as const;
 
@@ -236,9 +238,15 @@ export const ForgotPasswordView: React.FC<ForgotPasswordViewProps> = ({
         <>
           <p className="text-body-md text-on-surface-variant text-center px-md">
             {t.sub2}{" "}
-            <span className="font-mono font-bold text-primary">
-              {MOCK_OTP_CODE}
-            </span>{" "}
+            {authMode !== "supabase" ? (
+              <span className="font-mono font-bold text-primary">
+                {MOCK_OTP_CODE}
+              </span>
+            ) : (
+              <span className="font-bold text-primary">
+                {t.checkInbox}
+              </span>
+            )}{" "}
             {t.sub2Suffix}
           </p>
           <p className="text-label-sm text-on-surface text-center">

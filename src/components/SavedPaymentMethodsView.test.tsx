@@ -1,46 +1,20 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
-import { render, screen, within } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
+import { describe, it, expect, vi } from "vitest";
+import { render, screen } from "@testing-library/react";
 import { AppContext, type AppContextType } from "@/context/AppContext";
-import type { PaymentMethod } from "@/data/paymentMethods";
 import { SavedPaymentMethodsView } from "@/components/SavedPaymentMethodsView";
-
-const VISA: PaymentMethod = {
-  id: "pm-1",
-  labelEn: "Personal Visa",
-  labelAr: "فيزا شخصية",
-  brandEn: "Visa",
-  brandAr: "فيزا",
-  last4: "4242",
-  holderEn: "Layla Mansour",
-  holderAr: "ليلى منصور",
-  expiry: "11/27",
-  isDefault: true,
-};
-
-const MASTERCARD: PaymentMethod = {
-  ...VISA,
-  id: "pm-2",
-  brandEn: "Mastercard",
-  brandAr: "ماستركارد",
-  last4: "1881",
-  isDefault: false,
-};
-
-const PAYMENT_METHODS: PaymentMethod[] = [VISA, MASTERCARD];
 
 const DEFAULT_USER = {
   fullNameEn: "Test",
   fullNameAr: "اختبار",
   handle: "@t",
-  avatar: "/a.jpg",
-  bioEn: "b",
-  bioAr: "b",
+  avatar: "/sellers/placeholder.svg",
+  bioEn: "",
+  bioAr: "",
   locationEn: "Dubai",
   locationAr: "دبي",
   styleTagsEn: [],
   styleTagsAr: [],
-  rating: 5,
+  rating: 0,
   reviewsCount: 0,
   followers: 0,
   following: 0,
@@ -62,6 +36,7 @@ function makeContext(overrides: Partial<AppContextType> = {}): AppContextType {
     updateQuantity: vi.fn(),
     clearCart: vi.fn(),
     chats: [],
+    setActiveChats: vi.fn(),
     sendChatMessage: vi.fn(),
     createChatThread: vi.fn(() => "t1"),
     markChatRead: vi.fn(),
@@ -77,7 +52,7 @@ function makeContext(overrides: Partial<AppContextType> = {}): AppContextType {
     updateAddress: vi.fn(),
     removeAddress: vi.fn(),
     setDefaultAddress: vi.fn(),
-    paymentMethods: PAYMENT_METHODS,
+    paymentMethods: [],
     addPaymentMethod: vi.fn(),
     removePaymentMethod: vi.fn(),
     setDefaultPaymentMethod: vi.fn(),
@@ -111,85 +86,38 @@ function makeContext(overrides: Partial<AppContextType> = {}): AppContextType {
   };
 }
 
-function renderView(opts: { language?: "en" | "ar" } = {}) {
-  const ctx = makeContext({ language: opts.language });
-  const onBack = vi.fn();
-  const utils = render(
-    <AppContext.Provider value={ctx}>
-      <SavedPaymentMethodsView onBack={onBack} />
-    </AppContext.Provider>,
-  );
-  return { ...utils, onBack, ctx };
-}
-
-beforeEach(() => {
-  localStorage.clear();
-  globalThis.alert = vi.fn();
-});
-
-describe("SavedPaymentMethodsView (G-36)", () => {
-  it("renders the page title", () => {
-    renderView();
-    expect(screen.getByText("Payment methods")).toBeInTheDocument();
-  });
-
-  it("renders both cards with last4 visible", () => {
-    renderView();
-    expect(screen.getAllByText(/4242/).length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByText(/1881/).length).toBeGreaterThanOrEqual(1);
-  });
-
-  it("marks the default card with a Default badge", () => {
-    renderView();
-    expect(screen.getAllByText("Default").length).toBeGreaterThanOrEqual(1);
-  });
-
-  it("'Make default' calls setDefaultPaymentMethod", async () => {
-    const user = userEvent.setup();
-    const { ctx } = renderView();
-    await user.click(screen.getByRole("button", { name: /Make default/i }));
-    expect(ctx.setDefaultPaymentMethod).toHaveBeenCalledWith("pm-2");
-  });
-
-  it("Delete opens a confirmation modal", async () => {
-    const user = userEvent.setup();
-    renderView();
-    await user.click(screen.getAllByRole("button", { name: "Delete" })[0]);
-    expect(screen.getByText(/Delete this card?/i)).toBeInTheDocument();
-  });
-
-  it("Confirming delete calls removePaymentMethod", async () => {
-    const user = userEvent.setup();
-    const { ctx } = renderView();
-    await user.click(screen.getAllByRole("button", { name: "Delete" })[0]);
-    // Modal shows two buttons: Cancel + Delete — find the Delete inside the modal.
-    const dialog = screen.getByRole("dialog");
-    const deleteInModal = within(dialog).getByRole("button", {
-      name: /^Delete$/,
-    });
-    await user.click(deleteInModal);
-    expect(ctx.removePaymentMethod).toHaveBeenCalled();
-  });
-
-  it("Back calls onBack", async () => {
-    const user = userEvent.setup();
-    const { onBack } = renderView();
-    await user.click(screen.getByRole("button", { name: "Back" }));
-    expect(onBack).toHaveBeenCalled();
-  });
-
-  it("Arabic title", () => {
-    renderView({ language: "ar" });
-    expect(screen.getByText("طرق الدفع")).toBeInTheDocument();
-  });
-
-  it("empty state when no methods", () => {
+describe("SavedPaymentMethodsView", () => {
+  it("shows that card storage is disabled in the public Demo", () => {
     render(
-      <AppContext.Provider value={makeContext({ paymentMethods: [] })}>
+      <AppContext.Provider value={makeContext()}>
         <SavedPaymentMethodsView onBack={vi.fn()} />
       </AppContext.Provider>,
     );
-    // The component opens the form by default when there are no cards.
-    expect(screen.getByPlaceholderText(/Name on card/i)).toBeInTheDocument();
+
+    expect(screen.getByText("Payment methods")).toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent(/not available in Demo mode/i);
+    expect(screen.getByRole("status")).toHaveTextContent(/does not request or store card numbers or CVV/i);
+    expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
+  });
+
+  it("supports Arabic", () => {
+    render(
+      <AppContext.Provider value={makeContext({ language: "ar" })}>
+        <SavedPaymentMethodsView onBack={vi.fn()} />
+      </AppContext.Provider>,
+    );
+
+    expect(screen.getByText("طرق الدفع")).toBeInTheDocument();
+  });
+
+  it("calls onBack", () => {
+    const onBack = vi.fn();
+    render(
+      <AppContext.Provider value={makeContext()}>
+        <SavedPaymentMethodsView onBack={onBack} />
+      </AppContext.Provider>,
+    );
+    screen.getByRole("button", { name: "Back" }).click();
+    expect(onBack).toHaveBeenCalledOnce();
   });
 });

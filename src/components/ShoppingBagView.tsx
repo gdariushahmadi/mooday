@@ -1,9 +1,8 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
-import { useApp, type Product } from "@/context/AppContext";
-
-const SAVED_FOR_LATER_KEY = "mooday_saved_for_later";
+import React from "react";
+import { useApp } from "@/context/AppContext";
+import { AppImage } from "@/components/AppImage";
 
 interface ShoppingBagViewProps {
   onBack: () => void;
@@ -14,42 +13,77 @@ export const ShoppingBagView: React.FC<ShoppingBagViewProps> = ({
   onBack,
   onCheckout,
 }) => {
-  const { language, cart, addToCart, removeFromCart, updateQuantity } = useApp();
+  const {
+    language,
+    cart,
+    addToCart,
+    removeFromCart,
+    savedForLater = [],
+    saveForLater: saveSavedItem,
+    removeSavedForLater,
+    cartError,
+    clearCartError,
+  } = useApp();
   const isAr = language === "ar";
-  const [savedForLater, setSavedForLater] = useState<Product[]>(() => {
+  const [actionError, setActionError] = React.useState<string | null>(null);
+
+  const saveForLater = async (product: (typeof cart)[number]["product"]) => {
+    setActionError(null);
     try {
-      return JSON.parse(localStorage.getItem(SAVED_FOR_LATER_KEY) ?? "[]");
+      if (!saveSavedItem) return;
+      await saveSavedItem(product);
+      await removeFromCart(product.id);
     } catch {
-      return [];
+      setActionError(
+        isAr
+          ? "تعذر حفظ المنتج. لم يتم حذفُه من الحقيبة."
+          : "Could not save the item. It remains in your bag.",
+      );
     }
-  });
-
-  useEffect(() => {
-    localStorage.setItem(SAVED_FOR_LATER_KEY, JSON.stringify(savedForLater));
-  }, [savedForLater]);
-
-  const saveForLater = (product: Product) => {
-    setSavedForLater((current) =>
-      current.some((item) => item.id === product.id)
-        ? current
-        : [...current, product],
-    );
-    removeFromCart(product.id);
   };
 
-  const moveToBag = (product: Product) => {
-    addToCart(product);
-    setSavedForLater((current) =>
-      current.filter((item) => item.id !== product.id),
-    );
+  const removeItem = async (productId: string) => {
+    setActionError(null);
+    try {
+      await removeFromCart(productId);
+    } catch {
+      setActionError(
+        isAr
+          ? "تعذر إزالة المنتج. حاولي مرة أخرى."
+          : "Could not remove the item. Please try again.",
+      );
+    }
   };
 
+  const moveToBag = async (product: (typeof cart)[number]["product"]) => {
+    setActionError(null);
+    if (cart.length > 0 && cart[0].product.id !== product.id) {
+      setActionError(
+        isAr
+          ? "يمكن أن تحتوي الحقيبة على منتج واحد فقط. أزيلي المنتج الحالي أولاً."
+          : "The bag can contain one listing only. Remove the current item first.",
+      );
+      return;
+    }
+    try {
+      await addToCart(product);
+      await removeSavedForLater?.(product.id);
+    } catch {
+      setActionError(
+        isAr
+          ? "تعذر نقل المنتج إلى الحقيبة. لم يتم حذف العنصر المحفوظ."
+          : "Could not move the item to your bag. The saved item was kept.",
+      );
+    }
+  };
+
+  // Each line is a unique listing, so totals do not multiply by quantity yet.
   const totalOriginal = cart.reduce(
-    (sum, item) => sum + item.product.originalPrice * item.quantity,
+    (sum, item) => sum + item.product.originalPrice,
     0,
   );
   const totalDiscounted = cart.reduce(
-    (sum, item) => sum + item.product.price * item.quantity,
+    (sum, item) => sum + item.product.price,
     0,
   );
   const discount = totalOriginal - totalDiscounted;
@@ -75,6 +109,19 @@ export const ShoppingBagView: React.FC<ShoppingBagViewProps> = ({
         </div>
         <div className="w-10"></div>
       </div>
+
+      {cartError && (
+        <p role="alert" className="rounded-lg bg-error-container px-md py-sm text-label-sm font-bold text-on-error-container">
+          {isAr ? "لا يمكن إضافة أكثر من منتج واحد إلى الحقيبة." : cartError}
+          {clearCartError && <button type="button" onClick={clearCartError} className="ms-2 underline">{isAr ? "إغلاق" : "Dismiss"}</button>}
+        </p>
+      )}
+
+      {actionError && (
+        <p role="alert" className="rounded-lg bg-error-container px-md py-sm text-label-sm font-bold text-on-error-container">
+          {actionError}
+        </p>
+      )}
 
       {cart.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 gap-md text-center">
@@ -106,9 +153,11 @@ export const ShoppingBagView: React.FC<ShoppingBagViewProps> = ({
                 className="bg-surface-container-low rounded-xl border border-surface-container-high p-md flex gap-md relative"
               >
                 <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-lg overflow-hidden flex-shrink-0 bg-surface-container-high">
-                  <img
+                  <AppImage
                     alt={isAr ? item.product.titleAr : item.product.titleEn}
-                    className="w-full h-full object-cover"
+                    className="object-cover"
+                    fill
+                    sizes="112px"
                     src={item.product.image}
                   />
                 </div>
@@ -119,7 +168,7 @@ export const ShoppingBagView: React.FC<ShoppingBagViewProps> = ({
                         {isAr ? item.product.titleAr : item.product.titleEn}
                       </h3>
                       <button
-                        onClick={() => removeFromCart(item.product.id)}
+                        onClick={() => void removeItem(item.product.id)}
                         className="text-on-surface-variant hover:text-error transition-colors p-1"
                         aria-label={isAr ? "إزالة" : "Remove"}
                       >
@@ -145,40 +194,7 @@ export const ShoppingBagView: React.FC<ShoppingBagViewProps> = ({
                     </button>
                   </div>
 
-                  <div className="flex justify-between items-end mt-2">
-                    <div className="flex items-center gap-sm">
-                      <button
-                        onClick={() =>
-                          updateQuantity(item.product.id, item.quantity - 1)
-                        }
-                        className="w-7 h-7 rounded-full border border-outline-variant text-on-surface-variant hover:bg-surface-container-high active:scale-95 transition-all flex items-center justify-center"
-                        aria-label={isAr ? "تقليل" : "Decrease"}
-                      >
-                        <span
-                          className="material-symbols-outlined text-[16px]"
-                          aria-hidden="true"
-                        >
-                          remove
-                        </span>
-                      </button>
-                      <span className="text-label-sm text-on-surface-variant font-bold min-w-[24px] text-center">
-                        {item.quantity}
-                      </span>
-                      <button
-                        onClick={() =>
-                          updateQuantity(item.product.id, item.quantity + 1)
-                        }
-                        className="w-7 h-7 rounded-full border border-outline-variant text-on-surface-variant hover:bg-surface-container-high active:scale-95 transition-all flex items-center justify-center"
-                        aria-label={isAr ? "زيادة" : "Increase"}
-                      >
-                        <span
-                          className="material-symbols-outlined text-[16px]"
-                          aria-hidden="true"
-                        >
-                          add
-                        </span>
-                      </button>
-                    </div>
+                  <div className="flex justify-end items-end mt-2">
                     <div className="text-right">
                       <span className="block text-on-surface-variant line-through text-[12px] opacity-60">
                         AED {item.product.originalPrice}
@@ -240,7 +256,7 @@ export const ShoppingBagView: React.FC<ShoppingBagViewProps> = ({
                 onClick={onCheckout}
                 className="btn-primary w-full py-4 rounded-xl text-label-md uppercase tracking-widest font-bold shadow-lg btn-tactile text-center active:scale-[0.98] transition-all mt-4"
               >
-                {isAr ? "إتمام الشراء الدفع الآمن" : "Checkout Now"}
+                {isAr ? "حفظ الطلب التجريبي" : "Save Demo Order"}
               </button>
             </div>
           </section>
@@ -257,11 +273,15 @@ export const ShoppingBagView: React.FC<ShoppingBagViewProps> = ({
               key={product.id}
               className="flex items-center gap-md rounded-xl border border-surface-container-high bg-surface-container-low p-md"
             >
-              <img
-                src={product.image}
-                alt={isAr ? product.titleAr : product.titleEn}
-                className="h-16 w-16 rounded-lg object-cover"
-              />
+              <div className="relative h-16 w-16 overflow-hidden rounded-lg">
+                <AppImage
+                  fill
+                  sizes="64px"
+                  src={product.image}
+                  alt={isAr ? product.titleAr : product.titleEn}
+                  className="object-cover"
+                />
+              </div>
               <div className="min-w-0 flex-1">
                 <p className="truncate font-serif text-label-md text-on-surface">
                   {isAr ? product.titleAr : product.titleEn}

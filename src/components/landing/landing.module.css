@@ -4,6 +4,10 @@
  * champagne / ink / plum palette. Bodoni Moda for display, Hanken
  * Grotesk for body. Namespaced under .landing so nothing leaks into
  * the app shell.
+ *
+ * Palette matched to daneg.ae (deep teal-green + brand orange/gold).
+ * "Plum" variable names are kept for minimal diff even though the
+ * hue is now teal.
  */
 
 .landing {
@@ -11,12 +15,12 @@
   --c-ink-soft: #5a4f55;
   --c-cream: #f7f3ee;
   --c-cream-deep: #ebe4da;
-  --c-plum: #512443;
-  --c-plum-deep: #2a1224;
-  --c-plum-soft: #6b3a5b;
-  --c-champagne: #c9a96e;
-  --c-champagne-deep: #8a6d35;
-  --c-blush: #d9a8c0;
+  --c-plum: #11302d;
+  --c-plum-deep: #071714;
+  --c-plum-soft: #1f4f4a;
+  --c-champagne: #e2a545;
+  --c-champagne-deep: #96650f;
+  --c-blush: #a9d9cd;
 
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-soft: cubic-bezier(0.2, 0.7, 0.2, 1);

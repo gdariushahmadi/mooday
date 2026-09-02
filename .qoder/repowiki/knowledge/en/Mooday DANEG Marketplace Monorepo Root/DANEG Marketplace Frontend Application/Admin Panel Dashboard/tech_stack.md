@@ -1,0 +1,1 @@
+React Server Components + Client Components (`"use client"`), Next.js App Router, Tailwind CSS with Material Symbols icons, Vitest + @testing-library/react for tests, and Supabase-backed server actions in `@/services/admin/actions` as the data layer.

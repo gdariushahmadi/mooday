@@ -66,10 +66,9 @@ export function hydrateProductsFromRemote({
       sellerTypeEn: seller?.typeEn ?? "",
       sellerTypeAr: seller?.typeAr ?? "",
       createdAt: listing.createdAt,
-      // Active-listing volume is the closest proxy we have to a popularity
-      // signal in Phase 3; the original `saves` field belongs to the
-      // likes slice. Zero is fine until that slice lands.
-      saves: seller?.listingsCount ?? 0,
+      // `saves` is a listing-level count. Seller listing volume is not a
+      // valid substitute, so keep it neutral until the aggregate is queried.
+      saves: 0,
       image: primaryImage,
       images: allImages,
       descriptionEn: listing.descriptionEn,
@@ -203,10 +202,8 @@ export function isPublicImageUrl(path: string): boolean {
 // but callers import from this single barrel for ergonomic consistency.
 export {
   mapOrderFromRemote,
-  buildCreateOrderInput,
   hydrateOrderProduct,
   type MapOrderInput,
-  type BuildCreateOrderInputArgs,
 } from "./mappers-orders";
 export {
   mapThreadFromRemote,

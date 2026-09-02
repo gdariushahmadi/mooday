@@ -7,6 +7,8 @@
 
 export interface BlockedUser {
   id: string;
+  /** Real auth user id. Required by the remote block API. */
+  userId?: string;
   /** Display name in the chat-thread / profile style (EN). */
   nameEn: string;
   nameAr: string;

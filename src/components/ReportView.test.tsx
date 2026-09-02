@@ -26,7 +26,7 @@ function makeContext(overrides: Partial<AppContextType> = {}): AppContextType {
   const submitReport = vi.fn(
     (input: Parameters<AppContextType["submitReport"]>[0]) => ({
       id: "rep-test",
-      caseNumber: "MOODAY-99999",
+      caseNumber: "DANEG-99999",
       status: "open" as const,
       date: new Date().toISOString(),
       ...input,
@@ -47,6 +47,7 @@ function makeContext(overrides: Partial<AppContextType> = {}): AppContextType {
     updateQuantity: vi.fn(),
     clearCart: vi.fn(),
     chats: [],
+    setActiveChats: vi.fn(),
     sendChatMessage: vi.fn(),
     createChatThread: vi.fn(() => "t1"),
     markChatRead: vi.fn(),
@@ -134,7 +135,7 @@ describe("ReportView (H-40)", () => {
     const ctx = makeContext();
     render(
       <AppContext.Provider value={ctx}>
-        <ReportView onBack={vi.fn()} />
+        <ReportView targetId="listing-test" onBack={vi.fn()} />
       </AppContext.Provider>,
     );
     await user.type(
@@ -149,7 +150,7 @@ describe("ReportView (H-40)", () => {
     const user = userEvent.setup();
     render(
       <AppContext.Provider value={makeContext()}>
-        <ReportView onBack={vi.fn()} />
+        <ReportView targetId="listing-test" onBack={vi.fn()} />
       </AppContext.Provider>,
     );
     await user.type(
@@ -158,7 +159,7 @@ describe("ReportView (H-40)", () => {
     );
     await user.click(screen.getByRole("button", { name: /Submit report/i }));
     expect(await screen.findByText(/Report submitted/i)).toBeInTheDocument();
-    expect(screen.getByText("MOODAY-99999")).toBeInTheDocument();
+    expect(screen.getByText("DANEG-99999")).toBeInTheDocument();
   });
 
   it("Arabic: renders Arabic title", () => {

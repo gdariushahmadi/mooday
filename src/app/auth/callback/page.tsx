@@ -58,7 +58,7 @@ export default function AuthCallbackPage() {
   return (
     <main className="min-h-screen grid place-items-center bg-surface px-6 text-center">
       <div className="w-full max-w-sm rounded-2xl bg-surface-container-lowest p-8 shadow-lg">
-        <h1 className="font-serif text-headline-sm text-primary">Mooday</h1>
+        <h1 className="font-serif text-headline-sm text-primary">DANEG</h1>
         {error ? (
           <>
             <p className="mt-3 text-body-md text-on-surface-variant" role="alert">

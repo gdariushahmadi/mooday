@@ -26,7 +26,7 @@ interface SignUpViewProps {
 
 const COPY = {
   en: {
-    title: "Create your Mooday",
+    title: "Create your DANEG",
     sub: "Join the UAE's women-led resale & rental community.",
     fullName: "Full name",
     fullNamePlaceholder: "Layla Mansour",
@@ -42,7 +42,7 @@ const COPY = {
     back: "Back",
     haveAccount: "Already have an account?",
     signIn: "Sign in",
-    termsPrefix: "I agree to Mooday's",
+    termsPrefix: "I agree to DANEG's",
     termsLink: "Terms",
     privacyLink: "Privacy Policy",
     nameRequired: "Please enter your name.",
@@ -50,7 +50,7 @@ const COPY = {
     passwordsMismatch: "Passwords don't match.",
   },
   ar: {
-    title: "أنشئي حسابك في مودي",
+    title: "أنشئي حسابك في دانق",
     sub: "انضمي لمجتمع النساء في الإمارات لبيع وإعادة تأجير الملابس.",
     fullName: "الاسم الكامل",
     fullNamePlaceholder: "ليلى منصور",
@@ -66,7 +66,7 @@ const COPY = {
     back: "رجوع",
     haveAccount: "لديكِ حساب بالفعل؟",
     signIn: "تسجيل الدخول",
-    termsPrefix: "أوافق على",
+    termsPrefix: "أوافق على شروط دانق",
     termsLink: "شروط",
     privacyLink: "سياسة الخصوصية",
     nameRequired: "يرجى إدخال اسمك.",
@@ -220,33 +220,25 @@ export const SignUpView: React.FC<SignUpViewProps> = ({
           />
           <span>
             {t.termsPrefix}{" "}
-            <button
-              type="button"
+            {/* Opened in a new tab so a half-filled sign-up form survives
+                the reader checking what they are agreeing to. */}
+            <a
+              href="/legal/terms"
+              target="_blank"
+              rel="noopener noreferrer"
               className="text-primary font-bold underline underline-offset-2"
-              onClick={() => {
-                window.alert(
-                  isAr
-                    ? "ستتوفر شروط الاستخدام قريباً."
-                    : "Terms of use will be available soon.",
-                );
-              }}
             >
               {t.termsLink}
-            </button>{" "}
+            </a>{" "}
             &{" "}
-            <button
-              type="button"
+            <a
+              href="/legal/privacy"
+              target="_blank"
+              rel="noopener noreferrer"
               className="text-primary font-bold underline underline-offset-2"
-              onClick={() => {
-                window.alert(
-                  isAr
-                    ? "ستتوفر سياسة الخصوصية قريباً."
-                    : "Privacy policy will be available soon.",
-                );
-              }}
             >
               {t.privacyLink}
-            </button>
+            </a>
             .
           </span>
         </label>

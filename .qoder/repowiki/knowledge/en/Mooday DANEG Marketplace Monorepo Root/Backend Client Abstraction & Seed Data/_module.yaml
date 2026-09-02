@@ -1,0 +1,12 @@
+schema_version: 1
+module_path: backend_client
+title: Backend Client Abstraction & Seed Data
+scope:
+    - src/services/
+    - src/data/
+source_files: []
+depends_on: []
+related_to:
+    - path: frontend_app
+    - path: scripts_and_deploy
+    - path: tests

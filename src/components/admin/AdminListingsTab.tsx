@@ -3,6 +3,22 @@
 import { useState } from "react";
 import type { AdminListingSummary } from "@/services/admin/actions";
 
+const STATUS_OPTIONS = [
+  "draft",
+  "active",
+  "reserved",
+  "sold",
+  "archived",
+] as const;
+
+const STATUS_LABELS: Record<(typeof STATUS_OPTIONS)[number], { en: string; ar: string }> = {
+  draft: { en: "Draft", ar: "مسودة" },
+  active: { en: "Active", ar: "نشط" },
+  reserved: { en: "Reserved", ar: "محجوز" },
+  sold: { en: "Sold", ar: "مباع" },
+  archived: { en: "Archived", ar: "مؤرشف" },
+};
+
 interface AdminListingsTabProps {
   listings: AdminListingSummary[];
   onApprove: (listingId: string) => Promise<void>;
@@ -13,6 +29,10 @@ interface AdminListingsTabProps {
     noteEn: string,
     noteAr: string
   ) => Promise<void>;
+  onChangeStatus: (
+    listingId: string,
+    status: (typeof STATUS_OPTIONS)[number]
+  ) => Promise<void>;
   lang: "en" | "ar";
 }
 
@@ -21,6 +41,7 @@ export function AdminListingsTab({
   onApprove,
   onReject,
   onFeature,
+  onChangeStatus,
   lang,
 }: AdminListingsTabProps) {
   const isAr = lang === "ar";
@@ -39,6 +60,18 @@ export function AdminListingsTab({
     try {
       setProcessingId(id);
       await onApprove(id);
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
+  const handleStatusChange = async (
+    id: string,
+    status: (typeof STATUS_OPTIONS)[number],
+  ) => {
+    try {
+      setProcessingId(id);
+      await onChangeStatus(id, status);
     } finally {
       setProcessingId(null);
     }
@@ -158,6 +191,28 @@ export function AdminListingsTab({
 
               {/* Action Buttons */}
               <div className="flex flex-wrap items-center gap-2 pt-2 lg:pt-0 border-t lg:border-t-0 border-surface-container-low">
+                <label className="sr-only" htmlFor={`status-${item.id}`}>
+                  {isAr ? "حالة المنتج" : "Product status"}
+                </label>
+                <select
+                  id={`status-${item.id}`}
+                  disabled={processingId === item.id}
+                  value={item.status}
+                  onChange={(e) =>
+                    handleStatusChange(
+                      item.id,
+                      e.target.value as (typeof STATUS_OPTIONS)[number],
+                    )
+                  }
+                  className="rounded-xl border border-surface-container-high bg-surface-container-low px-3 py-2 text-xs font-semibold text-on-surface disabled:opacity-50"
+                >
+                  {STATUS_OPTIONS.map((status) => (
+                    <option key={status} value={status}>
+                      {isAr ? STATUS_LABELS[status].ar : STATUS_LABELS[status].en}
+                    </option>
+                  ))}
+                </select>
+
                 <button
                   type="button"
                   disabled={processingId === item.id}

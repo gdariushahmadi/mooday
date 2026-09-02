@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { useApp } from "@/context/AppContext";
+import { BRAND, BRAND_AR, BRAND_MONOGRAM } from "@/lib/brand";
 
 interface WelcomeViewProps {
   onEnter: () => void;
@@ -11,9 +12,9 @@ interface WelcomeViewProps {
 
 const COPY = {
   en: {
-    tagline: "Resell & rent pre-loved fashion",
-    sub: "A peer-to-peer marketplace for women in the UAE to give their wardrobe a second life.",
-    enter: "Enter Mooday",
+    tagline: "Pre-loved Luxury. Authenticated.",
+    sub: "A curated, peer-to-peer marketplace for pre-loved fashion. Explore listings, try the clearly labelled Demo checkout, and pay nothing in this public beta.",
+    enter: `Enter ${BRAND}`,
     skip: "Skip",
     signIn: "Sign in",
     createAccount: "Create account",
@@ -21,9 +22,9 @@ const COPY = {
     newHere: "New here?",
   },
   ar: {
-    tagline: "بيعي و أجيلي ملابسك المستعملة",
-    sub: "سوق نظير لنظير للنساء في الإمارات، لمنح خزانة ملابسك حياة ثانية.",
-    enter: "ادخلي مودي",
+    tagline: "أزياء فاخرة محبوبة. معتمدة.",
+    sub: "سوق منتقى للأزياء المحبوبة. تصفحي القطع وجربي إتمام الطلب التجريبي الواضح. لا يتم خصم أي مبلغ في هذه النسخة العامة.",
+    enter: `ادخل ${BRAND_AR}`,
     skip: "تخطي",
     signIn: "تسجيل الدخول",
     createAccount: "إنشاء حساب",
@@ -63,12 +64,12 @@ export const WelcomeView: React.FC<WelcomeViewProps> = ({
         className="w-20 h-20 rounded-3xl bg-gradient-to-br from-on-primary-fixed-variant via-primary to-[#3a0e2f] flex items-center justify-center text-primary-fixed font-serif italic text-5xl leading-none shadow-xl"
         aria-hidden="true"
       >
-        M
+        {BRAND_MONOGRAM}
       </div>
 
       {/* Wordmark */}
       <h1 className="font-serif italic text-display-lg text-primary tracking-wide select-none">
-        Mooday
+        {isAr ? BRAND_AR : BRAND}
       </h1>
 
       {/* Tagline + sub */}

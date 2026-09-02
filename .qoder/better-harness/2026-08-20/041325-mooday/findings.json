@@ -1,0 +1,130 @@
+{
+  "summary": {
+    "projectName": "mooday",
+    "locale": "en",
+    "modelId": "agent-work-loop-v4",
+    "reportContractVersion": 25,
+    "overview": "The project exposes useful validation and CI surfaces, but its project agent context is only a framework stub and its sole project Skill is excluded from version control. The session evidence contains no edited episode, so current-task behavior and delivery outcomes remain insufficiently observed.",
+    "aiAgentPractice": {
+      "inspectedSurfaces": [],
+      "coverageRows": [
+        {
+          "surface": "Rules",
+          "scopes": [
+            "Project"
+          ],
+          "count": 1,
+          "paths": [
+            "AGENTS.md"
+          ]
+        },
+        {
+          "surface": "Skills",
+          "scopes": [
+            "Project"
+          ],
+          "count": 1,
+          "paths": [
+            ".agents/skills/impeccable/SKILL.md"
+          ]
+        },
+        {
+          "surface": "Workflows",
+          "scopes": [
+            "Project"
+          ],
+          "count": 1,
+          "paths": [
+            ".github/workflows/ci.yml"
+          ]
+        },
+        {
+          "surface": "Memories",
+          "scopes": [
+            "Project"
+          ],
+          "count": 6
+        },
+        {
+          "surface": "Custom Agents",
+          "scopes": [
+            "Project"
+          ],
+          "count": 0
+        }
+      ]
+    },
+    "assignmentSummaries": [],
+    "dimensions": [
+      {
+        "id": "task-understanding",
+        "label": "Task Understanding",
+        "score": 56,
+        "summary": "The project rule file points to bundled Next.js guidance but provides no project-specific operating map, and no edited episode was available to verify application.",
+        "findingRefs": [
+          "project-context-stub"
+        ]
+      },
+      {
+        "id": "controlled-execution",
+        "label": "Controlled Execution",
+        "score": 63,
+        "summary": "Scripts and CI provide supported execution surfaces, but the only project Skill is not versioned and is therefore unavailable in a clean checkout.",
+        "findingRefs": [
+          "untracked-project-skill"
+        ]
+      },
+      {
+        "id": "change-validation",
+        "label": "Change Validation",
+        "score": 55,
+        "summary": "The workspace exposes typecheck, lint, test, and build checks, but no edited episode was available to show focused validation and revalidation after repair.",
+        "findingRefs": []
+      },
+      {
+        "id": "reliable-delivery",
+        "label": "Reliable Delivery",
+        "score": 55,
+        "summary": "CI wiring offers a delivery gate, but no delivery or recovery outcome was observed, so acceptance confidence remains low.",
+        "findingRefs": []
+      },
+      {
+        "id": "learning-capture",
+        "label": "Learning Capture",
+        "score": 35,
+        "summary": "No comparable later window or intervention comparison is available; loop effectiveness and asset promotion are not evaluated.",
+        "findingRefs": []
+      }
+    ]
+  },
+  "findings": [
+    {
+      "id": "project-context-stub",
+      "title": "Task starts without a project-specific context map",
+      "severity": "Medium",
+      "reason": "The sole project rule file only points agents to bundled Next.js guidance. A fresh checkout therefore leaves the project’s own commands, acceptance boundaries, and high-risk change routes to be rediscovered from source history. No comparable edited episode was available to prove that agents apply the missing context.",
+      "expectedOutput": [
+        "Give each recurring task a project-owned starting point and an executable validation route."
+      ],
+      "expectedArtifact": "Project agent context",
+      "aiFixPrompt": "Expand AGENTS.md with a concise project map: supported commands, primary architecture boundaries, validation expectations, and the few high-risk changes that require review. Keep framework-specific details out unless they differ from the installed Next.js version. Verify by opening the file in a clean checkout and checking that every named route maps to an existing project script, workflow, or owner file.",
+      "dimensionRefs": [
+        "task-understanding"
+      ]
+    },
+    {
+      "id": "untracked-project-skill",
+      "title": "The project skill is absent from a clean checkout",
+      "severity": "Medium",
+      "reason": "The only discovered project Skill is stored below a directory ignored by the project. Because the Skill is not tracked, a fresh checkout receives neither the design workflow nor a durable route for the agent to invoke it. The scan found no second supported project Skill.",
+      "expectedOutput": [
+        "Make the project design workflow available in a clean checkout without publishing local secrets or tool state."
+      ],
+      "expectedArtifact": "Versioned project Skill",
+      "aiFixPrompt": "Version the project Skill in the project’s configured Skill route, then update .gitignore so only genuinely local agent artifacts remain ignored. Verify with a clean temporary checkout that the Skill inventory reports the project Skill and that its required local assets are present without exposing secrets or tool-state files.",
+      "dimensionRefs": [
+        "controlled-execution"
+      ]
+    }
+  ]
+}

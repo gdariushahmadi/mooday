@@ -1,0 +1,9 @@
+schema_version: 1
+module_path: frontend_app/listing_management
+title: Listing Creation & Photo Management UI
+scope:
+    - src/components/listing/
+source_files: []
+depends_on: []
+related_to:
+    - path: frontend_app/app_routes

@@ -33,8 +33,8 @@ function check(label, ok, detail) {
 }
 
 const suffix = `${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
-const sellerEmail = `upload-${suffix}@mooday.test`;
-const pw = "Mooday-Upload-42!";
+const sellerEmail = `upload-${suffix}@daneg.test`;
+const pw = "DANEG-Upload-42!";
 
 const { data: sellerUser } = await admin.auth.admin.createUser({
   email: sellerEmail, password: pw, email_confirm: true,
@@ -104,7 +104,7 @@ if (signed?.signedUrl) {
 }
 
 // A second user trying to upload into the seller's folder is blocked.
-const buyerEmail = `upload-buyer-${suffix}@mooday.test`;
+const buyerEmail = `upload-buyer-${suffix}@daneg.test`;
 await admin.auth.admin.createUser({
   email: buyerEmail, password: pw, email_confirm: true,
 });

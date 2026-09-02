@@ -297,7 +297,7 @@ function makeClient(overrides: Partial<ClientStub> = {}): ClientStub {
         if (idx >= 0) {
           cartRows[idx] = {
             ...cartRows[idx],
-            quantity: Math.min(99, cartRows[idx].quantity + delta),
+            quantity: 1,
             updated_at: new Date().toISOString(),
           };
         } else {
@@ -305,7 +305,7 @@ function makeClient(overrides: Partial<ClientStub> = {}): ClientStub {
             id: `ci-${cartRows.length + 1}`,
             user_id: USER_ID,
             listing_id: listingId,
-            quantity: Math.min(99, delta),
+            quantity: 1,
             added_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
           });
@@ -400,14 +400,14 @@ describe("SupabaseCartService", () => {
     expect(client.__cartRows.length).toBe(0);
   });
 
-  it("setQuantity > 0 upserts the line", async () => {
+  it("setQuantity > 0 keeps the line at quantity one", async () => {
     const client = makeClient();
     const backend = await buildBackend(client);
     await backend.cart.setQuantity("listing-a", 3);
     expect(client.__cartRows.length).toBe(1);
-    expect(client.__cartRows[0].quantity).toBe(3);
+    expect(client.__cartRows[0].quantity).toBe(1);
     await backend.cart.setQuantity("listing-a", 5);
-    expect(client.__cartRows[0].quantity).toBe(5);
+    expect(client.__cartRows[0].quantity).toBe(1);
   });
 
   it("clear() removes every cart row for the current user", async () => {

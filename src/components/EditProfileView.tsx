@@ -6,6 +6,7 @@ import {
   AVATAR_MAX_BYTES,
   LISTING_MEDIA_ALLOWED_MIME,
 } from "@/services/backend";
+import { AppImage } from "@/components/AppImage";
 
 
 interface EditProfileViewProps {
@@ -328,9 +329,11 @@ export const EditProfileView: React.FC<EditProfileViewProps> = ({
             {t.avatarHeading}
           </h2>
           <div className="flex items-center gap-md mb-sm">
-            <img
+            <AppImage
               alt={fullName || "Avatar"}
               src={avatar}
+              width={80}
+              height={80}
               className="w-20 h-20 rounded-full object-cover border-4 border-surface-container-low"
             />
             <div className="flex flex-col gap-xs flex-1">
@@ -386,7 +389,13 @@ export const EditProfileView: React.FC<EditProfileViewProps> = ({
                     : "border-outline-variant"
                 }`}
               >
-                <img alt="" src={url} className="w-full h-full object-cover" />
+                <AppImage
+                  alt=""
+                  src={url}
+                  width={80}
+                  height={80}
+                  className="w-full h-full object-cover"
+                />
               </button>
             ))}
           </div>

@@ -1,0 +1,1 @@
+Next.js marketing landing for the DANEG marketplace, rendering a bilingual (EN/AR) editorial page with hero, categories mosaic, value props, and PWA install prompt.

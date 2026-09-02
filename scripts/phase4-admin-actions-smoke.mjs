@@ -17,7 +17,6 @@ loadEnvConfig(process.cwd());
 import { createClient } from "@supabase/supabase-js";
 
 const url = "http://127.0.0.1:54321";
-const publishable = "sb_publishable_ACJWlzQHlZjBrEguHvfOxg_3BJgxAaH";
 const serviceRole = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU";
 
 const admin = createClient(url, serviceRole, {
@@ -32,9 +31,9 @@ function check(label, ok, detail) {
 }
 
 const suffix = `${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
-const adminEmail = `admin-${suffix}@mooday.test`;
-const buyerEmail = `admin-buyer-${suffix}@mooday.test`;
-const pw = "Mooday-Admin-42!";
+const adminEmail = `admin-${suffix}@daneg.test`;
+const buyerEmail = `admin-buyer-${suffix}@daneg.test`;
+const pw = "DANEG-Admin-42!";
 
 // Seed admin user via service-role.
 const { data: adminUser } = await admin.auth.admin.createUser({
@@ -61,10 +60,10 @@ const { data: listing } = await admin.from("listings").insert({
   description_en: "Test", description_ar: "اختبار",
   price_minor: 5000, currency: "AED",
   condition_en: "New", condition_ar: "جديد",
-  category: "Bags", mode: "resell", status: "active", is_authentic: true,
+  category: "Bags", mode: "resell", status: "active", approved_at: new Date().toISOString(), is_authentic: true,
 }).select("*").single();
 
-const { data: order } = await admin.from("orders").insert({
+await admin.from("orders").insert({
   buyer_id: buyerId,
   seller_id: adminId,
   status: "paid",
@@ -76,8 +75,8 @@ const { data: order } = await admin.from("orders").insert({
   payment_brand_en: "Visa", payment_brand_ar: "\u0641\u064a\u0632\u0627", payment_last4: "4242",
 }).select("*").single();
 
-const { data: report } = await admin.from("reports").insert({
-  case_number: `MOODAY-ADMIN-${suffix}`,
+await admin.from("reports").insert({
+    case_number: `DANEG-ADMIN-${suffix}`,
   reporter_id: buyerId,
   target: "listing",
   target_id: listing.id,

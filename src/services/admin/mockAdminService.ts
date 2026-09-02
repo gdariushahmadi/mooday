@@ -1,22 +1,37 @@
 import type {
-  AdminProfileSummary,
+  AdminAuditLogEntry,
+  AdminCategorySummary,
+  AdminDashboardStats,
+  AdminDisputeSummary,
   AdminListingSummary,
   AdminOrderSummary,
-  AdminDisputeSummary,
+  AdminProfileSummary,
   AdminReportSummary,
-  AdminAuditLogEntry,
-  AdminDashboardStats,
+  ListingStatus,
 } from "./actions";
 
-// In-memory mock databases for offline/demo mode
-const mockUsers: AdminProfileSummary[] = [
+export const MOCK_ADMIN_EMAIL = "admin@daneg.ae";
+export const MOCK_ADMIN_PASSWORD = "daneg123";
+export const MOCK_ADMIN_SESSION_KEY = "daneg_admin_demo_session";
+
+export function verifyMockAdminCredentials(
+  email: string,
+  password: string,
+): boolean {
+  return (
+    email.trim().toLowerCase() === MOCK_ADMIN_EMAIL &&
+    password === MOCK_ADMIN_PASSWORD
+  );
+}
+
+const initialUsers: AdminProfileSummary[] = [
   {
-    id: "usr-1",
-    email: "sarah.m@example.com",
-    fullNameEn: "Sarah Mansoor",
-    fullNameAr: "سارة منصور",
-    handle: "@sarah_m",
-    avatarUrl: "/avatars/seller-1.jpg",
+    id: "usr-admin",
+    email: MOCK_ADMIN_EMAIL,
+    fullNameEn: "DANEG Admin",
+    fullNameAr: "مشرف DANEG",
+    handle: "@daneg_admin",
+    avatarUrl: null,
     isAdmin: true,
     isSuspended: false,
     suspendedReason: null,
@@ -29,7 +44,7 @@ const mockUsers: AdminProfileSummary[] = [
     fullNameEn: "Tariq Khalil",
     fullNameAr: "طارق خليل",
     handle: "@tariq_styles",
-    avatarUrl: "/avatars/seller-2.jpg",
+    avatarUrl: null,
     isAdmin: false,
     isSuspended: false,
     suspendedReason: null,
@@ -42,11 +57,11 @@ const mockUsers: AdminProfileSummary[] = [
     fullNameEn: "Leila Hassan",
     fullNameAr: "ليلى حسن",
     handle: "@leilacloset",
-    avatarUrl: "/avatars/seller-3.jpg",
+    avatarUrl: null,
     isAdmin: false,
     isSuspended: true,
     suspendedReason: "Multiple counterfeit listing reports",
-    suspendedAt: "2024-06-01T09:00:00Z",
+    suspendedAt: "2026-06-01T09:00:00Z",
     createdAt: "2024-03-05T12:15:00Z",
   },
   {
@@ -64,7 +79,7 @@ const mockUsers: AdminProfileSummary[] = [
   },
 ];
 
-let mockPendingListings: AdminListingSummary[] = [
+const initialListings: AdminListingSummary[] = [
   {
     id: "lst-pending-1",
     sellerId: "usr-2",
@@ -73,11 +88,11 @@ let mockPendingListings: AdminListingSummary[] = [
     sellerEmail: "tariq.k@example.com",
     titleEn: "Vintage Rolex Submariner Date (1998)",
     titleAr: "ساعة رولكس سوبمارينر كلاسيكية (1998)",
-    priceMinor: 4850000, // 48,500 AED
+    priceMinor: 4_850_000,
     status: "active",
     category: "Watches",
     approvedAt: null,
-    createdAt: "2026-07-20T14:00:00Z",
+    createdAt: "2026-08-20T14:00:00Z",
     reportCount: 0,
   },
   {
@@ -86,13 +101,13 @@ let mockPendingListings: AdminListingSummary[] = [
     sellerNameEn: "Nasser Al-Subaie",
     sellerNameAr: "ناصر السبيعي",
     sellerEmail: "nasser.a@example.com",
-    titleEn: "Chanel Classic Flap Bag Medium Caviar Gold Hardware",
-    titleAr: "حقيبة شانييل كلاسيك فلاب متوسطة بجلد كافيار وقطع ذهبية",
-    priceMinor: 3400000, // 34,000 AED
+    titleEn: "Chanel Classic Flap Bag",
+    titleAr: "حقيبة شانييل كلاسيك فلاب",
+    priceMinor: 3_400_000,
     status: "active",
     category: "Bags",
     approvedAt: null,
-    createdAt: "2026-07-21T09:30:00Z",
+    createdAt: "2026-08-21T09:30:00Z",
     reportCount: 1,
   },
   {
@@ -101,27 +116,27 @@ let mockPendingListings: AdminListingSummary[] = [
     sellerNameEn: "Tariq Khalil",
     sellerNameAr: "طارق خليل",
     sellerEmail: "tariq.k@example.com",
-    titleEn: "Hermès Birkin 30 Gold Epsom Leather",
-    titleAr: "حقيبة هيرميس بيركين 30 جلد إبسوم ذهبي",
-    priceMinor: 6200000, // 62,000 AED
+    titleEn: "Hermes Birkin 30 Gold Leather",
+    titleAr: "حقيبة هيرمس بيركين 30 جلد ذهبي",
+    priceMinor: 6_200_000,
     status: "active",
     category: "Bags",
     approvedAt: null,
-    createdAt: "2026-07-21T11:15:00Z",
+    createdAt: "2026-08-21T11:15:00Z",
     reportCount: 0,
   },
 ];
 
-const mockOrders: AdminOrderSummary[] = [
+const initialOrders: AdminOrderSummary[] = [
   {
     id: "ord-8801",
-    buyerId: "usr-1",
-    buyerEmail: "sarah.m@example.com",
+    buyerId: "usr-admin",
+    buyerEmail: MOCK_ADMIN_EMAIL,
     sellerId: "usr-2",
     sellerEmail: "tariq.k@example.com",
     status: "delivered",
-    totalMinor: 125000,
-    createdAt: "2026-07-10T11:00:00Z",
+    totalMinor: 125_000,
+    createdAt: "2026-08-10T11:00:00Z",
     itemTitlesEn: ["Vintage Classic Handbag in Tan Leather"],
   },
   {
@@ -131,37 +146,37 @@ const mockOrders: AdminOrderSummary[] = [
     sellerId: "usr-3",
     sellerEmail: "leila.h@example.com",
     status: "processing",
-    totalMinor: 350000,
-    createdAt: "2026-07-18T16:20:00Z",
+    totalMinor: 350_000,
+    createdAt: "2026-08-18T16:20:00Z",
     itemTitlesEn: ["Gucci GG Canvas Shoulder Bag"],
   },
 ];
 
-const mockDisputes: AdminDisputeSummary[] = [
+const initialDisputes: AdminDisputeSummary[] = [
   {
     id: "disp-101",
     orderId: "ord-8802",
     buyerId: "usr-4",
     buyerEmail: "nasser.a@example.com",
     reason: "item_not_as_described",
-    body: "The handbag strap shows significant wear and scratches not shown in seller photos.",
+    body: "The handbag strap shows wear not shown in the seller photos.",
     status: "open",
-    createdAt: "2026-07-19T08:30:00Z",
-    updatedAt: "2026-07-19T08:30:00Z",
+    createdAt: "2026-08-19T08:30:00Z",
+    updatedAt: "2026-08-19T08:30:00Z",
   },
 ];
 
-const mockReports: AdminReportSummary[] = [
+const initialReports: AdminReportSummary[] = [
   {
     id: "rep-501",
     caseNumber: "REP-2026-001",
-    reporterEmail: "sarah.m@example.com",
+    reporterEmail: MOCK_ADMIN_EMAIL,
     target: "listing",
     targetId: "lst-pending-2",
     reason: "suspected_counterfeit",
-    body: "Stitching patterns look inconsistent with authentic Chanel Caviar series.",
+    body: "Stitching patterns may not match the advertised collection.",
     status: "open",
-    createdAt: "2026-07-21T10:00:00Z",
+    createdAt: "2026-08-21T10:00:00Z",
   },
   {
     id: "rep-502",
@@ -170,108 +185,268 @@ const mockReports: AdminReportSummary[] = [
     target: "user",
     targetId: "usr-3",
     reason: "harassment",
-    body: "User sent hostile private messages after price negotiation was declined.",
+    body: "User sent hostile private messages after a negotiation ended.",
     status: "investigating",
-    createdAt: "2026-07-20T19:45:00Z",
+    createdAt: "2026-08-20T19:45:00Z",
   },
 ];
 
-const mockAuditLogs: AdminAuditLogEntry[] = [
+const initialAuditLogs: AdminAuditLogEntry[] = [
   {
     id: 1,
-    actorEmail: "sarah.m@example.com",
+    actorEmail: MOCK_ADMIN_EMAIL,
     action: "listing.approve",
     targetKind: "listing",
     targetId: "lst-approved-100",
-    diff: { approved_at: "2026-07-19T12:00:00Z" },
-    note: "Verified luxury authenticity certificate",
-    createdAt: "2026-07-19T12:00:00Z",
+    diff: { approved_at: "2026-08-19T12:00:00Z" },
+    note: "Verified authenticity certificate",
+    createdAt: "2026-08-19T12:00:00Z",
   },
   {
     id: 2,
-    actorEmail: "sarah.m@example.com",
+    actorEmail: MOCK_ADMIN_EMAIL,
     action: "user.suspend",
     targetKind: "user",
     targetId: "usr-3",
     diff: { is_suspended: true },
     note: "Multiple counterfeit listing reports",
-    createdAt: "2026-07-19T14:30:00Z",
+    createdAt: "2026-08-19T14:30:00Z",
   },
 ];
+
+const initialCategories: AdminCategorySummary[] = [
+  {
+    id: "cat-dresses",
+    slug: "dresses",
+    nameEn: "Dresses",
+    nameAr: "فساتين",
+    sortOrder: 1,
+    isActive: true,
+    createdAt: "2024-01-15T10:00:00Z",
+    updatedAt: "2024-01-15T10:00:00Z",
+  },
+  {
+    id: "cat-shoes",
+    slug: "shoes",
+    nameEn: "Shoes",
+    nameAr: "أحذية",
+    sortOrder: 2,
+    isActive: true,
+    createdAt: "2024-01-15T10:00:00Z",
+    updatedAt: "2024-01-15T10:00:00Z",
+  },
+  {
+    id: "cat-bags",
+    slug: "bags",
+    nameEn: "Bags",
+    nameAr: "حقائب",
+    sortOrder: 3,
+    isActive: true,
+    createdAt: "2024-01-15T10:00:00Z",
+    updatedAt: "2024-01-15T10:00:00Z",
+  },
+  {
+    id: "cat-accessories",
+    slug: "accessories",
+    nameEn: "Accessories",
+    nameAr: "إكسسوارات",
+    sortOrder: 4,
+    isActive: true,
+    createdAt: "2024-01-15T10:00:00Z",
+    updatedAt: "2024-01-15T10:00:00Z",
+  },
+  {
+    id: "cat-clothing",
+    slug: "clothing",
+    nameEn: "Clothing",
+    nameAr: "ملابس",
+    sortOrder: 5,
+    isActive: true,
+    createdAt: "2024-01-15T10:00:00Z",
+    updatedAt: "2024-01-15T10:00:00Z",
+  },
+];
+
+let mockUsers = structuredClone(initialUsers);
+let mockPendingListings = structuredClone(initialListings);
+let mockDisputes = structuredClone(initialDisputes);
+let mockReports = structuredClone(initialReports);
+let mockAuditLogs = structuredClone(initialAuditLogs);
+let mockCategories = structuredClone(initialCategories);
+
+function addAudit(
+  action: string,
+  targetKind: string,
+  targetId: string,
+  diff: Record<string, unknown> | null,
+  note: string,
+): void {
+  mockAuditLogs.unshift({
+    id: Date.now(),
+    actorEmail: MOCK_ADMIN_EMAIL,
+    action,
+    targetKind,
+    targetId,
+    diff,
+    note,
+    createdAt: new Date().toISOString(),
+  });
+}
 
 export async function mockAdminDashboardStats(): Promise<AdminDashboardStats> {
   return {
     totalUsers: mockUsers.length,
     totalListings: 142,
     pendingListings: mockPendingListings.length,
-    openDisputes: mockDisputes.filter((d) => d.status === "open").length,
-    openReports: mockReports.filter((r) => r.status === "open" || r.status === "investigating").length,
-    suspendedUsers: mockUsers.filter((u) => u.isSuspended).length,
+    openDisputes: mockDisputes.filter((item) => item.status === "open").length,
+    openReports: mockReports.filter(
+      (item) => item.status === "open" || item.status === "investigating",
+    ).length,
+    suspendedUsers: mockUsers.filter((item) => item.isSuspended).length,
     ordersToday: 8,
   };
 }
 
-export async function mockAdminListPendingListings(): Promise<AdminListingSummary[]> {
-  return [...mockPendingListings];
+export async function mockAdminListPendingListings(): Promise<
+  AdminListingSummary[]
+> {
+  return structuredClone(mockPendingListings);
 }
 
 export async function mockAdminListOrders(): Promise<AdminOrderSummary[]> {
-  return [...mockOrders];
+  return structuredClone(initialOrders);
 }
 
 export async function mockAdminListDisputes(): Promise<AdminDisputeSummary[]> {
-  return [...mockDisputes];
+  return structuredClone(mockDisputes);
 }
 
 export async function mockAdminListReports(): Promise<AdminReportSummary[]> {
-  return [...mockReports];
+  return structuredClone(mockReports);
 }
 
 export async function mockAdminListUsers(): Promise<AdminProfileSummary[]> {
-  return [...mockUsers];
+  return structuredClone(mockUsers);
 }
 
 export async function mockAdminListAuditLog(
   targetKind?: string,
   targetId?: string,
 ): Promise<AdminAuditLogEntry[]> {
-  if (targetKind && targetId) {
-    return mockAuditLogs.filter(
-      (log) => log.targetKind === targetKind && log.targetId === targetId,
-    );
+  const logs =
+    targetKind && targetId
+      ? mockAuditLogs.filter(
+          (log) => log.targetKind === targetKind && log.targetId === targetId,
+        )
+      : mockAuditLogs;
+  return structuredClone(logs);
+}
+
+export async function mockAdminListCategories(): Promise<
+  AdminCategorySummary[]
+> {
+  return structuredClone(
+    [...mockCategories].sort((a, b) => a.sortOrder - b.sortOrder),
+  );
+}
+
+export async function mockAdminCreateCategory(input: {
+  slug: string;
+  nameEn: string;
+  nameAr: string;
+  sortOrder: number;
+}): Promise<void> {
+  const now = new Date().toISOString();
+  const category: AdminCategorySummary = {
+    id: `cat-${Date.now()}`,
+    slug: input.slug,
+    nameEn: input.nameEn,
+    nameAr: input.nameAr,
+    sortOrder: input.sortOrder,
+    isActive: true,
+    createdAt: now,
+    updatedAt: now,
+  };
+  mockCategories = [...mockCategories, category];
+  addAudit(
+    "category.create",
+    "category",
+    category.id,
+    { slug: input.slug, name_en: input.nameEn, name_ar: input.nameAr },
+    "Created in demo mode",
+  );
+}
+
+export async function mockAdminUpdateCategory(
+  categoryId: string,
+  input: {
+    nameEn: string;
+    nameAr: string;
+    sortOrder: number;
+    isActive: boolean;
+  },
+): Promise<void> {
+  const category = mockCategories.find((item) => item.id === categoryId);
+  if (category) {
+    category.nameEn = input.nameEn;
+    category.nameAr = input.nameAr;
+    category.sortOrder = input.sortOrder;
+    category.isActive = input.isActive;
+    category.updatedAt = new Date().toISOString();
   }
-  return [...mockAuditLogs];
+  addAudit(
+    "category.update",
+    "category",
+    categoryId,
+    {
+      name_en: input.nameEn,
+      name_ar: input.nameAr,
+      sort_order: input.sortOrder,
+      is_active: input.isActive,
+    },
+    "Updated in demo mode",
+  );
+}
+
+export async function mockAdminDeleteCategory(
+  categoryId: string,
+): Promise<void> {
+  mockCategories = mockCategories.filter((item) => item.id !== categoryId);
+  addAudit("category.delete", "category", categoryId, null, "Deleted in demo mode");
+}
+
+export async function mockAdminUpdateListingStatus(
+  listingId: string,
+  status: ListingStatus,
+): Promise<void> {
+  const listing = mockPendingListings.find((item) => item.id === listingId);
+  if (listing) listing.status = status;
+  addAudit(
+    "listing.status",
+    "listing",
+    listingId,
+    { status },
+    "Status changed in demo mode",
+  );
 }
 
 export async function mockAdminApproveListing(listingId: string): Promise<void> {
-  mockPendingListings = mockPendingListings.filter((l) => l.id !== listingId);
-  mockAuditLogs.unshift({
-    id: mockAuditLogs.length + 1,
-    actorEmail: "admin@mooday.ae",
-    action: "listing.approve",
-    targetKind: "listing",
-    targetId: listingId,
-    diff: { approved_at: new Date().toISOString() },
-    note: "Approved in demo mode",
-    createdAt: new Date().toISOString(),
-  });
+  mockPendingListings = mockPendingListings.filter((item) => item.id !== listingId);
+  addAudit(
+    "listing.approve",
+    "listing",
+    listingId,
+    { approved_at: new Date().toISOString() },
+    "Approved in demo mode",
+  );
 }
 
 export async function mockAdminRejectListing(
   listingId: string,
   reason: string,
 ): Promise<void> {
-  mockPendingListings = mockPendingListings.filter((l) => l.id !== listingId);
-  mockAuditLogs.unshift({
-    id: mockAuditLogs.length + 1,
-    actorEmail: "admin@mooday.ae",
-    action: "listing.reject",
-    targetKind: "listing",
-    targetId: listingId,
-    diff: { status: "archived" },
-    note: reason,
-    createdAt: new Date().toISOString(),
-  });
+  mockPendingListings = mockPendingListings.filter((item) => item.id !== listingId);
+  addAudit("listing.reject", "listing", listingId, { status: "archived" }, reason);
 }
 
 export async function mockAdminFeatureListing(
@@ -280,70 +455,52 @@ export async function mockAdminFeatureListing(
   noteEn: string,
   noteAr: string,
 ): Promise<void> {
-  mockAuditLogs.unshift({
-    id: mockAuditLogs.length + 1,
-    actorEmail: "admin@mooday.ae",
-    action: "listing.feature",
-    targetKind: "listing",
-    targetId: listingId,
-    diff: { sort_order: sortOrder, note_en: noteEn, note_ar: noteAr },
-    note: "Featured listing curator pick",
-    createdAt: new Date().toISOString(),
-  });
+  addAudit(
+    "listing.feature",
+    "listing",
+    listingId,
+    { sort_order: sortOrder, note_en: noteEn, note_ar: noteAr },
+    "Featured listing curator pick",
+  );
 }
 
 export async function mockAdminUnfeatureListing(listingId: string): Promise<void> {
-  mockAuditLogs.unshift({
-    id: mockAuditLogs.length + 1,
-    actorEmail: "admin@mooday.ae",
-    action: "listing.unfeature",
-    targetKind: "listing",
-    targetId: listingId,
-    diff: null,
-    note: "Removed from featured lane",
-    createdAt: new Date().toISOString(),
-  });
+  addAudit(
+    "listing.unfeature",
+    "listing",
+    listingId,
+    null,
+    "Removed from featured lane",
+  );
 }
 
 export async function mockAdminSuspendUser(
   userId: string,
   reason: string,
 ): Promise<void> {
-  const user = mockUsers.find((u) => u.id === userId);
+  const user = mockUsers.find((item) => item.id === userId);
   if (user) {
     user.isSuspended = true;
     user.suspendedReason = reason;
     user.suspendedAt = new Date().toISOString();
   }
-  mockAuditLogs.unshift({
-    id: mockAuditLogs.length + 1,
-    actorEmail: "admin@mooday.ae",
-    action: "user.suspend",
-    targetKind: "user",
-    targetId: userId,
-    diff: { is_suspended: true, reason },
-    note: reason,
-    createdAt: new Date().toISOString(),
-  });
+  addAudit("user.suspend", "user", userId, { is_suspended: true, reason }, reason);
 }
 
 export async function mockAdminUnsuspendUser(userId: string): Promise<void> {
-  const user = mockUsers.find((u) => u.id === userId);
+  const user = mockUsers.find((item) => item.id === userId);
   if (user) {
     user.isSuspended = false;
     user.suspendedReason = null;
     user.suspendedAt = null;
   }
-  mockAuditLogs.unshift({
-    id: mockAuditLogs.length + 1,
-    actorEmail: "admin@mooday.ae",
-    action: "user.unsuspend",
-    targetKind: "user",
-    targetId: userId,
-    diff: { is_suspended: false },
-    note: "User unsuspended by admin",
-    createdAt: new Date().toISOString(),
-  });
+  addAudit(
+    "user.unsuspend",
+    "user",
+    userId,
+    { is_suspended: false },
+    "User unsuspended by admin",
+  );
 }
 
 export async function mockAdminResolveDispute(
@@ -352,21 +509,18 @@ export async function mockAdminResolveDispute(
   noteEn: string,
   noteAr: string,
 ): Promise<void> {
-  const dispute = mockDisputes.find((d) => d.id === disputeId);
+  const dispute = mockDisputes.find((item) => item.id === disputeId);
   if (dispute) {
     dispute.status = status;
     dispute.updatedAt = new Date().toISOString();
   }
-  mockAuditLogs.unshift({
-    id: mockAuditLogs.length + 1,
-    actorEmail: "admin@mooday.ae",
-    action: "dispute.resolve",
-    targetKind: "dispute",
-    targetId: disputeId,
-    diff: { status, noteEn, noteAr },
-    note: noteEn,
-    createdAt: new Date().toISOString(),
-  });
+  addAudit(
+    "dispute.resolve",
+    "dispute",
+    disputeId,
+    { status, noteEn, noteAr },
+    noteEn,
+  );
 }
 
 export async function mockAdminTriageReport(
@@ -374,20 +528,9 @@ export async function mockAdminTriageReport(
   status: "investigating" | "resolved" | "dismissed",
   note?: string,
 ): Promise<void> {
-  const report = mockReports.find((r) => r.id === reportId);
-  if (report) {
-    report.status = status;
-  }
-  mockAuditLogs.unshift({
-    id: mockAuditLogs.length + 1,
-    actorEmail: "admin@mooday.ae",
-    action: "report.triage",
-    targetKind: "report",
-    targetId: reportId,
-    diff: { status },
-    note: note ?? "",
-    createdAt: new Date().toISOString(),
-  });
+  const report = mockReports.find((item) => item.id === reportId);
+  if (report) report.status = status;
+  addAudit("report.triage", "report", reportId, { status }, note ?? "");
 }
 
 export async function mockAdminBroadcastNotification(input: {
@@ -398,14 +541,20 @@ export async function mockAdminBroadcastNotification(input: {
   bodyAr: string;
   expiresAt?: string;
 }): Promise<void> {
-  mockAuditLogs.unshift({
-    id: mockAuditLogs.length + 1,
-    actorEmail: "admin@mooday.ae",
-    action: "notification.broadcast",
-    targetKind: "notification",
-    targetId: "broadcast",
-    diff: { kind: input.kind, titleEn: input.titleEn },
-    note: input.titleEn,
-    createdAt: new Date().toISOString(),
-  });
+  addAudit(
+    "notification.broadcast",
+    "notification",
+    "broadcast",
+    { kind: input.kind, titleEn: input.titleEn },
+    input.titleEn,
+  );
+}
+
+export function resetMockAdminService(): void {
+  mockUsers = structuredClone(initialUsers);
+  mockPendingListings = structuredClone(initialListings);
+  mockDisputes = structuredClone(initialDisputes);
+  mockReports = structuredClone(initialReports);
+  mockAuditLogs = structuredClone(initialAuditLogs);
+  mockCategories = structuredClone(initialCategories);
 }

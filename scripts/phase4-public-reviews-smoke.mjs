@@ -24,9 +24,9 @@ const admin = createClient(url, serviceRole, {
 });
 
 const suffix = `${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
-const sellerEmail = `phase4-seller-${suffix}@mooday.test`;
-const buyerEmail = `phase4-buyer-${suffix}@mooday.test`;
-const pw = "Mooday-Phase4-42!";
+const sellerEmail = `phase4-seller-${suffix}@daneg.test`;
+const buyerEmail = `phase4-buyer-${suffix}@daneg.test`;
+const pw = "DANEG-Phase4-42!";
 
 let pass = 0;
 let fail = 0;
@@ -79,7 +79,7 @@ check("reviewer_avatar snapshot", review?.reviewer_avatar === "/sellers/avatar.j
 const readerClient = createClient(url, publishable, {
   auth: { persistSession: false, autoRefreshToken: false },
 });
-const readerEmail = `phase4-reader-${suffix}@mooday.test`;
+const readerEmail = `phase4-reader-${suffix}@daneg.test`;
 await admin.auth.admin.createUser({
   email: readerEmail, password: pw, email_confirm: true,
 });

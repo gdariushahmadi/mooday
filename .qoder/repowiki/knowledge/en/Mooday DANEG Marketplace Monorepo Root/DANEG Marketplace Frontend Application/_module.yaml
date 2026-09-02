@@ -1,0 +1,14 @@
+schema_version: 1
+module_path: frontend_app
+title: DANEG Marketplace Frontend Application
+scope:
+    - src/app/
+    - src/components/
+    - src/context/
+    - src/hooks/
+    - src/types/
+source_files: []
+depends_on: []
+related_to:
+    - path: backend_client
+    - path: public_assets

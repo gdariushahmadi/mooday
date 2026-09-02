@@ -7,7 +7,6 @@ import {
   type Product,
 } from "@/context/AppContext";
 import type { Address } from "@/data/addresses";
-import type { PaymentMethod } from "@/data/paymentMethods";
 import { CheckoutFlowView } from "@/components/CheckoutFlowView";
 import { PHONE_PLACEHOLDER } from "@/lib/constants";
 
@@ -55,25 +54,10 @@ const ADDR_WORK: Address = {
   id: "addr-work",
   labelEn: "Work",
   labelAr: "العمل",
-  fullNameEn: "Layla Mansour",
-  fullNameAr: "ليلى منصور",
   phone: "+971 4 555 1234",
   streetEn: "Gate Avenue, Level 9",
   streetAr: "جيت أفينيو، الطابق 9",
   isDefault: false,
-};
-
-const CARD_VISA: PaymentMethod = {
-  id: "pm-visa",
-  labelEn: "Personal Visa",
-  labelAr: "فيزا شخصية",
-  brandEn: "Visa",
-  brandAr: "فيزا",
-  last4: "4242",
-  holderEn: "Layla Mansour",
-  holderAr: "ليلى منصور",
-  expiry: "11/27",
-  isDefault: true,
 };
 
 function makeContext(overrides: Partial<AppContextType> = {}): AppContextType {
@@ -88,8 +72,9 @@ function makeContext(overrides: Partial<AppContextType> = {}): AppContextType {
     addToCart: vi.fn(),
     removeFromCart: vi.fn(),
     updateQuantity: vi.fn(),
-    clearCart: vi.fn(),
+    clearCart: vi.fn(async () => {}),
     chats: [],
+    setActiveChats: vi.fn(),
     sendChatMessage: vi.fn(),
     createChatThread: vi.fn(() => "t1"),
     markChatRead: vi.fn(),
@@ -101,20 +86,36 @@ function makeContext(overrides: Partial<AppContextType> = {}): AppContextType {
     refreshReports: vi.fn(async () => {}),
     refreshDisputes: vi.fn(async () => {}),
     addresses: [ADDR_HOME, ADDR_WORK],
-    addAddress: vi.fn(),
+    addAddress: vi.fn(async (address) => ({ ...address, id: "addr-new" })),
     updateAddress: vi.fn(),
     removeAddress: vi.fn(),
     setDefaultAddress: vi.fn(),
-    paymentMethods: [CARD_VISA],
+    paymentMethods: [],
     addPaymentMethod: vi.fn(),
     removePaymentMethod: vi.fn(),
     setDefaultPaymentMethod: vi.fn(),
     orders: [],
     recordOrder: vi.fn(),
+    recordDemoOrder: vi.fn(() => "demo-1"),
     notifications: [],
     markNotificationRead: vi.fn(),
     markAllNotificationsRead: vi.fn(),
-    userProfile: { fullNameEn: "Test User", fullNameAr: "مستخدم اختبار", handle: "@test", avatar: "/sellers/test.jpg", bioEn: "Test bio", bioAr: "نبذة", locationEn: "Dubai", locationAr: "دبي", styleTagsEn: [], styleTagsAr: [], rating: 5, reviewsCount: 0, followers: 0, following: 0 },
+    userProfile: {
+      fullNameEn: "Test User",
+      fullNameAr: "مستخدم اختبار",
+      handle: "@test",
+      avatar: "/sellers/test.jpg",
+      bioEn: "Test bio",
+      bioAr: "نبذة",
+      locationEn: "Dubai",
+      locationAr: "دبي",
+      styleTagsEn: [],
+      styleTagsAr: [],
+      rating: 5,
+      reviewsCount: 0,
+      followers: 0,
+      following: 0,
+    },
     updateUserProfile: vi.fn(),
     myReviews: [],
     addMyReview: vi.fn(),
@@ -148,7 +149,7 @@ function renderCheckout(
     checkoutProduct?: Product | null;
   } = {},
 ) {
-  const context = makeContext({ language: opts.language, ...opts.context });
+  const context = makeContext({ language: opts.language ?? "en", ...opts.context });
   const onBack = vi.fn();
   const onSuccess = vi.fn();
   const utils = render(
@@ -160,234 +161,128 @@ function renderCheckout(
       />
     </AppContext.Provider>,
   );
-  return { ...utils, onBack, onSuccess };
+  return { ...utils, context, onBack, onSuccess };
+}
+
+async function advanceToDemo() {
+  const user = userEvent.setup();
+  renderCheckout();
+  await user.click(screen.getByRole("button", { name: /Continue to demo order/i }));
+  return user;
 }
 
 beforeEach(() => {
   localStorage.clear();
 });
 
-describe("CheckoutFlowView — address step (C-13)", () => {
-  it("renders the address step heading", () => {
+describe("CheckoutFlowView — address step", () => {
+  it("renders and selects saved addresses", async () => {
+    const user = userEvent.setup();
     renderCheckout();
-    expect(screen.getByText("Saved addresses")).toBeInTheDocument();
-  });
 
-  it("renders both saved addresses from context", () => {
-    renderCheckout();
-    // Both addresses' labels appear (their streets too).
+    expect(screen.getByText("Saved addresses")).toBeInTheDocument();
     expect(screen.getByText("Home")).toBeInTheDocument();
     expect(screen.getByText("Work")).toBeInTheDocument();
-    expect(screen.getByText(/Villa 24/)).toBeInTheDocument();
-    expect(screen.getByText(/Gate Avenue/)).toBeInTheDocument();
-  });
 
-  it("marks the default address with a Default badge", () => {
-    renderCheckout();
-    // The Home card carries the Default badge.
-    const homeBlock = screen.getByText("Home").closest("label");
-    expect(homeBlock?.textContent).toMatch(/Default/);
-  });
-
-  it("pre-selects the default address", () => {
-    renderCheckout();
-    const homeRadio = screen.getByRole("radio", {
-      name: /Home — Villa 24, Al Wasl Road/,
-    });
+    const homeRadio = screen.getByRole("radio", { name: /Home — Villa 24/ });
+    const workRadio = screen.getByRole("radio", { name: /Work — Gate Avenue/ });
     expect(homeRadio).toBeChecked();
-  });
-
-  it("selecting a different address switches the radio", async () => {
-    const user = userEvent.setup();
-    renderCheckout();
-    const workRadio = screen.getByRole("radio", {
-      name: /Work — Gate Avenue/,
-    });
     await user.click(workRadio);
     expect(workRadio).toBeChecked();
-    // Home is no longer checked.
-    expect(
-      screen.getByRole("radio", { name: /Home — Villa 24/ }),
-    ).not.toBeChecked();
+    expect(homeRadio).not.toBeChecked();
   });
 
-  it("clicking 'Add a new address' reveals the new-address form", async () => {
+  it("opens the new address form and persists the new default address", async () => {
     const user = userEvent.setup();
-    renderCheckout();
-    await user.click(
-      screen.getByRole("button", { name: /Add a new address/i }),
-    );
-    // The label text changes from "Saved addresses" to "New delivery address"
-    // when the new-address form opens.
-    expect(screen.getByText(/New delivery address/i)).toBeInTheDocument();
-    // Inputs are present (use placeholder since labels are siblings,
-    // not wrapped around inputs in the JSX).
-    expect(
-      screen.getByPlaceholderText(/Enter your full name/i),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByPlaceholderText(PHONE_PLACEHOLDER),
-    ).toBeInTheDocument();
+    const addAddress = vi.fn(async (address: Omit<Address, "id">) => ({ ...address, id: "addr-new" }));
+    const setDefaultAddress = vi.fn(async () => {});
+    renderCheckout({ context: { addresses: [], addAddress, setDefaultAddress } });
+
+    expect(screen.getByText("New delivery address")).toBeInTheDocument();
+    await user.type(screen.getByPlaceholderText(/Enter your full name/i), "New Buyer");
+    await user.type(screen.getByPlaceholderText(PHONE_PLACEHOLDER), "0500000000");
+    await user.type(screen.getByPlaceholderText(/Villa 24/i), "Building 1");
+    await user.click(screen.getByRole("button", { name: /Continue to demo order/i }));
+
+    expect(addAddress).toHaveBeenCalledTimes(1);
+    expect(setDefaultAddress).toHaveBeenCalledWith("addr-new");
+    expect(screen.getByText("Public demo order")).toBeInTheDocument();
   });
 
-  it("Arabic: opens the new-address form with Arabic labels", async () => {
+  it("supports Arabic labels", async () => {
     const user = userEvent.setup();
     renderCheckout({ language: "ar" });
-    await user.click(screen.getByRole("button", { name: /\+ إضافة عنوان/i }));
-    expect(screen.getByText(/عنوان جديد/)).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /إضافة عنوان/i }));
+    expect(screen.getByText(/عنوان توصيل جديد/)).toBeInTheDocument();
     expect(screen.getByText(/الاسم الكامل/)).toBeInTheDocument();
-  });
-
-  it("Continue to payment advances to step 2", async () => {
-    const user = userEvent.setup();
-    renderCheckout();
-    await user.click(
-      screen.getByRole("button", { name: /Continue to payment/i }),
-    );
-    // Step 2 heading visible.
-    expect(screen.getByText("Payment method")).toBeInTheDocument();
   });
 });
 
-describe("CheckoutFlowView — payment step (C-14)", () => {
-  async function advanceToPayment() {
-    const user = userEvent.setup();
-    renderCheckout();
-    await user.click(
-      screen.getByRole("button", { name: /Continue to payment/i }),
-    );
-    return user;
-  }
+describe("CheckoutFlowView — public demo mode", () => {
+  it("does not render payment fields or real payment options", async () => {
+    await advanceToDemo();
 
-  it("shows the saved cards list", async () => {
-    await advanceToPayment();
-    // Visa card text.
-    expect(screen.getByText(/Visa •••• 4242/)).toBeInTheDocument();
+    expect(screen.getByText("Public demo order")).toBeInTheDocument();
+    expect(screen.getByText(/No card number or CVV is requested/i)).toBeInTheDocument();
+    expect(screen.queryByText(/Apple Pay|Cash on Delivery|escrow|Payment secured/i)).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/card number|CVV|security code/i)).not.toBeInTheDocument();
+    expect(screen.queryByRole("textbox", { name: /card/i })).not.toBeInTheDocument();
   });
 
-  it("places the saved-card as default-selected", async () => {
-    await advanceToPayment();
-    const cardRadio = screen.getByRole("radio", {
-      name: /Visa ending in 4242/i,
+  it("records a local demo order and clears the bag only after success", async () => {
+    const user = userEvent.setup();
+    const recordDemoOrder = vi.fn(() => "demo-abc");
+    const recordOrder = vi.fn();
+    const clearCart = vi.fn(async () => {});
+    const { onSuccess } = renderCheckout({ context: { recordDemoOrder, recordOrder, clearCart } });
+
+    await user.click(screen.getByRole("button", { name: /Continue to demo order/i }));
+    await user.click(screen.getByRole("button", { name: /Save demo order/i }));
+
+    expect(recordDemoOrder).toHaveBeenCalledWith(expect.objectContaining({
+      product: PRODUCT,
+      address: ADDR_HOME,
+      subtotal: 1200,
+      shipping: 0,
+      total: 1200,
+    }));
+    expect(recordOrder).not.toHaveBeenCalled();
+    expect(clearCart).toHaveBeenCalledTimes(1);
+    expect(await screen.findByText("Demo order saved")).toBeInTheDocument();
+    expect(screen.getByText("demo-abc")).toBeInTheDocument();
+    expect(onSuccess).not.toHaveBeenCalled();
+  });
+
+  it("does not show success or clear the bag when saving fails", async () => {
+    const user = userEvent.setup();
+    const recordDemoOrder = vi.fn(() => {
+      throw new Error("storage failed");
     });
-    expect(cardRadio).toBeChecked();
+    const clearCart = vi.fn(async () => {});
+    renderCheckout({ context: { recordDemoOrder, clearCart } });
+
+    await user.click(screen.getByRole("button", { name: /Continue to demo order/i }));
+    await user.click(screen.getByRole("button", { name: /Save demo order/i }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(/could not save this demo order/i);
+    expect(screen.queryByText("Demo order saved")).not.toBeInTheDocument();
+    expect(clearCart).not.toHaveBeenCalled();
   });
 
-  it("displays the four payment options (Card, Apple Pay, COD)", async () => {
-    await advanceToPayment();
-    expect(screen.getByRole("radio", { name: /Card/i })).toBeInTheDocument();
-    expect(
-      screen.getByRole("radio", { name: /Apple Pay/i }),
-    ).toBeInTheDocument();
-    expect(screen.getByRole("radio", { name: /Cash/i })).toBeInTheDocument();
-  });
-
-  it("selecting Cash on Delivery shows the COD panel", async () => {
-    const user = await advanceToPayment();
-    await user.click(screen.getByRole("radio", { name: /Cash/i }));
-    expect(
-      screen.getByText(/Pay in cash when your order arrives/i),
-    ).toBeInTheDocument();
-  });
-
-  it("disables Cash on Delivery above AED 5,000 with a visible reason", async () => {
-    const expensive = { ...PRODUCT, id: "expensive", price: 6000 };
+  it("uses one item with quantity one for direct checkout", async () => {
     const user = userEvent.setup();
-    renderCheckout({ checkoutProduct: expensive });
-    await user.click(
-      screen.getByRole("button", { name: /Continue to payment/i }),
-    );
+    const recordDemoOrder = vi.fn(() => "demo-direct");
+    renderCheckout({ checkoutProduct: PRODUCT, context: { recordDemoOrder } });
+    await user.click(screen.getByRole("button", { name: /Continue to demo order/i }));
+    expect(screen.getByText(/Quantity: 1/i)).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /Save demo order/i }));
 
-    expect(screen.getByRole("radio", { name: /Cash/i })).toBeDisabled();
-    expect(
-      screen.getByText(/unavailable for orders over AED 5,000/i),
-    ).toBeInTheDocument();
+    expect(recordDemoOrder).toHaveBeenCalledWith(expect.objectContaining({ product: PRODUCT }));
   });
 
-  it("reports missing payment details inline", async () => {
-    const user = userEvent.setup();
-    renderCheckout({ context: { paymentMethods: [] } });
-    await user.click(
-      screen.getByRole("button", { name: /Continue to payment/i }),
-    );
-    await user.click(
-      screen.getByRole("button", { name: /Secure checkout/i }),
-    );
-
-    expect(screen.getByRole("alert")).toHaveTextContent(
-      /complete the required fields/i,
-    );
-  });
-
-  it("selecting Apple Pay shows the Apple Pay panel", async () => {
-    const user = await advanceToPayment();
-    await user.click(screen.getByRole("radio", { name: /Apple Pay/i }));
-    expect(
-      screen.getByText(/One-tap payment via Apple Pay/i),
-    ).toBeInTheDocument();
-  });
-
-  it("clicking 'Add a new card' reveals the new-card form", async () => {
-    const user = await advanceToPayment();
-    await user.click(
-      screen.getByRole("button", { name: /\+ Add a new card/i }),
-    );
-    // "New card" heading appears.
-    expect(screen.getByText(/^New card$/i)).toBeInTheDocument();
-    // Card inputs are present via placeholders (labels are siblings,
-    // not wrapped around inputs in the JSX).
-    expect(
-      screen.getByPlaceholderText(/4000 1234 5678 9010/),
-    ).toBeInTheDocument();
-    expect(screen.getByPlaceholderText(/MM\/YY/)).toBeInTheDocument();
-    expect(screen.getByPlaceholderText(/\*\*\*/)).toBeInTheDocument();
-  });
-
-  it("Back to address returns to step 1", async () => {
-    const user = await advanceToPayment();
+  it("returns from the demo step to the address step", async () => {
+    const user = await advanceToDemo();
     await user.click(screen.getByRole("button", { name: /Back to address/i }));
     expect(screen.getByText("Saved addresses")).toBeInTheDocument();
   });
-});
-
-describe("CheckoutFlowView — confirmation (C-15)", () => {
-  it("after payment, records an order and shows Order placed", async () => {
-    const user = userEvent.setup();
-    const recordOrder = vi.fn();
-    const { onSuccess } = renderCheckout({ context: { recordOrder } });
-    // Advance through steps.
-    await user.click(
-      screen.getByRole("button", { name: /Continue to payment/i }),
-    );
-    await user.click(screen.getByRole("button", { name: /Secure checkout/i }));
-
-    // Confirmation appears after the 2s processing timer.
-    expect(
-      await screen.findByText("Order placed", {}, { timeout: 3000 }),
-    ).toBeInTheDocument();
-    expect(recordOrder).toHaveBeenCalledTimes(1);
-    expect(recordOrder.mock.calls[0][0]).toMatchObject({
-      status: "processing",
-      paymentBrandEn: "Visa",
-      paymentLast4: "4242",
-    });
-
-    await user.click(screen.getByRole("button", { name: /Back to home/i }));
-    expect(onSuccess).toHaveBeenCalled();
-  }, 5000);
-
-  it("renders the order timeline on the confirmation screen", async () => {
-    const user = userEvent.setup();
-    renderCheckout();
-    await user.click(
-      screen.getByRole("button", { name: /Continue to payment/i }),
-    );
-    await user.click(screen.getByRole("button", { name: /Secure checkout/i }));
-    expect(
-      await screen.findByText(/Order Tracking/i, {}, { timeout: 3000 }),
-    ).toBeInTheDocument();
-    expect(
-      await screen.findByText(/Payment secured/i, {}, { timeout: 3000 }),
-    ).toBeInTheDocument();
-  }, 5000);
 });

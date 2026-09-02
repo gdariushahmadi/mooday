@@ -4,6 +4,8 @@ import React, { useState } from "react";
 import { useApp, Product } from "@/context/AppContext";
 import { ClickableCard } from "./ClickableCard";
 import { isOwnListing } from "@/lib/ownership";
+import { AppImage } from "@/components/AppImage";
+import { CANONICAL_SITE_URL, isPaymentsEnabled } from "@/lib/feature-flags";
 
 interface UserProfileViewProps {
   onSelectProduct: (product: Product) => void;
@@ -44,6 +46,7 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({
     currentUserId,
   } = useApp();
   const isAr = language === "ar";
+  const paymentsEnabled = isPaymentsEnabled();
 
   const [activeTab, setActiveTab] = useState<
     "listings" | "likes" | "chats" | "rentals"
@@ -62,11 +65,15 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({
     >
       {/* Profile Card Header */}
       <section className="bg-surface-container-low border border-surface-container-high rounded-xl p-lg flex flex-col sm:flex-row items-center gap-lg shadow-sm relative">
-        <img
-          alt={isAr ? userProfile.fullNameAr : userProfile.fullNameEn}
-          src={userProfile.avatar}
-          className="w-24 h-24 sm:w-28 sm:h-28 rounded-full object-cover border-4 border-primary-fixed-dim"
-        />
+        <div className="relative h-24 w-24 flex-shrink-0 overflow-hidden rounded-full border-4 border-primary-fixed-dim sm:h-28 sm:w-28">
+          <AppImage
+            alt={isAr ? userProfile.fullNameAr : userProfile.fullNameEn}
+            src={userProfile.avatar || "/sellers/placeholder.svg"}
+            fill
+            sizes="(min-width: 640px) 112px, 96px"
+            className="object-cover"
+          />
+        </div>
 
         <div className="flex-grow flex flex-col items-center sm:items-start text-center sm:text-left gap-xs">
           <h2 className="font-serif text-headline-sm sm:text-headline-md text-on-surface">
@@ -250,7 +257,11 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({
                   {isAr ? "طرق الدفع" : "Payment"}
                 </div>
                 <div className="text-[10px] text-on-surface-variant">
-                  {paymentMethodsFromContext.length} {isAr ? "بطاقة" : "saved"}
+                  {paymentsEnabled
+                    ? `${paymentMethodsFromContext.length} ${isAr ? "بطاقة" : "saved"}`
+                    : isAr
+                      ? "غير متاح في النسخة التجريبية"
+                      : "Not active in Demo"}
                 </div>
               </div>
             </div>
@@ -359,12 +370,13 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({
                     ariaLabel={title}
                     className="bg-surface-container-lowest rounded-xl border border-surface-container-high overflow-hidden group cursor-pointer hover:shadow-md transition-all relative"
                   >
-                    <div className="aspect-[4/5] bg-surface-container-low overflow-hidden">
-                      <img
+                    <div className="relative aspect-[4/5] bg-surface-container-low overflow-hidden">
+                      <AppImage
                         alt={title}
-                        src={item.image}
-                        loading="lazy"
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        src={item.image || "/products/placeholder.svg"}
+                        fill
+                        sizes="(min-width: 768px) 30vw, 50vw"
+                        className="object-cover transition-transform duration-500 group-hover:scale-105"
                       />
                     </div>
                     <div className="p-md flex flex-col gap-1">
@@ -420,10 +432,11 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({
                   }
                   className="bg-surface-container-low border border-surface-container-high rounded-xl p-md flex items-center gap-md cursor-pointer hover:bg-surface-container-high transition-colors"
                 >
-                  <img
+                  <AppImage
                     alt={chat.sellerName}
                     src={chat.sellerAvatar}
-                    loading="lazy"
+                    width={48}
+                    height={48}
                     className="w-12 h-12 rounded-full object-cover border border-outline-variant flex-shrink-0"
                   />
                   <div className="flex-grow min-w-0">
@@ -460,8 +473,8 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({
             </h2>
             <p className="max-w-sm text-body-md text-on-surface-variant">
               {isAr
-                ? "يمكنك البيع والشراء الآن. سنضيف مسار الإيجار بعد اكتمال سياسات الحماية والتأمين."
-                : "You can buy and resell today. Rentals will open after protection and insurance policies are ready."}
+                ? "يمكنك تصفح الإعلانات وإنشاء إعلانات تجريبية اليوم. ستضاف المبيعات والدفع والإيجار الحقيقي لاحقاً."
+                : "You can browse and create sample listings today. Real sales, payments, and rentals will open in a later phase."}
             </p>
           </div>
         )}
@@ -497,7 +510,7 @@ const LikesTabContent: React.FC<{
 
   const handleShare = async () => {
     const slug = handle.replace(/^@/, "") || "closet";
-    const link = `https://mooday.app/@${slug}/loves?cats=${encodeURIComponent(filter)}`;
+    const link = `${CANONICAL_SITE_URL}/@${slug}/loves?cats=${encodeURIComponent(filter)}`;
     try {
       if (typeof navigator !== "undefined" && navigator.clipboard) {
         await navigator.clipboard.writeText(link);
@@ -606,12 +619,13 @@ const LikesTabContent: React.FC<{
                 ariaLabel={title}
                 className="bg-surface-container-lowest rounded-xl border border-surface-container-high overflow-hidden group cursor-pointer hover:shadow-md transition-all relative"
               >
-                <div className="aspect-[4/5] bg-surface-container-low overflow-hidden">
-                  <img
+                <div className="relative aspect-[4/5] bg-surface-container-low overflow-hidden">
+                  <AppImage
                     alt={title}
-                    src={item.image}
-                    loading="lazy"
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    src={item.image || "/products/placeholder.svg"}
+                    fill
+                    sizes="(min-width: 768px) 30vw, 50vw"
+                    className="object-cover transition-transform duration-500 group-hover:scale-105"
                   />
                 </div>
                 <div className="p-md flex flex-col gap-1">

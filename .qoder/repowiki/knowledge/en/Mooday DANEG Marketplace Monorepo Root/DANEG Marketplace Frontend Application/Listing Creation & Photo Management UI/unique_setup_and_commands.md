@@ -1,0 +1,1 @@
+None — components are standard React modules consumed by parent pages; no build or test scripts specific to this directory beyond the project's default Next.js tooling.

@@ -4,7 +4,7 @@
  * Social Login — A-06.
  *
  * Phase 1 mock: tapping Google creates a derived user (email like
- * `user.google@mooday.app`) if it doesn't exist, then auto-signs them in.
+ * `user.google@daneg.app`) if it doesn't exist, then auto-signs them in.
  *
  * Phase 2 swaps for real Google OIDC. UI stays the same.
  */
@@ -27,7 +27,7 @@ const COPY = {
     back: "Back",
     noAccount: "Use email instead",
     providersNote:
-      "Phase 1 preview — we won't ask your real Google password.",
+      "Demo sign-in — production uses real Google OIDC.",
   },
   ar: {
     title: "تسجيل دخول بنقرة واحدة",
@@ -37,7 +37,7 @@ const COPY = {
     back: "رجوع",
     noAccount: "استخدام البريد بدلاً من ذلك",
     providersNote:
-      "معاينة المرحلة الأولى — لن نطلب كلمة مرور حساب Google الفعلي.",
+      "تسجيل دخول تجريبي — الإصدار الإنتاجي يستخدم OIDC الحقيقي من Google.",
   },
 } as const;
 
@@ -63,7 +63,7 @@ export const SocialLoginView: React.FC<SocialLoginViewProps> = ({
       }
       return;
     }
-    const email = "user.google@mooday.app";
+    const email = "user.google@daneg.app";
     const name = "Google User";
     // Ensure the social user exists, then sign them in.
     const id = await Promise.resolve(signUp({

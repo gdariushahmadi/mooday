@@ -20,6 +20,7 @@ function makeContext(overrides: Partial<AppContextType> = {}): AppContextType {
     updateQuantity: vi.fn(),
     clearCart: vi.fn(),
     chats: [],
+    setActiveChats: vi.fn(),
     sendChatMessage: vi.fn(),
     createChatThread: vi.fn(() => "t1"),
     markChatRead: vi.fn(),
@@ -129,7 +130,6 @@ describe("SellItemView (D-19)", () => {
     const { ctx, onSuccess } = renderSell();
 
     // Fill the EN title and price.
-    const titleInput = screen.getAllByDisplayValue("")[0];
     // Use a more robust locator by label text.
     const enTitle = screen
       .getByText(/Title \(English\)/i)
@@ -210,7 +210,7 @@ describe("SellItemView (D-19)", () => {
 
   it("restores an autosaved create-listing draft", () => {
     localStorage.setItem(
-      "mooday_listing_form_draft",
+      "daneg_listing_form_draft",
       JSON.stringify({ titleEn: "Restored silk dress", price: "740" }),
     );
 
@@ -230,9 +230,6 @@ describe("SellItemView (D-19)", () => {
   it("Discount % shows when price < original price", async () => {
     const user = userEvent.setup();
     renderSell();
-    const priceInput = screen
-      .getByText(/Your price/i)
-      .parentElement?.querySelector("input");
     const originalInput = screen
       .getByText(/Retail price/i)
       .parentElement?.querySelector("input");

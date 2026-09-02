@@ -59,7 +59,7 @@ describe("AppContext", () => {
       expect(result.current.cart[0].quantity).toBe(1);
     });
 
-    it("increments quantity when adding the same product twice", () => {
+    it("keeps quantity at one when adding the same product twice", () => {
       const { result } = renderHook(() => useApp(), { wrapper });
 
       act(() => {
@@ -68,10 +68,10 @@ describe("AppContext", () => {
       });
 
       expect(result.current.cart).toHaveLength(1);
-      expect(result.current.cart[0].quantity).toBe(2);
+      expect(result.current.cart[0].quantity).toBe(1);
     });
 
-    it("removes a product from the cart", () => {
+    it("rejects a second listing until the first one is removed", () => {
       const { result } = renderHook(() => useApp(), { wrapper });
 
       act(() => {
@@ -79,14 +79,15 @@ describe("AppContext", () => {
         result.current.addToCart(TEST_PRODUCT_2);
       });
 
-      expect(result.current.cart).toHaveLength(2);
+      expect(result.current.cart).toHaveLength(1);
+      expect(result.current.cart[0].product.id).toBe("test-1");
+      expect(result.current.cartError).toMatch(/one listing/i);
 
       act(() => {
         result.current.removeFromCart("test-1");
       });
 
-      expect(result.current.cart).toHaveLength(1);
-      expect(result.current.cart[0].product.id).toBe("test-2");
+      expect(result.current.cart).toEqual([]);
     });
 
     it("updates quantity positively", () => {
@@ -100,7 +101,7 @@ describe("AppContext", () => {
         result.current.updateQuantity("test-1", 5);
       });
 
-      expect(result.current.cart[0].quantity).toBe(5);
+      expect(result.current.cart[0].quantity).toBe(1);
     });
 
     it("removes the item when quantity drops to zero", () => {
@@ -136,7 +137,6 @@ describe("AppContext", () => {
 
       act(() => {
         result.current.addToCart(TEST_PRODUCT);
-        result.current.addToCart(TEST_PRODUCT_2);
       });
 
       act(() => {
@@ -153,7 +153,7 @@ describe("AppContext", () => {
         result.current.addToCart(TEST_PRODUCT);
       });
 
-      const stored = localStorage.getItem("mooday_cart");
+      const stored = localStorage.getItem("daneg_cart");
       expect(stored).not.toBeNull();
       const parsed = JSON.parse(stored!);
       expect(parsed).toHaveLength(1);
@@ -334,11 +334,11 @@ describe("AppContext", () => {
       });
 
       expect(result.current.language).toBe("ar");
-      expect(localStorage.getItem("mooday_lang")).toBe("ar");
+      expect(localStorage.getItem("daneg_lang")).toBe("ar");
     });
 
     it("reads the saved language from localStorage", () => {
-      localStorage.setItem("mooday_lang", "ar");
+      localStorage.setItem("daneg_lang", "ar");
 
       const { result } = renderHook(() => useApp(), { wrapper });
 

@@ -5,6 +5,7 @@ import { useApp, Product } from "@/context/AppContext";
 import { CATEGORIES, CATEGORIES_AR } from "@/data/categories";
 import { ClickableCard } from "./ClickableCard";
 import { formatAEDLabel } from "@/lib/format";
+import { AppImage } from "@/components/AppImage";
 
 export type TabView = "home" | "search" | "sell" | "activity" | "profile";
 
@@ -494,12 +495,13 @@ const CompactProductCard: React.FC<{
         </span>
       </button>
 
-      <div className="aspect-[4/5] bg-surface-container-low overflow-hidden">
-        <img
+      <div className="relative aspect-[4/5] bg-surface-container-low overflow-hidden">
+        <AppImage
           alt={productTitle}
-          src={product.image}
-          loading="lazy"
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+          src={product.image || "/products/placeholder.svg"}
+          fill
+          sizes="(min-width: 768px) 30vw, 50vw"
+          className="object-cover transition-transform duration-500 group-hover:scale-105"
         />
       </div>
       <div className="p-md flex flex-col gap-1">
@@ -596,14 +598,15 @@ const FeaturedProductCard: React.FC<{
 
       {/* Product Image */}
       <div
-        className={`${isFeatured ? "aspect-[16/9]" : "aspect-[4/5]"} w-full bg-surface-container-low overflow-hidden`}
+        className={`relative ${isFeatured ? "aspect-[16/9]" : "aspect-[4/5]"} w-full bg-surface-container-low overflow-hidden`}
       >
-        <img
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000 ease-out"
-          src={product.image}
+        <AppImage
+          className="object-cover transition-transform duration-1000 ease-out group-hover:scale-105"
+          src={product.image || "/products/placeholder.svg"}
           alt={productTitle}
-          loading={isFeatured ? "eager" : "lazy"}
-          fetchPriority={isFeatured ? "high" : "auto"}
+          fill
+          sizes={isFeatured ? "(min-width: 768px) 66vw, 100vw" : "(min-width: 768px) 33vw, 50vw"}
+          priority={isFeatured}
         />
       </div>
 
@@ -645,12 +648,15 @@ const FeaturedProductCard: React.FC<{
         {/* Seller Info Footer */}
         <div className="flex items-center justify-between pt-md border-t border-surface-container-high mt-2">
           <div className="flex items-center gap-3">
-            <img
-              className="w-8 h-8 rounded-full object-cover border border-surface-container-high"
-              src={product.sellerAvatar}
-              alt={isAr ? product.sellerNameAr : product.sellerNameEn}
-              loading="lazy"
-            />
+            <div className="relative h-8 w-8 flex-shrink-0 overflow-hidden rounded-full border border-surface-container-high">
+              <AppImage
+                className="object-cover"
+                src={product.sellerAvatar || "/sellers/placeholder.svg"}
+                alt={isAr ? product.sellerNameAr : product.sellerNameEn}
+                fill
+                sizes="32px"
+              />
+            </div>
             <div>
               <p className="text-label-md text-on-surface leading-tight font-bold">
                 {isAr ? product.sellerNameAr : product.sellerNameEn}

@@ -1,4 +1,4 @@
-/* Mooday Service Worker
+/* DANEG Service Worker
  *
  * Strategy:
  *  - App shell (HTML navigations): network-first, falls back to cached /offline.
@@ -10,7 +10,7 @@
  * (component tree, route layout, etc.) to force clients to refetch.
  */
 
-const CACHE_VERSION = "mooday-v4";
+const CACHE_VERSION = "daneg-v3";
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 const IMAGE_CACHE = `${CACHE_VERSION}-images`;
@@ -192,7 +192,7 @@ self.addEventListener("fetch", (event) => {
 self.addEventListener("push", (event) => {
   if (!event.data) return;
   const data = event.data.json();
-  const title = data.title || "Mooday";
+  const title = data.title || "DANEG";
   const options = {
     body: data.body,
     icon: data.icon || "/icons/icon-192x192.png",

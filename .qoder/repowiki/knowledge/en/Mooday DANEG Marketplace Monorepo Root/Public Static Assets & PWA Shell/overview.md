@@ -1,0 +1,1 @@
+Serves the DANEG app's static assets — brand logos, product and seller imagery, landing media, icons, manifest, offline page, robots.txt, and a service worker that enables PWA caching and push notifications.

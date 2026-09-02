@@ -1,82 +1,76 @@
-# Mooday Beta Launch — Session Handoff
+# DANEG public Demo/Beta handoff
 
-This is the durable handoff for the next session. It summarizes what
-is code-complete, what is verified, and what remains operational.
+Date: 2026-08-31.
 
-## Verified DoD (8 of 11)
+## What this handoff contains
 
-- [x] All Phase2Backend services wired through `AppContext`.
-- [x] UI is Arabic + English; no Persian text (verified by search).
-- [x] All prices in AED.
-- [x] `npm run typecheck` passes.
-- [x] `npm run lint` passes (0 errors, 75 warnings — all pre-existing).
-- [x] `npm run test:ci` passes (72 test files, 617 tests).
-- [x] `npm run build` succeeds; all 8 routes registered:
-  - `/`, `/admin`, `/api/health`, `/api/stripe/webhook`, `/app`,
-    `/auth/callback`, `/preview`, `/sitemap.xml`.
-- [x] Stripe SDK dynamic-import bug fixed in webhook route and
-  `OrderService.createPaymentIntent` (would have thrown at runtime).
-- [x] Stripe hardcoded API version removed; SDK default used.
+This repository implements the public Demo boundary. It does not enable real
+payments or seller payouts.
 
-## Operational DoD (requires running infrastructure)
+## Completed code areas
 
-- [ ] `npx supabase db push` to apply new migrations.
-- [ ] `npm run test:phase2:u3u8` against a running local Supabase.
-- [ ] `npm run test:phase2:smoke` (auth flow).
-- [ ] `npm run test:phase2:e2e` (Playwright).
-- [ ] Real Stripe test keys + `stripe listen` forwarding.
-- [ ] Production env vars + `bash scripts/build-standalone.sh --upload`.
-- [ ] `curl https://app.daneg.ae/api/health` returns `{"status":"ok"}`.
-- [ ] Sign up via the production URL and run AE1.
-- [ ] 5+ beta users run AE1.
-- [ ] Supabase Pro with PITR enabled.
+- Demo checkout saves one browser-only `DemoOrder`.
+- Checkout does not receive or store card number, expiry, or CVV data.
+- The Demo checkout does not call the real order table.
+- Cart additions are limited to one listing and quantity `1`.
+- Payouts and saved payment methods are visibly disabled in Demo mode.
+- Future order creation uses `create_single_listing_order` and reads listing
+  price and address ownership inside the database transaction.
+- Direct authenticated inserts into `orders` and `order_items` are revoked.
+- Payment state is separate from delivery state.
+- Stripe intent creation is server-side and feature-gated.
+- Webhook signatures, duplicate event ids, amount, currency, and database
+  errors are checked before an order update.
+- Public listing, image, seller-count, saved-item, search, chat, review,
+  dispute, report, block, affiliate, and suspension boundaries are covered by
+  the delivery migration.
+- Network failures preserve the cart and show an error.
+- Return success appears only after dispute creation and order transition.
+- Arabic `lang` and `dir` are selected before the first document render.
+- Loading, error, not-found, health, canonical, sitemap, and CSP paths exist.
 
-## Code artifacts (29 commits)
+## Files for review
 
-- `docs/plans/2026-08-16-0347-feat-mooday-beta-launch-plan.md` (490 lines).
-- `docs/plans/IMPLEMENTATION.md` (DoD ledger).
-- `docs/audit-u1-mock-branches.md` (mock-mode branch inventory).
-- `docs/progress-u2-auth.md`, `progress-u3-listings.md`, `progress-u4-resell.md`,
-  `progress-u5-stripe.md`, `progress-u6-reviews.md`, `progress-u7-chat.md`,
-  `progress-u8-social.md`, `progress-u8-follow.md`, `progress-u10-notifications.md`,
-  `progress-u11-admin.md`, `progress-u12-u13-admin-block.md`,
-  `progress-u17-polish.md`, `progress-u18-sentry.md`, `progress-u19-u20-backup-deploy.md`.
-- `supabase/migrations/202608160429_u3_search_listings.sql`.
-- `supabase/migrations/202608160446_u8_user_follows.sql`.
-- `src/app/api/stripe/webhook/route.ts` (113 lines) + `route.test.ts`.
-- `src/app/api/health/route.ts` + `route.test.ts`.
-- `src/components/ErrorBoundary.tsx`.
-- `sentry.client.config.ts`, `sentry.server.config.ts`, `sentry.edge.config.ts`.
-- `next.config.ts` updated with `withSentryConfig`.
-- `package.json` updated with `stripe` and `@sentry/nextjs`.
-- 12 `TODO(phase-1): <U-ID>` comments in `src/context/AppContext.tsx`.
-- `src/services/backend/contracts.ts` adds: `ListingService.search`,
-  `OrderService.createPaymentIntent`, `ChatService.subscribeMessages`,
-  `NotificationService.subscribe`, `FollowService`.
-- `src/services/backend/supabase.ts` implements the above plus
-  `SupabaseFollowService`.
-- `scripts/u3-u8-smoke.mjs` (smoke test for U3 + U8).
-- `src/services/backend/{user-follows-migration,search-listings-migration,realtime,create-payment-intent,mock-helpers}.test.ts`.
+- `src/components/CheckoutFlowView.tsx`
+- `src/context/AppContext.tsx`
+- `src/lib/feature-flags.ts`
+- `src/services/backend/contracts.ts`
+- `src/services/backend/supabase.ts`
+- `supabase/migrations/202608310002_delivery_integrity.sql`
+- `supabase/tests/phase_3_orders_rls.sql`
+- `src/services/backend/delivery-integrity-migration.test.ts`
 
-## Known remaining work
+## Required operator checks
 
-The code is ready for production. The remaining work is operational:
+1. Apply migrations to an isolated staging database.
+2. Run pgTAP tests and a real concurrent two-session order test.
+3. Domain, TLS, Next.js/Kong routes, and the `app.daneg.ae` Auth callback are
+   verified in the live deployment.
+4. Confirm SMTP and Google OAuth, then test sign-up, OTP, recovery, and OAuth.
+5. Confirm staging never uses the production database.
+6. Run desktop and mobile Playwright tests in English and Arabic.
+7. Enable Sentry release tracking, uptime alerts, backups, and restore drill.
+8. Replace legal placeholders and approve the legal copy.
 
-1. **Deploy**: set `NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_*_KEY`,
-   `STRIPE_*_KEY`, `SENTRY_*` env vars in `.env.production`, then run
-   `scripts/build-standalone.sh --upload`.
-2. **Migrations**: `npx supabase db push` to apply the new migrations.
-3. **Supabase Pro**: enable PITR in the dashboard.
-4. **Beta**: sign up via the production URL and run AE1 with 5+ users.
-5. **Admin**: verify moderation works under 30 seconds.
-6. **Block**: verify blocked users cannot view/message/review.
+## Evidence limits
 
-## Risks for the next session
+The local Supabase database was not running during this task, so live database
+and pgTAP results are not claimed. `npm run test:phase2:db` failed because
+local Postgres was not available. Chromium was not available for Playwright;
+the five browser tests could not launch. The public URL was redeployed after
+the domain switch and is reachable, but database, browser, SMTP, OAuth,
+monitoring, backup/restore, and legal gates still need independent evidence.
 
-- The mocked sections in `AppContext.tsx` are still gated by
-  `if (!phase2Backend) return;`. They remain inert in production
-  but should be removed in Phase 4 cleanup.
-- `MOCK_OTP_CODE` references remain in non-prod paths. The UI helper
-  is gated on `authMode !== "supabase"`.
-- The hardcoded `<img>` tags (75 lint warnings) are pre-existing
-  and not introduced by this session.
+Latest local code evidence: typecheck passed, lint passed with zero warnings,
+full unit test passed with 82 files and 639 tests, production build passed,
+and `git diff --check` passed.
+
+The latest public probe after redeployment returned `200` for
+`app.daneg.ae/`, `/app`, and `/auth/callback`. `/api/health` returned `200`
+with Supabase reachable. The response used enforced nonce CSP without
+`unsafe-eval`; the sitemap used only `app.daneg.ae` URLs. The protected
+`/auth/v1/settings` and `/rest/v1/` routes reached Kong and returned `401`, as
+expected without a session. These are deployment checks, not database or
+browser acceptance results.
+
+The worktree was already dirty. No reset or destructive cleanup was used.

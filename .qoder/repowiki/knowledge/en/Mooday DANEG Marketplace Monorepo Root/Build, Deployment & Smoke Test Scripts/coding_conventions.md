@@ -1,0 +1,6 @@
+- Smoke scripts load environment with `@next/env`'s `loadEnvConfig(process.cwd())` and guard missing credentials by throwing before any network call.
+- Each smoke test creates uniquely suffixed test entities (e.g. `phase2-smoke-${Date.now()}-${random}`) and deletes them at the end to keep runs idempotent.
+- Assertions use a local `assert(condition, message)` helper that throws immediately, keeping smoke flows linear without try/catch blocks.
+- Scripts enforce safety gates via explicit environment flags before destructive actions (e.g. `PHASE2_SMOKE_ALLOW_REMOTE` for remote Supabase, `MOODAY_DEMO_SEED_CONFIRM=YES` for seeding).
+- Supabase clients are created with `auth: { persistSession: false, autoRefreshToken: false }` since scripts run as short-lived processes.
+- Phase-scoped naming convention: smoke scripts are prefixed by their release phase (`phase2-*`, `phase4-*`) and routed through matching `test:phaseN:*` npm scripts.

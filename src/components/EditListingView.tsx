@@ -45,7 +45,10 @@ export const EditListingView: React.FC<EditListingViewProps> = ({
   const { language, updateListing, userProfile } = useApp();
   const isAr = language === "ar";
   const t = isAr ? COPY.ar : COPY.en;
-  const stagedFilesRef = useRef<File[]>([]);
+  // Same `url → File` map the form maintains. We hand it untouched
+  // to `updateListing` so the staged files land at the right index
+  // of `patch.images` instead of being silently dropped.
+  const stagedFilesRef = useRef<Map<string, File>>(new Map());
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
 
@@ -101,8 +104,12 @@ export const EditListingView: React.FC<EditListingViewProps> = ({
               setSaving(true);
               setError("");
               try {
-                await updateListing(product.id, { ...data, status: "active" });
-                stagedFilesRef.current = [];
+                await updateListing(
+                  product.id,
+                  { ...data, status: "active" },
+                  stagedFilesRef.current,
+                );
+                stagedFilesRef.current = new Map();
                 onSuccess();
               } catch {
                 setError(t.saveError);
@@ -116,7 +123,11 @@ export const EditListingView: React.FC<EditListingViewProps> = ({
               setSaving(true);
               setError("");
               try {
-                await updateListing(product.id, { ...data, status: "draft" });
+                await updateListing(
+                  product.id,
+                  { ...data, status: "draft" },
+                  stagedFilesRef.current,
+                );
                 onSuccess();
               } catch {
                 setError(t.saveError);

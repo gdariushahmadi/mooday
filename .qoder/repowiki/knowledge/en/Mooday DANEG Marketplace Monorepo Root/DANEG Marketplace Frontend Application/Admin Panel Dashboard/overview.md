@@ -1,0 +1,1 @@
+Client-side admin dashboard providing tabbed moderation, user management, dispute handling, reporting, broadcast messaging, and audit log views for platform operators.

@@ -1,0 +1,6 @@
+- Each tab is a separate file exporting a named function component typed with an explicit `Props` interface and driven entirely through props/callbacks rather than internal state for cross-tab data.
+- Bilingual support is implemented uniformly by checking `lang === 'ar'` into an `isAr` boolean and selecting between English and Arabic string literals per label.
+- Server mutations are invoked via callback props (e.g. `onApprove`, `onReject`, `onFeature`, `onSuspendUser`) passed down from the parent page, keeping tabs free of direct Supabase calls.
+- Async mutation handlers wrap their work in try/finally blocks that clear a local `processingId` state to disable buttons during in-flight requests.
+- Navigation between tabs uses the shared `AdminTab` union type from `AdminTypes.ts` so sidebar buttons, overview stat cards, and tab routes stay type-safe.
+- UI uses Tailwind utility classes with Material Symbols icon names stored as plain strings on configuration objects (tabs, stat cards) rather than inline `<Icon>` components.

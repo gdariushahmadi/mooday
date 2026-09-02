@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { BrandLogo } from "@/components/BrandLogo";
+import { AppImage } from "@/components/AppImage";
 import { COPY, type Lang } from "./copy";
 import { LangToggle } from "./LangToggle";
 import { Reveal } from "./Reveal";
@@ -122,12 +123,12 @@ export function Landing({ lang }: LandingProps) {
                   className={styles.marqueeCard}
                   tabIndex={loop === 1 ? -1 : undefined}
                 >
-                  <img
+                  <AppImage
                     src={item.image}
                     alt=""
                     className={styles.marqueeImg}
-                    loading="lazy"
-                    decoding="async"
+                    fill
+                    sizes="(min-width: 768px) 18vw, 40vw"
                   />
                   <span className={styles.marqueeName}>{item.name}</span>
                 </Link>
@@ -199,12 +200,13 @@ export function Landing({ lang }: LandingProps) {
                 <Reveal key={tile.key} delay={idx * 50} className={spanClass}>
                   <Link href={href} className={styles.mosaicTile}>
                     {tile.image ? (
-                      <img
+                      <AppImage
                         src={tile.image}
                         alt=""
                         className={styles.mosaicImg}
-                        loading={idx < 3 ? "eager" : "lazy"}
-                        decoding="async"
+                        fill
+                        priority={idx < 3}
+                        sizes="(min-width: 900px) 33vw, 50vw"
                       />
                     ) : (
                       <div
@@ -240,12 +242,12 @@ export function Landing({ lang }: LandingProps) {
       >
         <div className={styles.splitMedia}>
           <Reveal className={styles.splitImageWrap}>
-            <img
+            <AppImage
               src="/landing/lifestyle-touch.jpg"
               alt=""
               className={styles.splitImage}
-              loading="lazy"
-              decoding="async"
+              fill
+              sizes="(min-width: 960px) 52vw, 100vw"
             />
           </Reveal>
         </div>
@@ -308,12 +310,13 @@ export function Landing({ lang }: LandingProps) {
             </cite>
           </Reveal>
           <Reveal className={styles.editorialImageWrap} delay={120}>
-            <img
+            <AppImage
               src="/landing/lifestyle-flatlay.jpg"
               alt=""
               className={styles.editorialImg}
-              loading="lazy"
-              decoding="async"
+              width={1200}
+              height={900}
+              sizes="(min-width: 900px) 36vw, 100vw"
             />
           </Reveal>
         </div>

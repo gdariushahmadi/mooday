@@ -26,6 +26,7 @@ function renderWithLanguage(initialLanguage: "en" | "ar") {
     updateQuantity: vi.fn(),
     clearCart: vi.fn(),
     chats: [],
+    setActiveChats: vi.fn(),
     sendChatMessage: vi.fn(),
     createChatThread: vi.fn(() => "test-thread"),
     markChatRead: vi.fn(),
@@ -101,12 +102,12 @@ describe("WelcomeView", () => {
   it("renders the brand mark, wordmark, tagline, and CTA", () => {
     renderWithLanguage("en");
 
-    expect(screen.getByText("Mooday")).toBeInTheDocument();
+    expect(screen.getByText("DANEG")).toBeInTheDocument();
     expect(
-      screen.getByText("Resell & rent pre-loved fashion"),
+      screen.getByText("Pre-loved Luxury. Authenticated."),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: /enter mooday/i }),
+      screen.getByRole("button", { name: /enter daneg/i }),
     ).toBeInTheDocument();
   });
 
@@ -158,6 +159,7 @@ describe("WelcomeView", () => {
       updateQuantity: vi.fn(),
       clearCart: vi.fn(),
       chats: [],
+      setActiveChats: vi.fn(),
       sendChatMessage: vi.fn(),
       createChatThread: vi.fn(() => "test-thread"),
     markChatRead: vi.fn(),
@@ -228,7 +230,7 @@ describe("WelcomeView", () => {
       </AppContext.Provider>,
     );
 
-    await user.click(screen.getByRole("button", { name: /enter mooday/i }));
+    await user.click(screen.getByRole("button", { name: /enter daneg/i }));
 
     expect(onEnter).toHaveBeenCalledTimes(1);
   });
@@ -250,6 +252,7 @@ describe("WelcomeView", () => {
       updateQuantity: vi.fn(),
       clearCart: vi.fn(),
       chats: [],
+      setActiveChats: vi.fn(),
       sendChatMessage: vi.fn(),
       createChatThread: vi.fn(() => "test-thread"),
     markChatRead: vi.fn(),
@@ -329,10 +332,10 @@ describe("WelcomeView", () => {
     renderWithLanguage("ar");
 
     expect(
-      screen.getByText("بيعي و أجيلي ملابسك المستعملة"),
+      screen.getByText("أزياء فاخرة محبوبة. معتمدة."),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: /ادخلي مودي/ }),
+      screen.getByRole("button", { name: /ادخل دانق/ }),
     ).toBeInTheDocument();
   });
 

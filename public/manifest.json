@@ -1,7 +1,7 @@
 {
-  "name": "Mooday - Resell & Rent Pre-loved Fashion",
-  "short_name": "Mooday",
-  "description": "A peer-to-peer marketplace for women in the UAE to resell or rent out fashion items they bought or received as gifts.",
+  "name": "DANEG - Pre-loved Luxury. Authenticated.",
+  "short_name": "DANEG",
+  "description": "DANEG is a peer-to-peer marketplace Demo for pre-loved fashion in the UAE. Demo receipts are stored in your browser. Real payments are not active.",
   "lang": "en",
   "dir": "ltr",
   "start_url": "/app",
@@ -10,7 +10,7 @@
   "display_override": ["window-controls-overlay", "standalone", "browser"],
   "orientation": "portrait-primary",
   "background_color": "#fbf9f7",
-  "theme_color": "#512443",
+  "theme_color": "#F9A11B",
   "categories": ["shopping", "lifestyle", "social"],
   "id": "/app?source=pwa",
   "prefer_related_applications": false,
@@ -90,7 +90,7 @@
   "handle_links": "preferred",
   "protocol_handlers": [
     {
-      "protocol": "web+mooday",
+      "protocol": "web+daneg",
       "url": "/app?source=protocol&%s"
     }
   ]

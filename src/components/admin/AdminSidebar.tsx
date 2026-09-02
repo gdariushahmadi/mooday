@@ -31,6 +31,12 @@ export function AdminSidebar({
       icon: "inventory_2",
       badge: pendingListingsCount,
     },
+    {
+      key: "categories",
+      labelEn: "Categories",
+      labelAr: "الفئات",
+      icon: "category",
+    },
     { key: "orders", labelEn: "Orders", labelAr: "الطلبات", icon: "receipt_long" },
     { key: "users", labelEn: "Users", labelAr: "المستخدمين", icon: "group" },
     {
@@ -49,6 +55,12 @@ export function AdminSidebar({
     },
     { key: "broadcast", labelEn: "Broadcast", labelAr: "إرسال إشعار", icon: "campaign" },
     { key: "audit", labelEn: "Audit Log", labelAr: "سجل العمليات", icon: "history" },
+    {
+      key: "affiliate",
+      labelEn: "Affiliate Links",
+      labelAr: "التسويق بالعمولة",
+      icon: "ads_click",
+    },
   ];
 
   return (
@@ -60,7 +72,7 @@ export function AdminSidebar({
           title={isAr ? "العودة إلى التطبيق الرئيسي" : "Return to main app"}
         >
           <span className="material-symbols-outlined text-[24px]">arrow_back</span>
-          <span className="text-xl font-bold tracking-tight">Mooday</span>
+          <span className="text-xl font-bold tracking-tight">DANEG</span>
         </Link>
       </div>
 
@@ -83,7 +95,12 @@ export function AdminSidebar({
               }`}
             >
               <div className="flex items-center gap-3">
-                <span className="material-symbols-outlined text-[20px]">{tab.icon}</span>
+                <span
+                  className="material-symbols-outlined text-[20px]"
+                  aria-hidden="true"
+                >
+                  {tab.icon}
+                </span>
                 <span>{isAr ? tab.labelAr : tab.labelEn}</span>
               </div>
               {typeof tab.badge === "number" && tab.badge > 0 && (

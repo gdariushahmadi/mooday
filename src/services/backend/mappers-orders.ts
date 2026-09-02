@@ -14,7 +14,6 @@ import type {
   OrderWithItems,
   OrderRecord,
   OrderItemRecord,
-  CreateOrderInput,
 } from "./contracts";
 import type { ListingRecord } from "./contracts";
 
@@ -23,7 +22,7 @@ const AED_MINOR_PER_MAJOR = 100;
 type DbStatus = OrderRecord["status"];
 
 function dbStatusToView(status: DbStatus): ViewStatus {
-  if (status === "paid") return "processing";
+  if (status === "paid" || status === "pending_payment") return "processing";
   return status;
 }
 
@@ -36,8 +35,8 @@ interface StatusDescriptor {
 const STATUS_DESCRIPTORS: Record<ViewStatus, StatusDescriptor> = {
   processing: {
     status: "processing",
-    descriptionEn: "Order placed, payment secured in Mooday escrow.",
-    descriptionAr: "تم تسجيل الطلب وتأمين المبلغ في حساب مودي.",
+    descriptionEn: "Order recorded. Payment is not active in the public Demo.",
+    descriptionAr: "تم تسجيل الطلب. الدفع غير مفعّل في النسخة التجريبية العامة.",
   },
   shipped: {
     status: "shipped",
@@ -51,8 +50,8 @@ const STATUS_DESCRIPTORS: Record<ViewStatus, StatusDescriptor> = {
   },
   returned: {
     status: "returned",
-    descriptionEn: "Return requested. Refund pending parcel receipt.",
-    descriptionAr: "تم طلب الإرجاع. الاسترداد بعد استلام الشحنة.",
+    descriptionEn: "Return recorded. Refunds are not active in the public Demo.",
+    descriptionAr: "تم تسجيل الإرجاع. الاسترداد غير مفعّل في النسخة التجريبية العامة.",
   },
   cancelled: {
     status: "cancelled",
@@ -138,9 +137,9 @@ export function hydrateOrderProduct(
     conditionEn: listing?.conditionEn ?? "Pre-loved",
     conditionAr: listing?.conditionAr ?? "مستعمل بحالة جيدة",
     sellerNameEn:
-      input.fallbackSellerNameEn ?? (listing ? "Mooday seller" : "Seller"),
+      input.fallbackSellerNameEn ?? (listing ? "DANEG seller" : "Seller"),
     sellerNameAr:
-      input.fallbackSellerNameAr ?? (listing ? "بائع مودي" : "البائع"),
+      input.fallbackSellerNameAr ?? (listing ? "بائع دانق" : "البائع"),
     sellerAvatar: "/sellers/placeholder.svg",
     sellerTypeEn: "Verified Closet",
     sellerTypeAr: "خزانة معتمدة",
@@ -205,8 +204,8 @@ export function mapOrderFromRemote(input: MapOrderInput): ViewOrder {
       typeof address.fullNameAr === "string"
         ? (address.fullNameAr as string)
         : undefined,
-    paymentBrandEn: (record.paymentBrandEn ?? "Visa") as ViewOrder["paymentBrandEn"],
-    paymentBrandAr: (record.paymentBrandAr ?? "فيزا") as ViewOrder["paymentBrandAr"],
+    paymentBrandEn: (record.paymentBrandEn ?? "Demo") as ViewOrder["paymentBrandEn"],
+    paymentBrandAr: (record.paymentBrandAr ?? "تجريبي") as ViewOrder["paymentBrandAr"],
     paymentLast4: record.paymentLast4 ?? "",
     subtotal: record.itemsSubtotalMinor / AED_MINOR_PER_MAJOR,
     shipping: record.shippingFeeMinor / AED_MINOR_PER_MAJOR,
@@ -217,50 +216,5 @@ export function mapOrderFromRemote(input: MapOrderInput): ViewOrder {
       trackingNumber: record.courierTracking ?? "",
     },
     timeline: buildTimeline(record),
-  };
-}
-
-export interface BuildCreateOrderInputArgs {
-  order: ViewOrder;
-  sellerId: string;
-}
-
-function paymentMethodString(brandEn: string): string {
-  if (brandEn === "Apple Pay") return "apple_pay";
-  if (brandEn === "Cash") return "cod";
-  return "card";
-}
-
-export function buildCreateOrderInput(
-  args: BuildCreateOrderInputArgs,
-): CreateOrderInput {
-  const { order, sellerId } = args;
-  return {
-    sellerId,
-    shippingAddress: {
-      cityEn: order.addressCityEn,
-      cityAr: order.addressCityAr,
-      streetEn: order.addressStreetEn,
-      streetAr: order.addressStreetAr,
-      fullNameEn: order.addressFullNameEn ?? null,
-      fullNameAr: order.addressFullNameAr ?? null,
-    },
-    itemsSubtotalMinor: Math.round(order.subtotal * AED_MINOR_PER_MAJOR),
-    shippingFeeMinor: Math.round(order.shipping * AED_MINOR_PER_MAJOR),
-    totalMinor: Math.round(order.total * AED_MINOR_PER_MAJOR),
-    paymentMethod: paymentMethodString(order.paymentBrandEn),
-    paymentBrandEn: order.paymentBrandEn,
-    paymentBrandAr: order.paymentBrandAr,
-    paymentLast4: order.paymentLast4,
-    items: order.lineItems.map((line) => ({
-      listingId: line.product.id,
-      titleEnAtPurchase: line.product.titleEn,
-      titleArAtPurchase: line.product.titleAr,
-      imageUrlAtPurchase: line.product.image,
-      priceMinorAtPurchase: Math.round(
-        line.priceAtPurchase * AED_MINOR_PER_MAJOR,
-      ),
-      quantity: line.quantity,
-    })),
   };
 }

@@ -1,0 +1,1 @@
+Next.js 16 with React 19, TypeScript strict mode, Tailwind v4 + PostCSS, Supabase JS client for data/RLS, Sentry for error tracking, Vitest + Testing Library for unit tests, Playwright for E2E, and a standalone output target for cPanel/Passenger deployments.

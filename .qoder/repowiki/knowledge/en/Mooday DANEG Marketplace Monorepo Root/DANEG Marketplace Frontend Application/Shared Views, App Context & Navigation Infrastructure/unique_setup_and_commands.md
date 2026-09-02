@@ -1,0 +1,1 @@
+The provider auto-migrates seed data when `SEED_VERSION` changes and clears legacy mock-mode keys (`users`, `session`, `pendingOtp`, etc.) once `phase2Backend` is detected so mock and real modes never coexist in storage.

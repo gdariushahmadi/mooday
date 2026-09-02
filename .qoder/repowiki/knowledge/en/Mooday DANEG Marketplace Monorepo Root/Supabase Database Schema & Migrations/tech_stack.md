@@ -1,0 +1,1 @@
+PostgreSQL with Supabase CLI migrations, GoTrue auth, pgtap for RLS unit tests, PL/pgSQL triggers/functions, and email templates rendered via Supabase's built-in template engine.

@@ -48,10 +48,6 @@ import { renderHook } from "@testing-library/react";
 import React from "react";
 import { AppProvider, useApp } from "@/context/AppContext";
 
-function wrapper({ children }: { children: React.ReactNode }) {
-  return <AppProvider>{children}</AppProvider>;
-}
-
 describe("markChatRead identity stability (regression for chat page hang)", () => {
   beforeEach(() => {
     localStorage.clear();

@@ -21,6 +21,7 @@ function makeContext(overrides: Partial<AppContextType> = {}): AppContextType {
     updateQuantity: vi.fn(),
     clearCart: vi.fn(),
     chats: [],
+    setActiveChats: vi.fn(),
     sendChatMessage: vi.fn(),
     createChatThread: vi.fn(() => "test-thread"),
     markChatRead: vi.fn(),
@@ -137,8 +138,8 @@ describe("OtpView (A-03)", () => {
   });
 
   it("renders the email it was called with", () => {
-    renderOtp({ email: "layla@mooday.app" });
-    expect(screen.getByText("layla@mooday.app")).toBeInTheDocument();
+    renderOtp({ email: "layla@daneg.app" });
+    expect(screen.getByText("layla@daneg.app")).toBeInTheDocument();
   });
 
   it("calls onBack when the back button is clicked", async () => {

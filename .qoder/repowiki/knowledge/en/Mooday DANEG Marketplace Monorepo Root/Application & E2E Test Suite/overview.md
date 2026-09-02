@@ -1,0 +1,1 @@
+Vitest unit test and Playwright end-to-end tests that enforce the DANEG rebrand copy policy and validate user journeys including signup with OTP verification via Mailpit.

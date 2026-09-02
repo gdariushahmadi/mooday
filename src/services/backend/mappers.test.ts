@@ -121,7 +121,7 @@ describe("hydrateProductsFromRemote", () => {
     expect(product.sellerAvatar).toBe("https://cdn.example/layla.jpg");
     expect(product.sellerTypeEn).toBe("Verified Closet");
     expect(product.sellerTypeAr).toBe("خزانة معتمدة");
-    expect(product.saves).toBe(9);
+    expect(product.saves).toBe(0);
   });
 
   it("produces empty seller fields when no card is present", () => {
@@ -334,7 +334,7 @@ describe("isPublicImageUrl", () => {
   });
 });
 
-import { mapOrderFromRemote, buildCreateOrderInput } from "./mappers-orders";
+import { mapOrderFromRemote } from "./mappers-orders";
 import { mapNotificationFromRemote, mapReportFromRemote, mapThreadFromRemote } from "./mappers-social";
 import type { OrderRecord, OrderItemRecord, NotificationRecord, ReportRecord, ChatThreadRecord } from "./contracts";
 
@@ -344,6 +344,9 @@ describe("mapOrderFromRemote", () => {
     buyerId: "buyer-1",
     sellerId: "seller-1",
     status: "paid",
+    paymentStatus: "succeeded",
+    paymentIntentId: "pi-test",
+    paidAt: "2024-01-15T10:00:00Z",
     shippingAddress: {
       cityEn: "Dubai",
       cityAr: "دبي",
@@ -425,86 +428,6 @@ describe("mapOrderFromRemote", () => {
     });
     expect(order.timeline).toHaveLength(1);
     expect(order.timeline[0].status).toBe("cancelled");
-  });
-});
-
-describe("buildCreateOrderInput", () => {
-  it("rounds major-unit prices back to integer minor units", () => {
-    const input = buildCreateOrderInput({
-      order: {
-        id: "ord-x",
-        dateOrdered: "2024-01-15T10:00:00Z",
-        status: "processing",
-        lineItems: [
-          {
-            product: {
-              id: "listing-1",
-              titleEn: "Bag",
-              titleAr: "حقيبة",
-              price: 99.99,
-              originalPrice: 99.99,
-              conditionEn: "New",
-              conditionAr: "جديد",
-              sellerNameEn: "S",
-              sellerNameAr: "S",
-              sellerAvatar: "/s",
-              sellerTypeEn: "Verified",
-              sellerTypeAr: "معتمد",
-              saves: 0,
-              image: "/p.jpg",
-              images: ["/p.jpg"],
-              descriptionEn: "",
-              descriptionAr: "",
-              category: "Bags",
-            },
-            quantity: 1,
-            priceAtPurchase: 99.99,
-          },
-        ],
-        addressCityEn: "Dubai",
-        addressCityAr: "دبي",
-        addressStreetEn: "St",
-        addressStreetAr: "شارع",
-        paymentBrandEn: "Visa",
-        paymentBrandAr: "فيزا",
-        paymentLast4: "4242",
-        subtotal: 99.99,
-        shipping: 5,
-        total: 104.99,
-        courier: { nameEn: "Aramex", nameAr: "أرامكس", trackingNumber: "" },
-        timeline: [],
-      },
-      sellerId: "seller-1",
-    });
-    expect(input.itemsSubtotalMinor).toBe(9999);
-    expect(input.shippingFeeMinor).toBe(500);
-    expect(input.totalMinor).toBe(10499);
-    expect(input.items[0].priceMinorAtPurchase).toBe(9999);
-  });
-
-  it("maps Cash brand to 'cod' payment method", () => {
-    const input = buildCreateOrderInput({
-      order: {
-        id: "ord-y",
-        dateOrdered: "2024-01-15T10:00:00Z",
-        status: "processing",
-        lineItems: [],
-        addressCityEn: "Dubai",
-        addressCityAr: "دبي",
-        addressStreetEn: "St",
-        addressStreetAr: "شارع",
-        paymentBrandEn: "Cash",
-        paymentBrandAr: "نقداً",
-        paymentLast4: "",
-        subtotal: 0,
-        shipping: 0,
-        total: 0,
-        courier: { nameEn: "", nameAr: "", trackingNumber: "" },
-        timeline: [],
-      },
-      sellerId: "seller-1",
-    });
-    expect(input.paymentMethod).toBe("cod");
   });
 });
 

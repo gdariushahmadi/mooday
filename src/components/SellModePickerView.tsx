@@ -28,10 +28,10 @@ const COPY: Record<"en" | "ar", PickerCopy> = {
     intro: "Pick a flow — you can change later from your closet.",
     resellLabel: "Resell",
     resellBody:
-      "Sell a piece you own outright. Once it sells, the buyer takes ownership and you receive the payout via Mooday escrow.",
+      "Create a sample listing for the public Demo. No sale, payment, escrow, or seller payout is created.",
     rentLabel: "Rent out",
     rentBody:
-      "List a piece to be rented out by weekly slots. Mooday handles the deposit, insurance, and returns.",
+      "Rental listings are not available in the public Demo. Deposit, insurance, and return flows will be added later.",
     rentPill: "Coming in Phase 4",
     resellCta: "Start reselling",
     rentCta: "Coming soon",
@@ -42,10 +42,10 @@ const COPY: Record<"en" | "ar", PickerCopy> = {
     intro: "اختاري المسار — يمكنكِ تغييره لاحقاً من خزانتك.",
     resellLabel: "إعادة بيع",
     resellBody:
-      "بيعي قطعة تملكينها بالكامل. عند البيع، يستلمها المشتري وتحصلين على المبلغ عبر ضمان مودي.",
+      "أنشئي إعلاناً تجريبياً في النسخة العامة. لا يتم إنشاء بيع أو دفع أو ضمان أو تحويل للبائع.",
     rentLabel: "تأجير",
     rentBody:
-      "اعرضي قطعة للإيجار الأسبوعي. مودي تتولى التأمين والودائع والإرجاع.",
+      "إعلانات التأجير غير متاحة في النسخة التجريبية العامة. ستضاف الودائع والتأمين والإرجاع لاحقاً.",
     rentPill: "قريباً في Phase 4",
     resellCta: "ابدئي إعادة البيع",
     rentCta: "قريباً",

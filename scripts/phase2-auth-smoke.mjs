@@ -23,8 +23,8 @@ const supabase = createClient(url, key, {
 });
 const suffix = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 const email = `phase2-smoke-${suffix}@example.test`;
-const initialPassword = "Mooday-smoke-42!";
-const recoveredPassword = "Mooday-recovered-43!";
+const initialPassword = "DANEG-smoke-42!";
+const recoveredPassword = "DANEG-recovered-43!";
 
 function assert(condition, message) {
   if (!condition) throw new Error(message);
@@ -61,7 +61,7 @@ const signup = await supabase.auth.signUp({
 assert(!signup.error && signup.data.user, `Sign-up failed: ${signup.error?.message}`);
 assert(!signup.data.session, "Email confirmation should be required locally.");
 
-const signupOtp = await latestOtp("Confirm your Mooday account");
+const signupOtp = await latestOtp("Confirm your DANEG account");
 const verified = await supabase.auth.verifyOtp({ email, token: signupOtp, type: "signup" });
 assert(!verified.error && verified.data.session, `OTP verification failed: ${verified.error?.message}`);
 const userId = verified.data.user?.id;
@@ -98,7 +98,7 @@ assert(!signin.error && signin.data.session, `Password sign-in failed: ${signin.
 
 const recovery = await supabase.auth.resetPasswordForEmail(email);
 assert(!recovery.error, `Recovery request failed: ${recovery.error?.message}`);
-const recoveryOtp = await latestOtp("Reset your Mooday password");
+const recoveryOtp = await latestOtp("Reset your DANEG password");
 const recovered = await supabase.auth.verifyOtp({
   email,
   token: recoveryOtp,

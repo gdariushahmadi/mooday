@@ -4,6 +4,7 @@ import React, { useMemo } from "react";
 import { useApp } from "@/context/AppContext";
 import { findOrder } from "@/data/orders";
 import { formatOrderDate } from "@/data/orders";
+import { AppImage } from "@/components/AppImage";
 
 interface MyReviewsViewProps {
   onBack: () => void;
@@ -26,7 +27,7 @@ const COPY: Record<"en" | "ar", MyReviewsCopy> = {
     emptyBody:
       "Once you leave a review on a delivered order, it will appear here.",
     verifiedPurchase: "Verified purchase",
-    outOf: (n) => `out of 5`,
+    outOf: (n) => `${n} out of 5`,
   },
   ar: {
     title: "تقييماتي",
@@ -34,7 +35,7 @@ const COPY: Record<"en" | "ar", MyReviewsCopy> = {
     emptyTitle: "لا توجد تقييمات بعد",
     emptyBody: "بمجرد ترك تقييم على طلب تم تسليمه، سيظهر هنا.",
     verifiedPurchase: "شراء موثق",
-    outOf: (n) => `من ٥`,
+    outOf: (n) => `${n} من ٥`,
   },
 };
 
@@ -119,10 +120,13 @@ export const MyReviewsView: React.FC<MyReviewsViewProps> = ({ onBack }) => {
               >
                 <header className="flex gap-sm">
                   {productImage && (
-                    <img
+                    <AppImage
                       alt={productTitle}
-                      src={productImage}
-                      className="w-14 h-14 rounded object-cover border border-outline-variant flex-shrink-0"
+                      src={productImage || "/products/placeholder.svg"}
+                      width={56}
+                      height={56}
+                      sizes="56px"
+                      className="h-14 w-14 flex-shrink-0 rounded border border-outline-variant object-cover"
                     />
                   )}
                   <div className="flex-grow min-w-0">
@@ -167,10 +171,12 @@ export const MyReviewsView: React.FC<MyReviewsViewProps> = ({ onBack }) => {
                 {review.photos.length > 0 && (
                   <div className="flex gap-sm mt-2">
                     {review.photos.map((p, i) => (
-                      <img
+                      <AppImage
                         key={i}
                         alt=""
                         src={p}
+                        width={64}
+                        height={64}
                         className="w-16 h-16 rounded object-cover border border-outline-variant"
                       />
                     ))}

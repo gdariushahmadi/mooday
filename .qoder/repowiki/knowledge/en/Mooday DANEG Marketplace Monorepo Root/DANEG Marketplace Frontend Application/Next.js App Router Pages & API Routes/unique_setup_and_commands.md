@@ -1,0 +1,1 @@
+Requires environment variables `NEXT_PUBLIC_SITE_URL`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `STRIPE_SECRET_KEY`, and `STRIPE_WEBHOOK_SECRET`; the health endpoint depends on Supabase being reachable and the Stripe webhook handler requires the Stripe SDK to be installed at runtime.

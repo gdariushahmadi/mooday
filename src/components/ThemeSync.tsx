@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 
-export const DARK_MODE_STORAGE_KEY = "mooday-pref-dark";
+export const DARK_MODE_STORAGE_KEY = "daneg-pref-dark";
 
 export function readDarkModePreference(): boolean {
   if (typeof window === "undefined") return false;

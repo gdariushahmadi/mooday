@@ -17,11 +17,13 @@ import type {
   AuthService,
   CartItemRecord,
   CartService,
+  SavedItemRecord,
+  SavedItemsService,
   ChatMessageRecord,
   ChatMessageType,
   ChatService,
   ChatThreadRecord,
-  CreateOrderInput,
+  CreateSingleListingOrderInput,
   DisputeRecord,
   DisputeService,
   DisputeStatus,
@@ -32,7 +34,6 @@ import type {
   NotificationService,
   OtpPurpose,
   OrderItemRecord,
-  OrderItemSnapshot,
   OrderRecord,
   OrderService,
   OrderStatus,
@@ -63,8 +64,21 @@ import type {
   BlockedUserRecord,
   BlockService,
   FollowService,
+  AffiliateClickService,
+  AffiliateLinkService,
+  AffiliateLinkRecord,
+  AffiliateReportRange,
+  AffiliateReportSummary,
+  PartnerRecord,
 } from "./contracts";
 import type { BackendConfig } from "./config";
+import { isPaymentsEnabled } from "@/lib/feature-flags";
+import {
+  toAffiliateLinkRecord,
+  toPartnerRecord,
+  type AffiliateLinkRow,
+  type PartnerRow,
+} from "./mappers-affiliate";
 
 function toUser(user: User): AuthenticatedUser {
   return {
@@ -153,6 +167,14 @@ class SupabaseAuthService implements AuthService {
     const { data, error } = await this.client.auth.getUser();
     if (error || !data.user) return null;
     return toUser(data.user);
+  }
+
+  async getAccessToken(): Promise<string | null> {
+    // `getSession` refreshes an expired token before returning it, so the
+    // caller always hands the server a token it can still verify.
+    const { data, error } = await this.client.auth.getSession();
+    if (error) return null;
+    return data.session?.access_token ?? null;
   }
 
   subscribe(listener: (user: AuthenticatedUser | null) => void): () => void {
@@ -554,6 +576,8 @@ class SupabaseListingService implements ListingService {
     const { data, error } = await this.client
       .from("listings")
       .select("*")
+      .eq("status", "active")
+      .not("approved_at", "is", null)
       .order("created_at", { ascending: false });
     if (error) throw error;
     return (data ?? []).map(listingFromRow);
@@ -589,9 +613,10 @@ class SupabaseListingService implements ListingService {
       category: filters?.category ?? null,
       price_min: filters?.priceMin ?? null,
       price_max: filters?.priceMax ?? null,
-      status: filters?.status ?? null,
-      limit_count: filters?.limit ?? null,
-      offset_count: filters?.offset ?? null,
+      // The public RPC owns the status boundary. It ignores a client-supplied
+      // status and always returns active, approved listings.
+      limit: filters?.limit ?? null,
+      offset: filters?.offset ?? null,
     };
     const { data, error } = await this.client.rpc("search_listings", {
       query,
@@ -608,6 +633,7 @@ class SupabaseListingService implements ListingService {
       .select("*")
       .in("id", ids)
       .eq("status", "active")
+      .not("approved_at", "is", null)
       .order("created_at", { ascending: false });
     if (error) throw error;
     return (data ?? []).map(listingFromRow);
@@ -624,9 +650,9 @@ class SupabaseListingService implements ListingService {
       .insert({
         ...listingToRow(input),
         seller_id: authData.user.id,
-        // Until an admin UI ships, auto-approve so new listings are
-        // publicly visible. The moderation queue can still re-review later.
-        approved_at: new Date().toISOString(),
+        // Moderation owns approval. A new listing is private until an
+        // administrator explicitly approves it.
+        approved_at: null,
       })
       .select("*")
       .single();
@@ -1001,13 +1027,6 @@ function sellerCardToRow(patch: SellerCardUpsertInput) {
     ...(patch.styleTagsAr !== undefined && {
       style_tags_ar: patch.styleTagsAr,
     }),
-    ...(patch.isVerified !== undefined && { is_verified: patch.isVerified }),
-    ...(patch.responseRate !== undefined && {
-      response_rate: patch.responseRate,
-    }),
-    ...(patch.responseTimeHours !== undefined && {
-      response_time_hours: patch.responseTimeHours,
-    }),
   };
 }
 
@@ -1250,9 +1269,9 @@ class SupabaseCartService implements CartService {
     if (authError || !authData.user) {
       throw authError ?? new Error("Authentication required");
     }
-    // Atomic increment via the SECURITY INVOKER RPC. SECURITY INVOKER means
-    // RLS still enforces owner-scoped rows — the function can only ever
-    // touch the current user's cart.
+    // The RPC is SECURITY DEFINER so it can perform one atomic write. It
+    // validates auth.uid(), listing visibility, suspension, and blocking
+    // inside the database. The client never writes cart rows directly.
     const { error } = await this.client.rpc("cart_items_increment", {
       target_listing_id: listingId,
       delta: quantity,
@@ -1262,27 +1281,14 @@ class SupabaseCartService implements CartService {
   }
 
   async setQuantity(listingId: string, quantity: number): Promise<void> {
-    const { data: authData, error: authError } =
-      await this.client.auth.getUser();
-    if (authError || !authData.user) {
-      throw authError ?? new Error("Authentication required");
-    }
     if (quantity <= 0) {
       await this.remove(listingId);
       return;
     }
-    const { error } = await this.client
-      .from("cart_items")
-      .upsert(
-        {
-          user_id: authData.user.id,
-          listing_id: listingId,
-          quantity,
-        },
-        { onConflict: "user_id,listing_id" },
-      )
-      .select("listing_id")
-      .single();
+    const { error } = await this.client.rpc("cart_items_increment", {
+      target_listing_id: listingId,
+      delta: 1,
+    });
     if (error) throw error;
   }
 
@@ -1314,6 +1320,42 @@ class SupabaseCartService implements CartService {
   }
 }
 
+class SupabaseSavedItemsService implements SavedItemsService {
+  constructor(private readonly client: SupabaseClient) {}
+
+  async listMine(): Promise<SavedItemRecord[]> {
+    const { data, error } = await this.client
+      .from("saved_items")
+      .select("listing_id, created_at")
+      .order("created_at", { ascending: false });
+    if (error) throw error;
+    return (data ?? []).map((row) => ({
+      listingId: String(row.listing_id),
+      createdAt: String(row.created_at),
+    }));
+  }
+
+  async save(listingId: string): Promise<void> {
+    const { data: authData, error: authError } = await this.client.auth.getUser();
+    if (authError || !authData.user) throw authError ?? new Error("Authentication required");
+    const { error } = await this.client
+      .from("saved_items")
+      .upsert({ user_id: authData.user.id, listing_id: listingId }, { onConflict: "user_id,listing_id", ignoreDuplicates: true });
+    if (error) throw error;
+  }
+
+  async remove(listingId: string): Promise<void> {
+    const { data: authData, error: authError } = await this.client.auth.getUser();
+    if (authError || !authData.user) throw authError ?? new Error("Authentication required");
+    const { error } = await this.client
+      .from("saved_items")
+      .delete()
+      .eq("user_id", authData.user.id)
+      .eq("listing_id", listingId);
+    if (error) throw error;
+  }
+}
+
 // ---------- orders (Phase 3, slice 5) ----------
 
 function orderFromRow(row: Record<string, unknown>): OrderRecord {
@@ -1335,6 +1377,10 @@ function orderFromRow(row: Record<string, unknown>): OrderRecord {
     paymentBrandAr:
       row.payment_brand_ar == null ? null : String(row.payment_brand_ar),
     paymentLast4: row.payment_last4 == null ? null : String(row.payment_last4),
+    paymentStatus: (row.payment_status ?? "pending") as OrderRecord["paymentStatus"],
+    paymentIntentId:
+      row.payment_intent_id == null ? null : String(row.payment_intent_id),
+    paidAt: row.paid_at == null ? null : String(row.paid_at),
     courierNameEn:
       row.courier_name_en == null ? null : String(row.courier_name_en),
     courierNameAr:
@@ -1430,131 +1476,80 @@ class SupabaseOrderService implements OrderService {
     return withItems;
   }
 
-  async create(input: CreateOrderInput): Promise<OrderRecord> {
-    const userId = await this.requireUserId();
-    const { data: orderRow, error: orderError } = await this.client
-      .from("orders")
-      .insert({
-        buyer_id: userId,
-        seller_id: input.sellerId,
-        shipping_address: input.shippingAddress,
-        items_subtotal_minor: input.itemsSubtotalMinor,
-        shipping_fee_minor: input.shippingFeeMinor,
-        total_minor: input.totalMinor,
-        payment_method: input.paymentMethod,
-        payment_brand_en: input.paymentBrandEn,
-        payment_brand_ar: input.paymentBrandAr,
-        payment_last4: input.paymentLast4,
-      })
-      .select("*")
-      .single();
-    if (orderError) throw orderError;
-    const order = orderFromRow(orderRow as Record<string, unknown>);
-
-    const itemRows = input.items.map((item: OrderItemSnapshot) => ({
-      order_id: order.id,
-      listing_id: item.listingId,
-      title_en_at_purchase: item.titleEnAtPurchase,
-      title_ar_at_purchase: item.titleArAtPurchase,
-      image_url_at_purchase: item.imageUrlAtPurchase,
-      price_minor_at_purchase: item.priceMinorAtPurchase,
-      quantity: item.quantity,
-    }));
-    if (itemRows.length > 0) {
-      const { error: itemsError } = await this.client
-        .from("order_items")
-        .insert(itemRows);
-      if (itemsError) {
-        // Best-effort rollback of the order so a partial commit cannot
-        // leave the buyer charged for items they did not order.
-        await this.client.from("orders").delete().eq("id", order.id);
-        throw itemsError;
-      }
-    }
-    return order;
+  async createSingleListingOrder(
+    input: CreateSingleListingOrderInput,
+  ): Promise<OrderRecord> {
+    await this.requireUserId();
+    const { data, error } = await this.client.rpc("create_single_listing_order", {
+      target_listing_id: input.listingId,
+      target_address_id: input.addressId,
+    });
+    if (error) throw error;
+    const row = Array.isArray(data) ? data[0] : data;
+    if (!row) throw new Error("The order RPC returned no order.");
+    return orderFromRow(row as Record<string, unknown>);
   }
 
   async markShipped(
     orderId: string,
     courier: { nameEn: string; nameAr: string; tracking: string },
   ): Promise<void> {
-    const { error } = await this.client
-      .from("orders")
-      .update({
-        status: "shipped",
-        courier_name_en: courier.nameEn,
-        courier_name_ar: courier.nameAr,
-        courier_tracking: courier.tracking,
-      })
-      .eq("id", orderId);
+    const { error } = await this.client.rpc("mark_order_shipped", {
+      target_order_id: orderId,
+      courier_name_en_input: courier.nameEn,
+      courier_name_ar_input: courier.nameAr,
+      courier_tracking_input: courier.tracking,
+    });
     if (error) throw error;
   }
 
   async markDelivered(orderId: string): Promise<void> {
-    const { error } = await this.client
-      .from("orders")
-      .update({ status: "delivered" })
-      .eq("id", orderId);
+    const { error } = await this.client.rpc("mark_order_delivered", {
+      target_order_id: orderId,
+    });
     if (error) throw error;
   }
 
   async cancel(orderId: string): Promise<void> {
-    const { error } = await this.client
-      .from("orders")
-      .update({ status: "cancelled" })
-      .eq("id", orderId);
+    const { error } = await this.client.rpc("cancel_order", {
+      target_order_id: orderId,
+    });
     if (error) throw error;
   }
 
   async requestReturn(orderId: string): Promise<void> {
-    const { error } = await this.client
-      .from("orders")
-      .update({ status: "returned" })
-      .eq("id", orderId);
+    const { error } = await this.client.rpc("request_order_return", {
+      target_order_id: orderId,
+    });
     if (error) throw error;
   }
 
   async createPaymentIntent(
     orderId: string,
   ): Promise<{ clientSecret: string; paymentIntentId: string }> {
-    // The Stripe SDK is loaded via dynamic import so the dependency is
-    // optional at build time. Without the SDK this method throws a
-    // clear error; the UI is expected to gate on `hasStripe()`.
-    const stripeModule = (await import("stripe").catch(() => null)) as
-      | (typeof import("stripe"))
-      | null;
-    const Stripe = stripeModule?.default ?? null;
-    if (!Stripe) {
-      throw new Error(
-        "Stripe SDK is not installed. Run `npm install stripe` to enable payments.",
-      );
+    if (!isPaymentsEnabled()) {
+      throw new Error("Real payments are disabled in Demo mode.");
     }
-    const secretKey = process.env.STRIPE_SECRET_KEY;
-    if (!secretKey) {
-      throw new Error("STRIPE_SECRET_KEY is not configured.");
-    }
-    const order = await this.getById(orderId);
-    if (!order) {
-      throw new Error(`Order ${orderId} not found.`);
-    }
-    // Omit apiVersion so the SDK uses its bundled default.
-    const stripe = new Stripe(secretKey);
-    const intent = await stripe.paymentIntents.create({
-      amount: order.totalMinor,
-      currency: order.currency.toLowerCase(),
-      metadata: {
-        order_id: orderId,
-        buyer_id: order.buyerId,
-        seller_id: order.sellerId,
+    const { data: sessionData } = await this.client.auth.getSession();
+    const accessToken = sessionData.session?.access_token;
+    if (!accessToken) throw new Error("Authentication required");
+    const response = await fetch("/api/stripe/payment-intent", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        authorization: `Bearer ${accessToken}`,
       },
-      automatic_payment_methods: { enabled: true },
+      body: JSON.stringify({ orderId }),
     });
-    if (!intent.client_secret) {
-      throw new Error("Stripe did not return a client_secret.");
+    const body = (await response.json().catch(() => null)) as
+      | { clientSecret?: string; paymentIntentId?: string; error?: string }
+      | null;
+    if (!response.ok || !body?.clientSecret || !body.paymentIntentId) {
+      throw new Error(body?.error ?? "Could not create a payment intent.");
     }
     return {
-      clientSecret: intent.client_secret,
-      paymentIntentId: intent.id,
+      clientSecret: body.clientSecret,
+      paymentIntentId: body.paymentIntentId,
     };
   }
 }
@@ -1757,6 +1752,7 @@ function reviewFromRow(row: Record<string, unknown>): SellerReviewRecord {
     sellerId: String(row.seller_id),
     buyerId: String(row.buyer_id),
     orderId: row.order_id == null ? null : String(row.order_id),
+    listingId: row.listing_id == null ? null : String(row.listing_id),
     rating: Number(row.rating),
     bodyEn: String(row.body_en ?? ""),
     bodyAr: String(row.body_ar ?? ""),
@@ -1811,6 +1807,7 @@ class SupabaseSellerReviewService implements SellerReviewService {
         seller_id: input.sellerId,
         buyer_id: authData.user.id,
         order_id: input.orderId,
+        listing_id: input.listingId,
         rating: input.rating,
         body_en: input.bodyEn,
         body_ar: input.bodyAr,
@@ -2264,6 +2261,211 @@ class SupabaseBlockService implements BlockService {
   }
 }
 
+class SupabaseAffiliateLinkService implements AffiliateLinkService {
+  constructor(private readonly client: SupabaseClient) {}
+
+  async listPartners(includeInactive = false): Promise<PartnerRecord[]> {
+    let query = this.client
+      .from("partners")
+      .select("*")
+      .order("display_order", { ascending: true });
+    if (!includeInactive) query = query.eq("is_active", true);
+    const { data, error } = await query;
+    if (error) throw error;
+    return (data ?? []).map((row) => toPartnerRecord(row as PartnerRow));
+  }
+
+  async listLinksForListing(
+    listingId: string,
+    includeInactive = false,
+  ): Promise<AffiliateLinkRecord[]> {
+    let query = this.client
+      .from("affiliate_links")
+      .select("*")
+      .eq("listing_id", listingId)
+      .order("display_order", { ascending: true });
+    if (!includeInactive) query = query.eq("is_active", true);
+    const { data, error } = await query;
+    if (error) throw error;
+    return (data ?? []).map((row) =>
+      toAffiliateLinkRecord(row as AffiliateLinkRow),
+    );
+  }
+
+  async createPartner(input: {
+    code: string;
+    name: string;
+    logoUrl?: string;
+    baseUrlTemplate?: string;
+    displayOrder?: number;
+    isActive?: boolean;
+  }): Promise<PartnerRecord> {
+    const { data, error } = await this.client
+      .from("partners")
+      .insert({
+        code: input.code.trim().toLowerCase(),
+        name: input.name.trim(),
+        logo_url: input.logoUrl?.trim() || null,
+        base_url_template: input.baseUrlTemplate?.trim() || null,
+        display_order: input.displayOrder ?? 0,
+        is_active: input.isActive ?? true,
+      })
+      .select("*")
+      .single();
+    if (error) throw error;
+    return toPartnerRecord(data as PartnerRow);
+  }
+
+  async updatePartner(
+    code: string,
+    patch: Partial<{
+      name: string;
+      logoUrl: string | null;
+      baseUrlTemplate: string | null;
+      displayOrder: number;
+      isActive: boolean;
+    }>,
+  ): Promise<void> {
+    const update: Record<string, unknown> = {};
+    if (patch.name !== undefined) update.name = patch.name.trim();
+    if (patch.logoUrl !== undefined) update.logo_url = patch.logoUrl;
+    if (patch.baseUrlTemplate !== undefined) {
+      update.base_url_template = patch.baseUrlTemplate;
+    }
+    if (patch.displayOrder !== undefined) {
+      update.display_order = patch.displayOrder;
+    }
+    if (patch.isActive !== undefined) update.is_active = patch.isActive;
+    if (Object.keys(update).length === 0) return;
+    const { error } = await this.client
+      .from("partners")
+      .update(update)
+      .eq("code", code);
+    if (error) throw error;
+  }
+
+  async deletePartner(code: string): Promise<void> {
+    const { error } = await this.client
+      .from("partners")
+      .delete()
+      .eq("code", code);
+    if (error) throw error;
+  }
+
+  async createLink(input: {
+    listingId: string;
+    partnerCode: string;
+    affiliateUrl: string;
+    displayOrder?: number;
+  }): Promise<AffiliateLinkRecord> {
+    const { data, error } = await this.client
+      .from("affiliate_links")
+      .insert({
+        listing_id: input.listingId,
+        partner_code: input.partnerCode,
+        affiliate_url: input.affiliateUrl.trim(),
+        display_order: input.displayOrder ?? 0,
+        is_active: true,
+      })
+      .select("*")
+      .single();
+    if (error) throw error;
+    return toAffiliateLinkRecord(data as AffiliateLinkRow);
+  }
+
+  async updateLink(
+    id: string,
+    patch: Partial<{
+      affiliateUrl: string;
+      displayOrder: number;
+      isActive: boolean;
+    }>,
+  ): Promise<void> {
+    const update: Record<string, unknown> = {};
+    if (patch.affiliateUrl !== undefined) {
+      update.affiliate_url = patch.affiliateUrl.trim();
+    }
+    if (patch.displayOrder !== undefined) {
+      update.display_order = patch.displayOrder;
+    }
+    if (patch.isActive !== undefined) update.is_active = patch.isActive;
+    if (Object.keys(update).length === 0) return;
+    const { error } = await this.client
+      .from("affiliate_links")
+      .update(update)
+      .eq("id", id);
+    if (error) throw error;
+  }
+
+  async removeLink(id: string): Promise<void> {
+    const { error } = await this.client
+      .from("affiliate_links")
+      .delete()
+      .eq("id", id);
+    if (error) throw error;
+  }
+}
+
+class SupabaseAffiliateClickService implements AffiliateClickService {
+  constructor(private readonly client: SupabaseClient) {}
+
+  async recordClick(input: {
+    shortId: string;
+    listingId: string;
+    partnerCode: string;
+    userId: string | null;
+    anonId: string | null;
+    userAgent: string | null;
+    referer: string | null;
+  }): Promise<void> {
+    const { error } = await this.client.from("affiliate_clicks").insert({
+      short_id: input.shortId,
+      listing_id: input.listingId,
+      partner_code: input.partnerCode,
+      user_id: input.userId,
+      anon_id: input.anonId,
+      user_agent: input.userAgent,
+      referer: input.referer,
+    });
+    if (error) throw error;
+  }
+
+  async aggregateForReports(
+    range: AffiliateReportRange,
+  ): Promise<AffiliateReportSummary> {
+    const { data, error } = await this.client
+      .from("affiliate_clicks")
+      .select("partner_code, listing_id")
+      .gte("clicked_at", range.fromIso)
+      .lte("clicked_at", range.toIso);
+    if (error) throw error;
+    const rows = data ?? [];
+    const byPartner = new Map<string, number>();
+    const byListing = new Map<string, number>();
+    for (const row of rows) {
+      const item = row as { partner_code: string; listing_id: string };
+      byPartner.set(
+        item.partner_code,
+        (byPartner.get(item.partner_code) ?? 0) + 1,
+      );
+      byListing.set(
+        item.listing_id,
+        (byListing.get(item.listing_id) ?? 0) + 1,
+      );
+    }
+    return {
+      byPartner: Array.from(byPartner.entries())
+        .map(([partnerCode, clicks]) => ({ partnerCode, clicks }))
+        .sort((a, b) => b.clicks - a.clicks),
+      byListing: Array.from(byListing.entries())
+        .map(([listingId, clicks]) => ({ listingId, clicks }))
+        .sort((a, b) => b.clicks - a.clicks)
+        .slice(0, 10),
+      totalClicks: rows.length,
+    };
+  }
+}
+
 let backend: Phase2Backend | null = null;
 
 
@@ -2288,6 +2490,7 @@ export function createSupabaseBackend(config: BackendConfig): Phase2Backend {
     sellerCards: new SupabaseSellerCardService(client),
     likes: new SupabaseLikeService(client),
     cart: new SupabaseCartService(client),
+    savedItems: new SupabaseSavedItemsService(client),
     follows: new SupabaseFollowService(client),
     orders: new SupabaseOrderService(client),
     chats: new SupabaseChatService(client),
@@ -2297,6 +2500,8 @@ export function createSupabaseBackend(config: BackendConfig): Phase2Backend {
     notifications: new SupabaseNotificationService(client),
     paymentMethods: new SupabasePaymentMethodService(client),
     blocks: new SupabaseBlockService(client),
+    affiliateLinks: new SupabaseAffiliateLinkService(client),
+    affiliateClicks: new SupabaseAffiliateClickService(client),
   };
   return backend;
 }

@@ -1,0 +1,1 @@
+React client components with `use client` directive; state persisted via `localStorage` using a custom `useLocalStorageState` hook and `useSyncExternalStore` for listings; optional Supabase Phase 2 backend accessed through `@/services/backend`; WebAuthn/PIN-based app lock via `@/lib/security`.

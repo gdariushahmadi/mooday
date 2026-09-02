@@ -1,4 +1,4 @@
-# Mooday marketing & app
+# DANEG marketing & app
 # - Landing is fully indexable in both EN and AR.
 # - /app is a client-only SPA shell (Cold-launch Welcome + Discover) and
 #   should not be indexed as bare HTML — links with `?view=...` parameters
@@ -7,6 +7,8 @@
 User-agent: *
 Allow: /
 Allow: /?lang=ar
+Allow: /legal/
 Disallow: /app
+Disallow: /admin
 
 Sitemap: /sitemap.xml

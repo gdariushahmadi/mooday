@@ -19,7 +19,7 @@ async function waitForOtp(email: string): Promise<string> {
         const message = inbox.messages?.find(
           (item) =>
             item.To?.some((recipient) => recipient.Address === email) &&
-            item.Subject?.includes("Confirm your Mooday account"),
+            item.Subject?.includes("Confirm your DANEG account"),
         );
         if (!message) return null;
 
@@ -50,7 +50,7 @@ async function waitForOtp(email: string): Promise<string> {
   const message = inbox.messages.find(
     (item) =>
       item.To?.some((recipient) => recipient.Address === email) &&
-      item.Subject?.includes("Confirm your Mooday account"),
+      item.Subject?.includes("Confirm your DANEG account"),
   );
   if (!message) throw new Error("Confirmation message disappeared from Mailpit.");
   const detail = (await (
@@ -66,11 +66,11 @@ async function waitForOtp(email: string): Promise<string> {
 test("a new user can sign up and verify the emailed OTP", async ({ page }) => {
   const suffix = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
   const email = `phase2-e2e-${suffix}@example.test`;
-  const password = "Mooday-e2e-42!";
+  const password = "DANEG-e2e-42!";
 
   await page.addInitScript(() => {
-    localStorage.setItem("mooday_has_seen_welcome", "true");
-    localStorage.setItem("mooday_language", "en");
+    localStorage.setItem("daneg_has_seen_welcome", "true");
+    localStorage.setItem("daneg_lang", "en");
   });
   await page.goto("/?view=signup");
 

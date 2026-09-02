@@ -5,6 +5,7 @@ import {
   LISTING_MEDIA_ALLOWED_MIME,
   LISTING_MEDIA_MAX_BYTES,
 } from "@/services/backend";
+import { AppImage } from "@/components/AppImage";
 
 /**
  * ListingPhotoPicker (Phase 3, slice 7).
@@ -48,7 +49,11 @@ export interface ListingPhotoPickerProps {
   /** Called when a freshly-selected file is staged. The URL emitted to
    * `onChange` is a `blob:` URL the caller can use as if it were an
    * image path. */
-  onFileStage?: (file: File) => void;
+  /** Called when a freshly-selected file is staged. Receives the staged
+   * `File` together with the `blob:` URL the picker pushed into the
+   * photos array, so the parent can index the staged file by the same
+   * key that will appear in `photos` at submit time. */
+  onFileStage?: (file: File, url: string) => void;
   /** Override the long-edge pixel ceiling. Default 1600. */
   maxLongEdgePx?: number;
 }
@@ -161,7 +166,11 @@ export const ListingPhotoPicker: React.FC<ListingPhotoPickerProps> = ({
         });
         const url = URL.createObjectURL(staged);
         next.push(url);
-        onFileStage?.(staged);
+        // Hand the URL through alongside the file so the parent stores
+        // it under the same key the picker pushed into `photos`.
+        // Without this, the staged-file map lookup at submit time
+        // misses and the real upload never reaches Supabase Storage.
+        onFileStage?.(staged, url);
       }
       onChange(next);
     } catch (err) {
@@ -200,10 +209,11 @@ export const ListingPhotoPicker: React.FC<ListingPhotoPickerProps> = ({
             key={`${url}-${idx}`}
             className="relative w-24 h-24 rounded-lg overflow-hidden border border-surface-container-high"
           >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
+            <AppImage
               alt={`Photo ${idx + 1}`}
               src={url}
+              width={96}
+              height={96}
               className="w-full h-full object-cover"
             />
             {idx === 0 && (

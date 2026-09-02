@@ -1,0 +1,1 @@
+Root of the Mooday marketplace that composes a Next.js frontend, Supabase-backed backend client, database schema, deployment scripts, static assets, tests, and product docs into one deployable app.

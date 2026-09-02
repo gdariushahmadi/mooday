@@ -145,7 +145,7 @@ export const SecuritySetupView: React.FC<SecuritySetupViewProps> = ({
  const userName =
  (typeof currentUser?.name === "string" && currentUser.name) ||
  currentUser?.email ||
- "Mooday user";
+ "DANEG user";
  const ok = await setupBiometric?.(userName);
  if (ok) {
  setStatus(copy.statusBiometricSaved);

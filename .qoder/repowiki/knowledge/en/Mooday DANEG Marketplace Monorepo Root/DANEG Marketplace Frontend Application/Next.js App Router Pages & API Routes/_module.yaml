@@ -1,0 +1,11 @@
+schema_version: 1
+module_path: frontend_app/app_routes
+title: Next.js App Router Pages & API Routes
+scope:
+    - src/app/
+source_files: []
+depends_on: []
+related_to:
+    - path: frontend_app/admin_panel
+    - path: frontend_app/landing_page
+    - path: frontend_app/listing_management

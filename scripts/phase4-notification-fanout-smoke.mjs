@@ -13,7 +13,6 @@ loadEnvConfig(process.cwd());
 import { createClient } from "@supabase/supabase-js";
 
 const url = "http://127.0.0.1:54321";
-const publishable = "sb_publishable_ACJWlzQHlZjBrEguHvfOxg_3BJgxAaH";
 const serviceRole = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU";
 
 const admin = createClient(url, serviceRole, {
@@ -33,9 +32,9 @@ function check(label, ok, detail) {
 }
 
 const suffix = `${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
-const sellerEmail = `fanout-seller-${suffix}@mooday.test`;
-const buyerEmail = `fanout-buyer-${suffix}@mooday.test`;
-const pw = "Mooday-Fanout-42!";
+const sellerEmail = `fanout-seller-${suffix}@daneg.test`;
+const buyerEmail = `fanout-buyer-${suffix}@daneg.test`;
+const pw = "DANEG-Fanout-42!";
 
 const sellerRes = await admin.auth.admin.createUser({
   email: sellerEmail, password: pw, email_confirm: true,
@@ -54,7 +53,7 @@ const { data: listing } = await admin.from("listings").insert({
   description_en: "", description_ar: "",
   price_minor: 10000, currency: "AED",
   condition_en: "New", condition_ar: "جديد",
-  category: "Bags", mode: "resell", status: "active", is_authentic: true,
+  category: "Bags", mode: "resell", status: "active", approved_at: new Date().toISOString(), is_authentic: true,
 }).select("*").single();
 
 const { data: thread } = await admin.from("chat_threads").insert({

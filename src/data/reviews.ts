@@ -8,6 +8,8 @@
  * this with a real `User` lookup.
  */
 
+import { batch2Reviews } from "./reviews-batch2";
+
 export type QuickTag =
   | "asDescribed"
   | "fastShipping"
@@ -525,4 +527,5 @@ export const REVIEWS: Review[] = [
     verifiedPurchase: true,
     orderId: "MD-10195",
   },
+  ...batch2Reviews,
 ];

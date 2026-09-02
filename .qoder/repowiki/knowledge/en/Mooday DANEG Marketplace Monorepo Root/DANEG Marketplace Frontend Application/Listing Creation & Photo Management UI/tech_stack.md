@@ -1,0 +1,1 @@
+React Server Components with `'use client'` directives; browser Canvas API for client-side image resizing; HTML5 `<input type="file" multiple capture="environment">` for camera/file pickers; `localStorage` for draft persistence; Tailwind utility classes for styling.

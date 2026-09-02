@@ -253,6 +253,7 @@ export const OtpView: React.FC<OtpViewProps> = ({
   );
 };
 
-// Make the universal code visible to QA + reviewers in the helper text.
-// Phase 2 will replace this helper with a real "check your inbox" message.
+// Demo-mode helper: surface the universal code so QA/reviewers know what
+// to type in the absence of a real email/SMS challenge. Production
+// (Supabase auth) hides this block — see docs/audit-u1-mock-branches.md.
 const MOCK_TP_DISPLAY = MOCK_OTP_CODE;

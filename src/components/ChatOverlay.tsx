@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useApp } from "@/context/AppContext";
 import { formatAEDLabel } from "@/lib/format";
+import { AppImage } from "@/components/AppImage";
 
 interface ChatOverlayProps {
   threadId: string;
@@ -32,7 +33,19 @@ interface ChatCopy {
   notFoundBack: string;
   attachImage: string;
   attachmentUnavailable: string;
-  imageAttached: string;
+  makeOffer: string;
+  offerHeading: string;
+  offerAmount: string;
+  offerPlaceholder: string;
+  offerSend: string;
+  offerCancel: string;
+  offerPending: string;
+  offerAccepted: string;
+  offerDeclined: string;
+  offerWaiting: string;
+  acceptOffer: string;
+  declineOffer: string;
+  invalidOffer: string;
   quickReply1: string;
   quickReply2: string;
   quickReply3: string;
@@ -49,7 +62,19 @@ const COPY: Record<"en" | "ar", ChatCopy> = {
     notFoundBack: "Back",
     attachImage: "Attach image",
     attachmentUnavailable: "Available after media upload is connected",
-    imageAttached: "📷 Photo",
+    makeOffer: "Make an offer",
+    offerHeading: "Send an offer",
+    offerAmount: "Your offer (AED)",
+    offerPlaceholder: "Example: 950",
+    offerSend: "Send offer",
+    offerCancel: "Cancel",
+    offerPending: "Pending",
+    offerAccepted: "Accepted",
+    offerDeclined: "Declined",
+    offerWaiting: "Waiting for the seller",
+    acceptOffer: "Accept offer",
+    declineOffer: "Decline offer",
+    invalidOffer: "Enter a valid amount greater than zero.",
     quickReply1: "Is this still available?",
     quickReply2: "Can you share more photos?",
     quickReply3: "What's your best price?",
@@ -64,7 +89,19 @@ const COPY: Record<"en" | "ar", ChatCopy> = {
     notFoundBack: "رجوع",
     attachImage: "إرفاق صورة",
     attachmentUnavailable: "يتوفر بعد ربط رفع الوسائط",
-    imageAttached: "📷 صورة",
+    makeOffer: "تقديم عرض",
+    offerHeading: "إرسال عرض",
+    offerAmount: "عرضك (درهم)",
+    offerPlaceholder: "مثال: ٩٥٠",
+    offerSend: "إرسال العرض",
+    offerCancel: "إلغاء",
+    offerPending: "قيد الانتظار",
+    offerAccepted: "تم القبول",
+    offerDeclined: "تم الرفض",
+    offerWaiting: "بانتظار رد البائع",
+    acceptOffer: "قبول العرض",
+    declineOffer: "رفض العرض",
+    invalidOffer: "أدخل مبلغاً صحيحاً أكبر من صفر.",
     quickReply1: "هل لا يزال متوفراً؟",
     quickReply2: "هل يمكنك مشاركة المزيد من الصور؟",
     quickReply3: "ما هو أفضل سعر؟",
@@ -75,7 +112,8 @@ const COPY: Record<"en" | "ar", ChatCopy> = {
  * F-29 — Chat Thread (enhanced).
  *
  * Adds over the previous version:
- *  - **Image attachment** button (Phase 1: inserts a "📷 Photo" stub message).
+ *  - **Image attachment** affordance is visible but disabled until media
+ *    upload is connected. It never creates a fake image message.
  *  - **Quick replies**: three chips above the input for common questions.
  *
  * Read receipts and real-time updates arrive with Phase 3.
@@ -87,12 +125,21 @@ export const ChatOverlay: React.FC<ChatOverlayProps> = ({
   onSelectSeller,
   onSelectProduct,
 }) => {
-  const { language, chats, sendChatMessage, markChatRead } = useApp();
+  const {
+    language,
+    chats,
+    sendChatMessage,
+    markChatRead,
+    setChatOfferStatus,
+  } = useApp();
   const isAr = language === "ar";
   const t = isAr ? COPY.ar : COPY.en;
 
 
   const [inputText, setInputText] = useState("");
+  const [offerAmount, setOfferAmount] = useState("");
+  const [showOfferForm, setShowOfferForm] = useState(false);
+  const [offerError, setOfferError] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const thread = chats.find((c) => c.id === threadId);
@@ -130,16 +177,106 @@ export const ChatOverlay: React.FC<ChatOverlayProps> = ({
   const handleSend = (e: React.FormEvent) => {
     e.preventDefault();
     if (!inputText.trim()) return;
-    sendChatMessage(threadId, inputText.trim());
+    void sendChatMessage(threadId, inputText.trim());
     setInputText("");
   };
 
   const handleQuickReply = (text: string) => {
-    sendChatMessage(threadId, text);
+    void sendChatMessage(threadId, text);
+  };
+
+  const handleSendOffer = (e: React.FormEvent) => {
+    e.preventDefault();
+    const amount = Number.parseFloat(offerAmount);
+    if (!Number.isFinite(amount) || amount <= 0) {
+      setOfferError(t.invalidOffer);
+      return;
+    }
+    setOfferError("");
+    void sendChatMessage(
+      threadId,
+      "OFFER:" + amount.toFixed(2) + ":" + t.offerHeading,
+    );
+    setOfferAmount("");
+    setShowOfferForm(false);
   };
 
   const renderMessage = (msg: (typeof thread.messages)[number]) => {
     const isUser = msg.sender === "user";
+    if (msg.type === "offer") {
+      const offerStatus = msg.offerStatus ?? "pending";
+      const statusLabel =
+        offerStatus === "accepted"
+          ? t.offerAccepted
+          : offerStatus === "declined"
+            ? t.offerDeclined
+            : t.offerPending;
+      return (
+        <div
+          key={msg.id}
+          className={
+            "flex flex-col max-w-[82%] " +
+            (isUser ? "self-end items-end" : "self-start items-start")
+          }
+        >
+          <div
+            className={
+              "w-full rounded-2xl border p-4 " +
+              (isUser
+                ? "border-primary/30 bg-primary/10"
+                : "border-surface-container-high bg-surface")
+            }
+          >
+            <div className="flex items-center justify-between gap-3">
+              <span className="flex items-center gap-2 text-label-sm font-bold text-on-surface">
+                <span
+                  className="material-symbols-outlined text-[19px] text-primary"
+                  aria-hidden="true"
+                >
+                  local_offer
+                </span>
+                {t.offerHeading}
+              </span>
+              <span className="rounded-full bg-surface-container-high px-2 py-1 text-[10px] font-bold text-on-surface-variant">
+                {statusLabel}
+              </span>
+            </div>
+            <div className="mt-3 font-serif text-headline-sm font-bold text-primary">
+              {formatAEDLabel((msg.offerMinor ?? 0) / 100)}
+            </div>
+            <p className="mt-1 text-xs text-on-surface-variant">{msg.text}</p>
+            {offerStatus === "pending" &&
+              (isUser ? (
+                <p className="mt-3 text-[11px] font-medium text-on-surface-variant">
+                  {t.offerWaiting}
+                </p>
+              ) : (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      void setChatOfferStatus(msg.id, "accepted")
+                    }
+                    className="rounded-full bg-primary px-3 py-1.5 text-[11px] font-bold text-on-primary hover:bg-primary/90"
+                  >
+                    {t.acceptOffer}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      void setChatOfferStatus(msg.id, "declined")
+                    }
+                    className="rounded-full border border-error/40 px-3 py-1.5 text-[11px] font-bold text-error hover:bg-error/10"
+                  >
+                    {t.declineOffer}
+                  </button>
+                </div>
+              ))}
+          </div>
+          <span className="mt-1 px-1 text-[10px] text-outline">{msg.time}</span>
+        </div>
+      );
+    }
     return (
       <div
         key={msg.id}
@@ -195,11 +332,15 @@ export const ChatOverlay: React.FC<ChatOverlayProps> = ({
               aria-label={`View ${thread.sellerName}'s profile`}
               className="flex items-center gap-md rounded-full px-1 py-0.5 -mx-1 hover:bg-surface-container-low active:scale-[0.98] transition-transform"
             >
-              <img
-                alt={thread.sellerName}
-                src={thread.sellerAvatar}
-                className="w-10 h-10 rounded-full object-cover border border-outline-variant"
-              />
+              <div className="relative h-10 w-10 flex-shrink-0 overflow-hidden rounded-full border border-outline-variant">
+                <AppImage
+                  alt={thread.sellerName}
+                  src={thread.sellerAvatar || "/sellers/placeholder.svg"}
+                  fill
+                  sizes="40px"
+                  className="object-cover"
+                />
+              </div>
               <div className="text-left">
                 <h3 className="text-label-md font-bold text-on-surface leading-tight">
                   {thread.sellerName}
@@ -211,11 +352,15 @@ export const ChatOverlay: React.FC<ChatOverlayProps> = ({
             </button>
           ) : (
             <div className="flex items-center gap-md">
-              <img
-                alt={thread.sellerName}
-                src={thread.sellerAvatar}
-                className="w-10 h-10 rounded-full object-cover border border-outline-variant"
-              />
+              <div className="relative h-10 w-10 flex-shrink-0 overflow-hidden rounded-full border border-outline-variant">
+                <AppImage
+                  alt={thread.sellerName}
+                  src={thread.sellerAvatar || "/sellers/placeholder.svg"}
+                  fill
+                  sizes="40px"
+                  className="object-cover"
+                />
+              </div>
               <div>
                 <h3 className="text-label-md font-bold text-on-surface leading-tight">
                   {thread.sellerName}
@@ -243,11 +388,15 @@ export const ChatOverlay: React.FC<ChatOverlayProps> = ({
           aria-label={`View ${thread.productTitle}`}
           className="w-full bg-surface-container-low border-b border-surface-container-high px-margin-mobile py-sm flex items-center gap-sm text-left hover:bg-surface-container-high transition-colors"
         >
-          <img
-            alt={thread.productTitle}
-            src={thread.productImage}
-            className="w-10 h-10 rounded object-cover border border-outline-variant flex-shrink-0"
-          />
+          <div className="relative h-10 w-10 flex-shrink-0 overflow-hidden rounded border border-outline-variant">
+            <AppImage
+              alt={thread.productTitle}
+              src={thread.productImage || "/products/placeholder.svg"}
+              fill
+              sizes="40px"
+              className="object-cover"
+            />
+          </div>
           <div className="min-w-0">
             <p className="text-label-sm font-bold text-on-surface truncate">
               {thread.productTitle}
@@ -259,11 +408,15 @@ export const ChatOverlay: React.FC<ChatOverlayProps> = ({
         </button>
       ) : (
         <div className="bg-surface-container-low border-b border-surface-container-high px-margin-mobile py-sm flex items-center gap-sm">
-          <img
-            alt={thread.productTitle}
-            src={thread.productImage}
-            className="w-10 h-10 rounded object-cover border border-outline-variant flex-shrink-0"
-          />
+          <div className="relative h-10 w-10 flex-shrink-0 overflow-hidden rounded border border-outline-variant">
+            <AppImage
+              alt={thread.productTitle}
+              src={thread.productImage || "/products/placeholder.svg"}
+              fill
+              sizes="40px"
+              className="object-cover"
+            />
+          </div>
           <div className="min-w-0">
             <p className="text-label-sm font-bold text-on-surface truncate">
               {thread.productTitle}
@@ -299,14 +452,85 @@ export const ChatOverlay: React.FC<ChatOverlayProps> = ({
 
       {/* Input bar */}
       <footer className="bg-surface border-t border-surface-container-high p-md">
+        {showOfferForm && (
+          <form
+            onSubmit={handleSendOffer}
+            className="mb-3 rounded-xl border border-primary/25 bg-primary/5 p-3"
+          >
+            <div className="flex items-center justify-between gap-3">
+              <label
+                htmlFor="offer-amount"
+                className="text-label-sm font-bold text-on-surface"
+              >
+                {t.offerHeading}
+              </label>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowOfferForm(false);
+                  setOfferError("");
+                }}
+                className="text-xs font-bold text-on-surface-variant hover:text-on-surface"
+              >
+                {t.offerCancel}
+              </button>
+            </div>
+            <div className="mt-2 flex items-center gap-2">
+              <input
+                id="offer-amount"
+                type="number"
+                min="1"
+                step="0.01"
+                inputMode="decimal"
+                value={offerAmount}
+                onChange={(e) => {
+                  setOfferAmount(e.target.value);
+                  setOfferError("");
+                }}
+                placeholder={t.offerPlaceholder}
+                aria-label={t.offerAmount}
+                className="min-w-0 flex-1 rounded-lg border border-surface-container-high bg-surface px-3 py-2 text-sm text-on-surface outline-none focus:border-primary"
+              />
+              <button
+                type="submit"
+                className="rounded-lg bg-primary px-3 py-2 text-xs font-bold text-on-primary hover:bg-primary/90"
+              >
+                {t.offerSend}
+              </button>
+            </div>
+            {offerError && (
+              <p className="mt-2 text-[11px] font-medium text-error" role="alert">
+                {offerError}
+              </p>
+            )}
+          </form>
+        )}
         <form onSubmit={handleSend} className="flex gap-sm items-center">
-          {/* Image attach — Phase 1 stub inserts a photo message */}
+          <button
+            type="button"
+            aria-label={t.makeOffer}
+            title={t.makeOffer}
+            onClick={() => {
+              setOfferError("");
+              setShowOfferForm((value) => !value);
+            }}
+            className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary hover:bg-primary/20 transition-colors flex-shrink-0 active:scale-95"
+          >
+            <span
+              className="material-symbols-outlined text-[20px] no-mirror"
+              aria-hidden="true"
+            >
+              local_offer
+            </span>
+          </button>
+          {/* Image messages stay disabled until a real media upload is wired. */}
           <button
             type="button"
             aria-label={t.attachImage}
-            title={t.attachImage}
-            onClick={() => sendChatMessage(threadId, t.imageAttached)}
-            className="w-10 h-10 rounded-full bg-surface-container-low flex items-center justify-center text-on-surface-variant hover:text-primary transition-colors flex-shrink-0 active:scale-95"
+            title={t.attachmentUnavailable}
+            disabled
+            aria-disabled="true"
+            className="w-10 h-10 rounded-full bg-surface-container-low flex items-center justify-center text-outline transition-colors flex-shrink-0 cursor-not-allowed"
           >
             <span
               className="material-symbols-outlined text-[20px] no-mirror"
@@ -346,4 +570,3 @@ export const ChatOverlay: React.FC<ChatOverlayProps> = ({
     </div>
   );
 };
-

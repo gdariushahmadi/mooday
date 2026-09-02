@@ -1,0 +1,5 @@
+- Bilingual UI text is selected at runtime via an `isAr` boolean that picks between parallel English/Arabic copy objects (e.g. `LISTING_FORM_COPY_EN` vs `LISTING_FORM_COPY_AR`, `PhotoPickerCopy` props) instead of using a translation library.
+- RTL inputs are explicitly marked with `dir="rtl"` on Arabic-language fields (title, description) while English fields remain LTR, ensuring correct text direction per language.
+- Form fields follow a controlled-component pattern: each piece of form state is held in a `useState` hook with a dedicated setter, and values are initialized from either `initial` (edit mode) or restored `localStorage` draft data.
+- Validation errors are surfaced as a single `validationError` string state rendered inside a `role="alert"` paragraph, rather than per-field error messages.
+- Image handling separates concerns: `ListingPhotoPicker` handles file selection, MIME/size validation, and canvas-based resizing, while `ListingForm` only manages the resulting URL array and forwards staged `File → URL` mappings via `onStagedFiles` for deferred upload.

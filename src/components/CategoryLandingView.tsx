@@ -7,6 +7,7 @@ import { deriveSubCategory } from "@/data/sub-categories";
 import { ClickableCard } from "./ClickableCard";
 import { formatAEDLabel } from "@/lib/format";
 import type { CategorySort } from "@/hooks/useAppNavigation";
+import { AppImage } from "@/components/AppImage";
 
 interface CategoryLandingViewProps {
   /** Active category name (must be a member of CATEGORIES, excluding "All"). */
@@ -256,8 +257,8 @@ export const CategoryLandingView: React.FC<CategoryLandingViewProps> = ({
           <p className="text-label-sm opacity-80 max-w-md">
             {heroCopy?.body ??
               (isAr
-                ? "مختارات من البائعين الموثوقين في مودي."
-                : "Curated pieces from Mooday's verified sellers.")}
+                ? "مختارات من البائعين الموثوقين في دانق."
+                : "Curated pieces from DANEG's verified sellers.")}
           </p>
         </div>
       </div>
@@ -417,12 +418,13 @@ const CategoryGridCard: React.FC<{
         </span>
       </button>
 
-      <div className="aspect-[4/5] bg-surface-container-low overflow-hidden">
-        <img
+      <div className="relative aspect-[4/5] bg-surface-container-low overflow-hidden">
+        <AppImage
           alt={productTitle}
-          src={product.image}
-          loading="lazy"
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+          src={product.image || "/products/placeholder.svg"}
+          fill
+          sizes="(min-width: 768px) 30vw, 50vw"
+          className="object-cover transition-transform duration-500 group-hover:scale-105"
         />
       </div>
       <div className="p-md flex flex-col gap-1">

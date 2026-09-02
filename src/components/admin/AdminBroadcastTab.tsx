@@ -70,8 +70,8 @@ export function AdminBroadcastTab({
         </h2>
         <p className="text-sm text-on-surface-variant">
           {isAr
-            ? "إرسال إعلانات عامة أو تنبيهات لجميع مستخدمي منصة موداي بدعم كامل للغتين"
-            : "Send announcements or system updates to all active Mooday users"}
+            ? "إرسال إعلانات عامة أو تنبيهات لجميع مستخدمي منصة دانق بدعم كامل للغتين"
+            : "Send announcements or system updates to all active DANEG users"}
         </p>
       </div>
 
@@ -137,7 +137,7 @@ export function AdminBroadcastTab({
               required
               value={bodyEn}
               onChange={(e) => setBodyEn(e.target.value)}
-              placeholder="e.g. Mooday marketplace services will undergo brief optimization between 2:00 AM and 4:00 AM GST."
+              placeholder="e.g. DANEG marketplace services will undergo brief optimization between 2:00 AM and 4:00 AM GST."
               className="mt-1 w-full rounded-xl border border-surface-container-high bg-surface-container-low p-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
             />
           </div>
@@ -167,7 +167,7 @@ export function AdminBroadcastTab({
               required
               value={bodyAr}
               onChange={(e) => setBodyAr(e.target.value)}
-              placeholder="مثال: ستخضع خدمات منصة موداي لتحديثات تحسينية من الساعة ۲:۰۰ صباحاً وحتى ۴:۰۰ صباحاً."
+              placeholder="مثال: ستخضع خدمات منصة دانق لتحديثات تحسينية من الساعة ۲:۰۰ صباحاً وحتى ۴:۰۰ صباحاً."
               className="mt-1 w-full rounded-xl border border-surface-container-high bg-surface-container-low p-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary text-right"
               dir="rtl"
             />

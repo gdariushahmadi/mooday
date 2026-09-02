@@ -96,17 +96,11 @@ export const AppContent: React.FC<AppContentProps> = ({ nav }) => {
     openOrder,
     closeOrder,
     openSellPicker,
-    closeSellPicker,
     openCloset,
-    closeCloset,
     openEditListing,
     closeEditListing,
     openSales,
-    closeSales,
-    openNotifications,
-    closeNotifications,
     openChats,
-    closeChats,
     openEditProfile,
     closeEditProfile,
     openAddresses,
@@ -117,7 +111,6 @@ export const AppContent: React.FC<AppContentProps> = ({ nav }) => {
     closeHelp,
     openLeaveReview,
     closeLeaveReview,
-    openMyReviews,
     closeMyReviews,
     openReport,
     closeReport,
@@ -576,8 +569,8 @@ export const AppContent: React.FC<AppContentProps> = ({ nav }) => {
           order={order}
           onBack={closeOrder}
           onSelectProduct={selectProduct}
-          onMarkReceived={(id) => {
-            updateOrderStatus(id, "delivered");
+          onMarkReceived={async (id) => {
+            await updateOrderStatus(id, "delivered");
           }}
           onContactSeller={(product) => {
             const threadId = createChatThread(product);

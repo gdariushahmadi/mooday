@@ -1,0 +1,6 @@
+- Each view component has a colocated `*.test.tsx` file next to its implementation, keeping unit tests co-located with the component they cover.
+- Domain data stores in `AppContext` expose paired getter/setter pairs (e.g. `listings` + `addListing`/`updateListing`/`removeListing`) rather than raw setters, encapsulating persistence and backend calls inside the context.
+- Navigation actions follow an open/close pair pattern (`openX` / `closeX`) that sets both the target `currentView` and clears any related overlay IDs, ensuring consistent state transitions.
+- Deep-linked routes are read from URL query parameters via `readUrlParam` during lazy `useState` initializers and mirrored back to the URL with `window.history.replaceState` to keep the address bar in sync without pushing history entries.
+- Views are selected in `AppContent` via a `switch` on `currentView` with a `default` case that falls back to `DiscoverFeedView`, treating unknown or missing deep-link targets as safe no-ops.
+- Phase 1 mock data and Phase 2 Supabase data are kept behind a single interface: each store holds both a local and a remote copy and selects the active one based on `phase2Backend` / `marketplaceMode`, so view code never branches on backend type.

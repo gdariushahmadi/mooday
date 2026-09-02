@@ -13,9 +13,12 @@ import { defaultProducts, SEED_VERSION } from "@/data/products";
 import { type Address, DEFAULT_ADDRESSES } from "@/data/addresses";
 import {
   type PaymentMethod,
-  DEFAULT_PAYMENT_METHODS,
 } from "@/data/paymentMethods";
-import { type Order, DEFAULT_ORDERS } from "@/data/orders";
+import {
+  type Order,
+  DEFAULT_ORDERS,
+  normalizeDemoOrders,
+} from "@/data/orders";
 import {
   type AppNotification,
   DEFAULT_NOTIFICATIONS,
@@ -33,7 +36,7 @@ import {
   isValidEmail,
   MOCK_OTP_CODE,
 } from "@/data/users";
-import { useLocalStorageState } from "@/lib/hooks";
+import { useLocalStorageState, readMigratedStorage } from "@/lib/hooks";
 import {
   DEFAULT_LOCK_TIMEOUT_MS,
   LOCK_TIMEOUT_PRESETS_MS,
@@ -45,6 +48,7 @@ import {
   type LockTimeoutMs,
 } from "@/lib/security";
 import { isOwnListing } from "@/lib/ownership";
+import { isPaymentsEnabled } from "@/lib/feature-flags";
 import {
   getBackendConfig,
   getPhase2Backend,
@@ -59,7 +63,6 @@ import {
   mapProductToCreateInput,
   mapProductToUpdatePatch,
   mapOrderFromRemote,
-  buildCreateOrderInput,
   mapThreadFromRemote,
   mapMessageFromRemote,
   mapNotificationFromRemote,
@@ -69,6 +72,21 @@ import {
 } from "@/services/backend/mappers";
 
 type Awaitable<T> = T | Promise<T>;
+
+const SINGLE_LISTING_CART_ERROR =
+  "Only one listing can be in the bag at a time.";
+
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  if (typeof error === "object" && error !== null && "message" in error) {
+    return String((error as { message?: unknown }).message ?? "");
+  }
+  return "";
+}
+
+function isSingleListingCartError(error: unknown): boolean {
+  return getErrorMessage(error).toLowerCase().includes("one listing");
+}
 
 export interface Product {
   id: string;
@@ -124,6 +142,9 @@ export interface ChatMessage {
   sender: "user" | "seller";
   text: string;
   time: string;
+  type?: "text" | "image" | "system" | "offer";
+  offerMinor?: number;
+  offerStatus?: "pending" | "accepted" | "declined";
 }
 
 export interface ChatThread {
@@ -155,6 +176,24 @@ export interface CartItem {
   product: Product;
   quantity: number;
 }
+
+/**
+ * A browser-only order receipt for the public Demo checkout.
+ *
+ * Demo orders never enter Supabase and contain no payment information.
+ */
+export interface DemoOrder {
+  id: string;
+  createdAt: string;
+  isDemo: true;
+  product: Product;
+  address: Address;
+  subtotal: number;
+  shipping: number;
+  total: number;
+}
+
+export type DemoOrderInput = Omit<DemoOrder, "id" | "createdAt" | "isDemo">;
 
 export interface UserProfile {
   fullNameEn: string;
@@ -203,8 +242,12 @@ export interface AppContextType {
   refreshListings?: () => Promise<void>;
   addListing: (
     product: Omit<Product, "id" | "saves">,
-    /** Phase 3 slice 7: real staged files matching `product.images`. */
-    files?: File[],
+    /** Phase 3 slice 7: `url → File` map pairing staged files with the
+     * URLs already in `product.images`. The form hands us the same
+     * map it built while the user picked photos so we can look up each
+     * file by its picker's URL. URLs without a matching entry are
+     * public/mock paths the picker let through unchanged. */
+    staged?: Map<string, File>,
     options?: { status?: "draft" | "active" },
   ) => Awaitable<void>;
   updateListing: (
@@ -212,15 +255,25 @@ export interface AppContextType {
     patch: Partial<Omit<Product, "id">> & {
       status?: "draft" | "active" | "sold" | "reserved" | "archived";
     },
+    /** Phase 3 slice 7: `url → File` map pairing staged files with the
+     * URLs in `patch.images`. */
+    staged?: Map<string, File>,
   ) => Awaitable<void>;
   removeListing: (id: string) => Awaitable<void>;
   likes: string[];
   toggleLike: (productId: string) => Awaitable<void>;
   cart: CartItem[];
   addToCart: (product: Product) => Awaitable<void>;
+  /** A clear, user-facing cart rule error. */
+  cartError?: string | null;
+  clearCartError?: () => void;
   removeFromCart: (productId: string) => Awaitable<void>;
   updateQuantity: (productId: string, quantity: number) => Awaitable<void>;
   clearCart: () => Awaitable<void>;
+  /** Account-scoped saved items in Supabase; browser-scoped in mock mode. */
+  savedForLater?: Product[];
+  saveForLater?: (product: Product) => Awaitable<void>;
+  removeSavedForLater?: (productId: string) => Awaitable<void>;
   chats: ChatThread[];
   /**
    * Setter that targets the active chats backing store (Supabase
@@ -244,6 +297,9 @@ export interface AppContextType {
   chatsLoading: boolean;
   orders: Order[];
   recordOrder: (order: Order) => Awaitable<string | null>;
+  /** Browser-only public Demo receipts. Never sent to the order table. */
+  demoOrders?: DemoOrder[];
+  recordDemoOrder?: (input: DemoOrderInput) => string;
   updateOrderStatus: (id: string, status: Order["status"]) => Awaitable<void>;
   notifications: AppNotification[];
   markNotificationRead: (id: string) => void;
@@ -296,7 +352,7 @@ export interface AppContextType {
   updateCurrentUserName: (name: string) => Awaitable<void>;
   resetPassword: (email: string, newPassword: string) => Awaitable<boolean>;
   addresses: Address[];
-  addAddress: (address: Omit<Address, "id">) => Awaitable<void>;
+  addAddress: (address: Omit<Address, "id">) => Awaitable<Address>;
   updateAddress: (
     id: string,
     patch: Partial<Omit<Address, "id">>,
@@ -363,28 +419,32 @@ export interface AppContextType {
 export const AppContext = createContext<AppContextType | undefined>(undefined);
 
 const STORAGE_KEYS = {
-  lang: "mooday_lang",
-  likes: "mooday_likes",
-  cart: "mooday_cart",
-  chats: "mooday_chats",
-  listings: "mooday_listings",
-  seedVersion: "mooday_seed_version",
-  addresses: "mooday_addresses",
-  paymentMethods: "mooday_payment_methods",
-  orders: "mooday_orders",
-  notifications: "mooday_notifications",
-  myReviews: "mooday_my_reviews",
-  blockedUsers: "mooday_blocked_users",
-  reports: "mooday_reports",
-  disputes: "mooday_disputes",
-  users: "mooday_users",
-  session: "mooday_session",
-  pendingOtp: "mooday_pending_otp",
-  lockEnabled: "mooday_lock_enabled",
-  lockTimeoutMs: "mooday_lock_timeout_ms",
-  lockPinHash: "mooday_lock_pin_hash",
-  lockPinSalt: "mooday_lock_pin_salt",
-  lockBiometricCred: "mooday_lock_webauthn_cred_id",
+  lang: "daneg_lang",
+  likes: "daneg_likes",
+  cart: "daneg_cart",
+  savedForLater: "daneg_saved_for_later",
+  demoOrders: "daneg_demo_orders",
+  chats: "daneg_chats",
+  chatLastRead: "daneg_chat_last_read",
+  listings: "daneg_listings",
+  seedVersion: "daneg_seed_version",
+  addresses: "daneg_addresses",
+  paymentMethods: "daneg_payment_methods",
+  orders: "daneg_orders",
+  notifications: "daneg_notifications",
+  userProfile: "daneg_user_profile",
+  myReviews: "daneg_my_reviews",
+  blockedUsers: "daneg_blocked_users",
+  reports: "daneg_reports",
+  disputes: "daneg_disputes",
+  users: "daneg_users",
+  session: "daneg_session",
+  pendingOtp: "daneg_pending_otp",
+  lockEnabled: "daneg_lock_enabled",
+  lockTimeoutMs: "daneg_lock_timeout_ms",
+  lockPinHash: "daneg_lock_pin_hash",
+  lockPinSalt: "daneg_lock_pin_salt",
+  lockBiometricCred: "daneg_lock_webauthn_cred_id",
 } as const;
 
 const DEFAULT_CHATS: ChatThread[] = [
@@ -435,8 +495,8 @@ let listingsCache: { raw: string | null; value: Product[] } | null = null;
 
 function getListingsSnapshot(): Product[] {
   try {
-    const raw = localStorage.getItem(STORAGE_KEYS.listings);
-    const seedVersion = localStorage.getItem(STORAGE_KEYS.seedVersion);
+    const raw = readMigratedStorage(STORAGE_KEYS.listings);
+    const seedVersion = readMigratedStorage(STORAGE_KEYS.seedVersion);
 
     // Migration must run before caching so the cache reflects the
     // post-migration state. After migration, the raw string is updated
@@ -495,6 +555,12 @@ function writeListings(next: Product[]) {
   );
 }
 
+/** The public beta supports exactly one listing and quantity one per cart. */
+function normalizeSingleCart(items: CartItem[]): CartItem[] {
+  const first = items[0];
+  return first ? [{ product: first.product, quantity: 1 }] : [];
+}
+
 // ---------- provider ----------
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
@@ -522,13 +588,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   // otherwise consumers like ChatOverlay would re-fire their effects on
   // every state update and create an infinite render loop on the chat
   // page (`Uncaught rh → ... → up/ud` repeated in the console).
+  // The update runs in an effect to comply with React's "no refs during
+  // render" rule instead of assigning in the render body.
   const remoteThreadsRef = useRef(remoteThreads);
-  remoteThreadsRef.current = remoteThreads;
-  const [ordersLoading, setOrdersLoading] = React.useState(false);
+  React.useEffect(() => {
+    remoteThreadsRef.current = remoteThreads;
+  }, [remoteThreads]);
+  const [, setOrdersLoading] = React.useState(false);
   const [chatsLoading, setChatsLoading] = React.useState(false);
   const [chatLastRead, setChatLastRead] = useLocalStorageState<
     Record<string, string>
-  >("mooday_chat_last_read", {});
+  >(STORAGE_KEYS.chatLastRead, {});
   const activeChats = phase2Backend ? remoteThreads : chats;
   const setActiveChats = phase2Backend ? setRemoteThreads : setChats;
   const [storedAddresses, setStoredAddresses] = useLocalStorageState<Address[]>(
@@ -540,23 +610,32 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   const setAddresses = phase2Backend ? setRemoteAddresses : setStoredAddresses;
   const [paymentMethods, setPaymentMethods] = useLocalStorageState<
     PaymentMethod[]
-  >(STORAGE_KEYS.paymentMethods, DEFAULT_PAYMENT_METHODS);
+  >(STORAGE_KEYS.paymentMethods, []);
   const [remotePaymentMethods, setRemotePaymentMethods] = React.useState<
     PaymentMethod[]
   >([]);
   const activePaymentMethods = phase2Backend
     ? remotePaymentMethods
     : paymentMethods;
-  const setActivePaymentMethods = phase2Backend
-    ? setRemotePaymentMethods
-    : setPaymentMethods;
+
+  useEffect(() => {
+    if (isPaymentsEnabled()) return;
+    localStorage.removeItem(STORAGE_KEYS.paymentMethods);
+    setPaymentMethods([]);
+  }, [setPaymentMethods]);
   const [storedOrders, setStoredOrders] = useLocalStorageState<Order[]>(
     STORAGE_KEYS.orders,
     DEFAULT_ORDERS,
+    { deserialize: (raw) => normalizeDemoOrders(JSON.parse(raw) as Order[]) },
   );
   const [remoteOrders, setRemoteOrders] = React.useState<Order[]>([]);
   const orders = phase2Backend ? remoteOrders : storedOrders;
   const setOrders = phase2Backend ? setRemoteOrders : setStoredOrders;
+
+  useEffect(() => {
+    if (phase2Backend || isPaymentsEnabled()) return;
+    setStoredOrders((previous) => normalizeDemoOrders(previous));
+  }, [phase2Backend, setStoredOrders]);
   const [notifications, setNotifications] = useLocalStorageState<
     AppNotification[]
   >(STORAGE_KEYS.notifications, DEFAULT_NOTIFICATIONS);
@@ -566,12 +645,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   const activeNotifications = phase2Backend
     ? remoteNotifications
     : notifications;
-  const setActiveNotifications = phase2Backend
-    ? setRemoteNotifications
-    : setNotifications;
   const [storedUserProfile, setStoredUserProfile] =
     useLocalStorageState<UserProfile>(
-      "mooday_user_profile",
+      STORAGE_KEYS.userProfile,
       DEFAULT_USER_PROFILE,
     );
   const [remoteUserProfile, setRemoteUserProfile] =
@@ -586,7 +662,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   );
   const [remoteMyReviews, setRemoteMyReviews] = React.useState<MyReview[]>([]);
   const activeMyReviews = phase2Backend ? remoteMyReviews : myReviews;
-  const setActiveMyReviews = phase2Backend ? setRemoteMyReviews : setMyReviews;
   const [blockedUsers, setBlockedUsers] = useLocalStorageState<BlockedUser[]>(
     STORAGE_KEYS.blockedUsers,
     DEFAULT_BLOCKED_USERS,
@@ -597,23 +672,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   const activeBlockedUsers = phase2Backend
     ? remoteBlockedUsers
     : blockedUsers;
-  const setActiveBlockedUsers = phase2Backend
-    ? setRemoteBlockedUsers
-    : setBlockedUsers;
   const [reports, setReports] = useLocalStorageState<ReportRecord[]>(
     STORAGE_KEYS.reports,
     DEFAULT_REPORTS,
   );
   const [remoteReports, setRemoteReports] = React.useState<ReportRecord[]>([]);
   const activeReports = phase2Backend ? remoteReports : reports;
-  const setActiveReports = phase2Backend ? setRemoteReports : setReports;
   const [disputes, setDisputes] = useLocalStorageState<Dispute[]>(
     STORAGE_KEYS.disputes,
     DEFAULT_DISPUTES,
   );
   const [remoteDisputes, setRemoteDisputes] = React.useState<Dispute[]>([]);
   const activeDisputes = phase2Backend ? remoteDisputes : disputes;
-  const setActiveDisputes = phase2Backend ? setRemoteDisputes : setDisputes;
   // Phase 3 marketplace state. Pulled from `listings` + `seller_card_view`
   // + `listing_images` and hydrated into the Phase 1 `Product` shape so the
   // existing screens render real data without per-component rewiring.
@@ -646,6 +716,30 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   );
   const [remoteCart, setRemoteCart] = React.useState<CartItem[]>([]);
   const cart = marketplaceMode ? remoteCart : storedCart;
+  const [storedSavedForLater, setStoredSavedForLater] =
+    useLocalStorageState<Product[]>(STORAGE_KEYS.savedForLater, []);
+  const [remoteSavedForLater, setRemoteSavedForLater] = React.useState<Product[]>([]);
+  const savedForLater = marketplaceMode ? remoteSavedForLater : storedSavedForLater;
+  const [cartError, setCartError] = React.useState<string | null>(null);
+  const [demoOrders] = useLocalStorageState<DemoOrder[]>(
+    STORAGE_KEYS.demoOrders,
+    [],
+  );
+
+  useEffect(() => {
+    if (marketplaceMode) return;
+    setStoredCart((previous) => {
+      const normalized = normalizeSingleCart(previous);
+      return normalized.length === previous.length &&
+        normalized.every(
+          (item, index) =>
+            item.product.id === previous[index]?.product.id &&
+            previous[index]?.quantity === 1,
+        )
+        ? previous
+        : normalized;
+    });
+  }, [marketplaceMode, setStoredCart]);
 
   // ---- App lock state ---------------------------------------------
   // All four lock primitives live in localStorage. We hold them as
@@ -698,7 +792,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   const [pendingAuthEmail, setPendingAuthEmail] = React.useState("");
 
   useEffect(() => {
-    if (!phase2Backend) return; // TODO(phase-1): U2 — remove when AuthService is fully wired.
+    if (!phase2Backend) return; // Demo mode: the real AuthService is only available when Supabase is configured. See docs/audit-u1-mock-branches.md.
 
     // One-way security migration: never keep Phase 1 plaintext credentials or
     // cosmetic session tokens when the real backend is enabled.
@@ -736,7 +830,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   }, [phase2Backend]);
 
   useEffect(() => {
-    if (!phase2Backend || !remoteUser) return; // TODO(phase-1): U2 — remove when U2 lands.
+    if (!phase2Backend || !remoteUser) return; // Demo mode: profile/address hydration only runs when Supabase auth is active. See docs/audit-u1-mock-branches.md.
     let active = true;
     void Promise.all([
       phase2Backend.profiles.getMine(),
@@ -767,6 +861,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   const setLanguage = useCallback(
     (lang: "en" | "ar") => {
       setLang(lang);
+      if (typeof document !== "undefined") {
+        document.cookie = `daneg_language=${lang}; Path=/; Max-Age=31536000; SameSite=Lax`;
+      }
     },
     [setLang],
   );
@@ -779,7 +876,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
    * second round-trip per order.
    */
   const refreshOrders = useCallback(async () => {
-    if (!phase2Backend) return; // TODO(phase-1): U3 — remove when listings read lands.
+    if (!phase2Backend) return; // Demo mode: order refresh is a no-op without a Supabase backend. See docs/audit-u1-mock-branches.md.
     setOrdersLoading(true);
     try {
       const [buyerRows, sellerRows] = await Promise.all([
@@ -837,7 +934,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
    * the cache honest.
    */
   const refreshListings = useCallback(async () => {
-    if (!marketplaceMode || !phase2Backend) return; // TODO(phase-1): U3 — remove when listings load lands.
+    if (!marketplaceMode || !phase2Backend) return; // Demo mode: marketplace fetch only runs in Supabase marketplace mode. See docs/audit-u1-mock-branches.md.
     setListingsLoading(true);
     setListingsError(null);
     try {
@@ -868,11 +965,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       if (!authState) {
         setRemoteLikes([]);
         setRemoteCart([]);
+        setRemoteSavedForLater([]);
         return;
       }
-      const [liked, cartItems] = await Promise.all([
+      const [liked, cartItems, savedItems] = await Promise.all([
         phase2Backend.likes.listMine(),
         phase2Backend.cart.listMine(),
+        phase2Backend.savedItems.listMine(),
       ]);
       setRemoteLikes(liked);
       const productById = new Map(hydrated.map((p) => [p.id, p]));
@@ -884,7 +983,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
           : await phase2Backend.listings.listByIds(missingIds);
       const missingById = new Map(missing.map((l) => [l.id, l]));
       setRemoteCart(
-        cartItems
+        normalizeSingleCart(
+          cartItems
           .map((item) => {
             const product =
               productById.get(item.listingId) ??
@@ -898,6 +998,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
             return product ? { product, quantity: item.quantity } : null;
           })
           .filter((c): c is CartItem => c !== null),
+        ),
+      );
+      setRemoteSavedForLater(
+        savedItems
+          .map((item) => productById.get(item.listingId))
+          .filter((item): item is Product => item !== undefined),
       );
     } catch (err) {
       const message =
@@ -908,10 +1014,63 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   }, [marketplaceMode, phase2Backend]);
 
+  /**
+   * Persist a listing's photo set against the Supabase backend.
+   *
+   * Real `File` objects (from `ListingPhotoPicker`) upload to the
+   * private `listing-media` bucket via `media.upload`. Public URLs
+   * (mock library picks, restored photo paths) insert straight into
+   * `listing_images` via `media.attachPublicUrl` — pushing them
+   * through `media.upload` with an empty body used to fail with a
+   * 415 from the bucket (Content-Type defaulted to
+   * `application/octet-stream` because FormData parts with no
+   * `type` resolve that way).
+   *
+   * `staged` is the same `url → File` map the picker/form built while
+   * the user staged photos. The URL keys let us pair each staged file
+   * with the entry it occupies in `photos` (and ultimately in
+   * `data.images`). Building a fresh map here with `URL.createObjectURL`
+   * would orphan the staged files, since the picker minted a different
+   * blob URL for the same blob.
+   */
+  const persistListingPhotos = useCallback(
+    async (args: {
+      phase2Backend: NonNullable<typeof phase2Backend>;
+      listingId: string;
+      photos: string[];
+      staged?: Map<string, File>;
+    }) => {
+      const { phase2Backend: backend, listingId, photos, staged } = args;
+      if (photos.length === 0) return;
+      for (let i = 0; i < photos.length; i += 1) {
+        const path = photos[i];
+        const stagedFile = staged?.get(path);
+        if (stagedFile) {
+          await backend.media.upload(
+            listingId,
+            {
+              filename:
+                stagedFile.name ||
+                `photo-${i}.${stagedFile.type.split("/")[1] ?? "jpg"}`,
+              mimeType: stagedFile.type as never,
+              sizeBytes: stagedFile.size,
+              body: stagedFile,
+            },
+            i,
+          );
+          continue;
+        }
+        if (!isPublicImageUrl(path)) continue;
+        await backend.media.attachPublicUrl(listingId, path, i);
+      }
+    },
+    [],
+  );
+
   const addListing = useCallback(
     async (
       product: Omit<Product, "id" | "saves">,
-      files?: File[],
+      staged?: Map<string, File>,
       options?: { status?: "draft" | "active" },
     ) => {
       const status = options?.status ?? "active";
@@ -919,48 +1078,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
         const created = await phase2Backend.listings.create(
           mapProductToCreateInput(product, status),
         );
-        // Persist photos. Real staged files (slice 7) upload to the
-        // private bucket; Phase 1 mock URLs persist as passthrough
-        // `listing_images.storage_path` rows.
-        const photos = product.images?.length
-          ? product.images
-          : product.image
-            ? [product.image]
-            : [];
-        const fileByUrl = new Map<string, File>();
-        for (const f of files ?? []) {
-          fileByUrl.set(URL.createObjectURL(f), f);
-        }
-        for (let i = 0; i < photos.length; i += 1) {
-          const path = photos[i];
-          const stagedFile = fileByUrl.get(path);
-          if (stagedFile) {
-            await phase2Backend.media.upload(
-              created.id,
-              {
-                filename:
-                  stagedFile.name ||
-                  `photo-${i}.${stagedFile.type.split("/")[1] ?? "jpg"}`,
-                mimeType: stagedFile.type as never,
-                sizeBytes: stagedFile.size,
-                body: stagedFile,
-              },
-              i,
-            );
-            continue;
-          }
-          if (!isPublicImageUrl(path)) continue;
-          await phase2Backend.media.upload(
-            created.id,
-            {
-              filename: path.split("/").pop() || `photo-${i}`,
-              mimeType: "image/jpeg",
-              sizeBytes: 1,
-              body: new Blob([]),
-            },
-            i,
-          );
-        }
+        await persistListingPhotos({
+          phase2Backend,
+          listingId: created.id,
+          photos: product.images?.length
+            ? product.images
+            : product.image
+              ? [product.image]
+              : [],
+          staged,
+        });
         await refreshListings();
         return;
       }
@@ -973,7 +1100,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       const current = getListingsSnapshot();
       writeListings([newProduct, ...current]);
     },
-    [marketplaceMode, phase2Backend, refreshListings, session],
+    [marketplaceMode, phase2Backend, persistListingPhotos, refreshListings, session],
   );
 
   const updateListing = useCallback(
@@ -982,20 +1109,32 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       patch: Partial<Omit<Product, "id">> & {
         status?: "draft" | "active" | "sold" | "reserved" | "archived";
       },
+      /** Phase 3 slice 7: `url → File` map pairing staged files with
+       * the URLs in `patch.images`. */
+      staged?: Map<string, File>,
     ) => {
       if (marketplaceMode && phase2Backend) {
         await phase2Backend.listings.update(id, mapProductToUpdatePatch(patch));
+        if (staged && staged.size > 0 && patch.images && patch.images.length > 0) {
+          await persistListingPhotos({
+            phase2Backend,
+            listingId: id,
+            photos: patch.images,
+            staged,
+          });
+        }
         await refreshListings();
         return;
       }
-      const { status: _status, ...productPatch } = patch;
+      const productPatch = { ...patch };
+      delete productPatch.status;
       const current = getListingsSnapshot();
       const next = current.map((p) =>
         p.id === id ? { ...p, ...productPatch } : p,
       );
       writeListings(next);
     },
-    [marketplaceMode, phase2Backend, refreshListings],
+    [marketplaceMode, phase2Backend, persistListingPhotos, refreshListings],
   );
 
   const removeListing = useCallback(
@@ -1030,16 +1169,31 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
           : [...prev, productId],
       );
     },
-    [marketplaceMode, phase2Backend],
+    [marketplaceMode, phase2Backend, setStoredLikes],
   );
 
   const addToCart = useCallback(
     async (product: Product) => {
+      setCartError(null);
       if (marketplaceMode && phase2Backend) {
+        const remoteItems = await phase2Backend.cart.listMine();
+        const existing = remoteItems.find((item) => item.quantity > 0);
+        if (existing && existing.listingId !== product.id) {
+          setCartError(SINGLE_LISTING_CART_ERROR);
+          throw new Error(SINGLE_LISTING_CART_ERROR);
+        }
         // Remote cart stores identifiers only; the seller/photo/title
         // refresh comes from the next listings fetch so a freshly-updated
         // listing show its new price in the bag immediately.
-        await phase2Backend.cart.add(product.id, 1);
+        try {
+          await phase2Backend.cart.add(product.id, 1);
+        } catch (error) {
+          if (isSingleListingCartError(error)) {
+            setCartError(SINGLE_LISTING_CART_ERROR);
+            throw new Error(SINGLE_LISTING_CART_ERROR);
+          }
+          throw error;
+        }
         const [items, listingRecords] = await Promise.all([
           phase2Backend.cart.listMine(),
           phase2Backend.listings.listByIds([product.id]),
@@ -1047,11 +1201,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
         const listing = listingRecords[0];
         if (!listing) {
           setRemoteCart([]);
-          return;
+          throw new Error("This listing is no longer available.");
         }
         const productById = new Map(remoteListings.map((p) => [p.id, p]));
         setRemoteCart(
-          items
+          normalizeSingleCart(
+            items
             .map((item) => {
               const fromList = productById.get(item.listingId);
               const fallback = fromList
@@ -1068,24 +1223,35 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
                 : null;
             })
             .filter((c): c is CartItem => c !== null),
+          ),
         );
         return;
       }
+      let rejectedSecondListing = false;
       setStoredCart((prev) => {
-        const idx = prev.findIndex((item) => item.product.id === product.id);
-        if (idx > -1) {
-          return prev.map((item, i) =>
-            i === idx ? { ...item, quantity: item.quantity + 1 } : item,
-          );
+        const current = normalizeSingleCart(prev);
+        if (current.length > 0 && current[0]?.product.id !== product.id) {
+          rejectedSecondListing = true;
+          return current;
         }
-        return [...prev, { product, quantity: 1 }];
+        if (current.length > 0) return current;
+        return [{ product, quantity: 1 }];
       });
+      if (rejectedSecondListing) {
+        setCartError(SINGLE_LISTING_CART_ERROR);
+      }
     },
-    [marketplaceMode, phase2Backend, remoteListings],
+    [
+      marketplaceMode,
+      phase2Backend,
+      remoteListings,
+      setStoredCart,
+    ],
   );
 
   const removeFromCart = useCallback(
     async (productId: string) => {
+      setCartError(null);
       if (marketplaceMode && phase2Backend) {
         await phase2Backend.cart.remove(productId);
         setRemoteCart((prev) =>
@@ -1097,17 +1263,56 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
         prev.filter((item) => item.product.id !== productId),
       );
     },
-    [marketplaceMode, phase2Backend],
+    [marketplaceMode, phase2Backend, setStoredCart],
   );
 
   const clearCart = useCallback(async () => {
+    setCartError(null);
     if (marketplaceMode && phase2Backend) {
       await phase2Backend.cart.clear();
       setRemoteCart([]);
       return;
     }
     setStoredCart([]);
-  }, [marketplaceMode, phase2Backend]);
+  }, [marketplaceMode, phase2Backend, setStoredCart]);
+
+  const clearCartError = useCallback(() => setCartError(null), []);
+
+  const saveForLater = useCallback(
+    async (product: Product): Promise<void> => {
+      if (marketplaceMode && phase2Backend) {
+        await phase2Backend.savedItems.save(product.id);
+        setRemoteSavedForLater((previous) =>
+          previous.some((item) => item.id === product.id)
+            ? previous
+            : [product, ...previous],
+        );
+        return;
+      }
+      setStoredSavedForLater((previous) =>
+        previous.some((item) => item.id === product.id)
+          ? previous
+          : [product, ...previous],
+      );
+    },
+    [marketplaceMode, phase2Backend, setStoredSavedForLater],
+  );
+
+  const removeSavedForLater = useCallback(
+    async (productId: string): Promise<void> => {
+      if (marketplaceMode && phase2Backend) {
+        await phase2Backend.savedItems.remove(productId);
+        setRemoteSavedForLater((previous) =>
+          previous.filter((item) => item.id !== productId),
+        );
+        return;
+      }
+      setStoredSavedForLater((previous) =>
+        previous.filter((item) => item.id !== productId),
+      );
+    },
+    [marketplaceMode, phase2Backend, setStoredSavedForLater],
+  );
 
   const updateQuantity = useCallback(
     async (productId: string, quantity: number) => {
@@ -1116,26 +1321,30 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
         return;
       }
       if (marketplaceMode && phase2Backend) {
-        await phase2Backend.cart.setQuantity(productId, quantity);
+        await phase2Backend.cart.setQuantity(productId, 1);
         const next = await phase2Backend.cart.listMine();
         const productById = new Map(remoteListings.map((p) => [p.id, p]));
         setRemoteCart(
-          next
+          normalizeSingleCart(
+            next
             .map((item) => {
               const product = productById.get(item.listingId);
               return product ? { product, quantity: item.quantity } : null;
             })
             .filter((c): c is CartItem => c !== null),
+          ),
         );
         return;
       }
       setStoredCart((prev) =>
-        prev.map((item) =>
-          item.product.id === productId ? { ...item, quantity } : item,
+        normalizeSingleCart(
+          prev.map((item) =>
+            item.product.id === productId ? { ...item, quantity: 1 } : item,
+          ),
         ),
       );
     },
-    [marketplaceMode, phase2Backend, remoteListings, removeFromCart],
+    [marketplaceMode, phase2Backend, remoteListings, removeFromCart, setStoredCart],
   );
 
 
@@ -1146,7 +1355,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
    * `chatLastRead` map so we don't need a server-side unread column.
    */
   const refreshChats = useCallback(async () => {
-    if (!phase2Backend) return; // TODO(phase-1): U7 — remove when chat realtime lands.
+    if (!phase2Backend) return; // Demo mode: chat threads hydrate from localStorage; the realtime service is only available on Supabase. See docs/audit-u1-mock-branches.md.
     setChatsLoading(true);
     try {
       const auth = await phase2Backend.auth.getCurrentUser();
@@ -1191,7 +1400,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
 
 
   const refreshNotifications = useCallback(async () => {
-    if (!phase2Backend) return; // TODO(phase-1): U7 — remove when chat send lands.
+    if (!phase2Backend) return; // Demo mode: notifications hydrate from localStorage in mock mode. See docs/audit-u1-mock-branches.md.
     try {
       const rows = await phase2Backend.notifications.listMine();
       setRemoteNotifications(rows.map(mapNotificationFromRemote));
@@ -1201,7 +1410,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   }, [phase2Backend]);
 
   const refreshMyReviews = useCallback(async () => {
-    if (!phase2Backend) return; // TODO(phase-1): U10 — remove when notifications service lands.
+    if (!phase2Backend) return; // Demo mode: my-reviews hydrate from localStorage in mock mode. See docs/audit-u1-mock-branches.md.
     try {
       const rows = await phase2Backend.reviews.listMine();
       // The view model needs a seller display name + avatar; the server
@@ -1223,7 +1432,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   }, [phase2Backend]);
 
   const refreshReports = useCallback(async () => {
-    if (!phase2Backend) return; // TODO(phase-1): U8 — remove when social follow lands.
+    if (!phase2Backend) return; // Demo mode: reports hydrate from localStorage in mock mode. See docs/audit-u1-mock-branches.md.
     try {
       const rows = await phase2Backend.reports.listMine();
       setRemoteReports(rows.map(mapReportFromRemote));
@@ -1233,7 +1442,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   }, [phase2Backend]);
 
   const refreshDisputes = useCallback(async () => {
-    if (!phase2Backend) return; // TODO(phase-1): U8 — remove when social like lands.
+    if (!phase2Backend) return; // Demo mode: disputes hydrate from localStorage in mock mode. See docs/audit-u1-mock-branches.md.
     try {
       const rows = await phase2Backend.disputes.listMine();
       setRemoteDisputes(rows.map(mapDisputeFromRemote));
@@ -1334,6 +1543,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
           productTitle: language === "ar" ? product.titleAr : product.titleEn,
           productImage: product.image,
           productPrice: product.price,
+          sellerId: product.sellerId,
+          productId: product.id,
           lastMessage:
             language === "ar"
               ? "مرحباً! كيف يمكنني مساعدتك؟"
@@ -1366,7 +1577,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       if (phase2Backend) {
         // Detect "OFFER:amount" pseudo-syntax (used by ChatOverlay's
         // Make-Offer flow) and route to the offer message type.
-        const offerMatch = /^OFFER:(\d+(?:\.\d+)?):/.exec(text);
+        const offerMatch = /^OFFER:(\d+(?:\.\d+)?):(.*)$/i.exec(text);
         const now = new Date();
         const timeStr = now.toLocaleTimeString([], {
           hour: "2-digit",
@@ -1378,11 +1589,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
         // is replaced with the server-issued id once the network call
         // resolves, and removed entirely if it fails.
         const tempId = `local-${now.getTime()}`;
+        const offerMinor = offerMatch
+          ? Math.round(Number.parseFloat(offerMatch[1]) * 100)
+          : undefined;
+        const displayText = offerMatch?.[2].trim() || text;
         const userMsg: ChatMessage = {
           id: tempId,
           sender: "user",
-          text,
+          text: displayText,
           time: timeStr,
+          type: offerMatch ? "offer" : "text",
+          offerMinor,
+          offerStatus: offerMatch ? "pending" : undefined,
         };
         setRemoteThreads((prev) =>
           prev.map((t) =>
@@ -1391,7 +1609,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
               : {
                   ...t,
                   messages: [...t.messages, userMsg],
-                  lastMessage: text,
+                  lastMessage: displayText,
                   lastMessageTime: timeStr,
                 },
           ),
@@ -1400,7 +1618,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
         const sendInput = offerMatch
           ? {
               type: "offer" as const,
-              body: text,
+              body: displayText,
               imageUrl: null,
               offerMinor: Math.round(
                 Number.parseFloat(offerMatch[1]) * 100,
@@ -1428,6 +1646,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
               typeof (realMsg as { body?: unknown }).body === "string"
                 ? (realMsg as { body: string }).body
                 : text;
+            const realDisplayText =
+              /^OFFER:\d+(?:\.\d+)?:(.*)$/i.exec(realBody)?.[1]?.trim() ??
+              realBody;
             setRemoteThreads((prev) =>
               prev.map((t) =>
                 t.id !== threadId
@@ -1437,11 +1658,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
                       messages: t.messages.map((m) =>
                         m.id === tempId
                           ? {
-                              id: realId,
-                              sender: "user",
-                              text: realBody,
-                              time: timeStr,
-                            }
+                            id: realId,
+                            sender: "user",
+                            text: realDisplayText,
+                            time: timeStr,
+                            type:
+                              realMsg.type === "offer"
+                                ? "offer"
+                                : realMsg.type,
+                            offerMinor: realMsg.offerMinor ?? offerMinor,
+                            offerStatus:
+                              realMsg.offerStatus ??
+                              (offerMatch ? "pending" : undefined),
+                          }
                           : m,
                       ),
                     },
@@ -1468,6 +1697,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
         hour: "2-digit",
         minute: "2-digit",
       });
+      const offerMatch = /^OFFER:(\d+(?:\.\d+)?):(.*)$/i.exec(text);
+      const offerMinor = offerMatch
+        ? Math.round(Number.parseFloat(offerMatch[1]) * 100)
+        : undefined;
+      const displayText = offerMatch?.[2].trim() || text;
 
       // Add the user's message immediately.
       setChats((prev) => {
@@ -1477,14 +1711,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
         const userMsg: ChatMessage = {
           id: `msg-${Date.now()}`,
           sender: "user",
-          text,
+          text: displayText,
           time: timeStr,
+          type: offerMatch ? "offer" : "text",
+          offerMinor,
+          offerStatus: offerMatch ? "pending" : undefined,
         };
 
         const updatedThread: ChatThread = {
           ...prev[idx],
           messages: [...prev[idx].messages, userMsg],
-          lastMessage: text,
+          lastMessage: displayText,
           lastMessageTime: timeStr,
         };
 
@@ -1495,6 +1732,56 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       setTimeout(() => {
         let replyText = "";
         const lowerText = text.toLowerCase();
+
+        if (offerMatch) {
+          setChats((prev) => {
+            const idx = prev.findIndex((c) => c.id === threadId);
+            if (idx === -1) return prev;
+            const target = prev[idx];
+            const accepted =
+              (offerMinor ?? 0) <= Math.round(target.productPrice * 100 * 0.85);
+            const nextStatus: "accepted" | "declined" = accepted
+              ? "accepted"
+              : "declined";
+            const nextOfferText = accepted
+              ? language === "ar"
+                ? "تم قبول عرضك. يمكنك متابعة الشراء بالسعر المتفق عليه."
+                : "Your offer was accepted. You can continue with the agreed price."
+              : language === "ar"
+                ? "شكراً على عرضك. لا يمكنني قبول هذا السعر حالياً."
+                : "Thanks for the offer. I cannot accept this price right now.";
+            const messages = target.messages.map((message) =>
+              message.type === "offer" &&
+              message.sender === "user" &&
+              message.offerStatus === "pending" &&
+              message.offerMinor === offerMinor
+                ? { ...message, offerStatus: nextStatus }
+                : message,
+            );
+            const sellerMsg: ChatMessage = {
+              id: `msg-${Date.now() + 1}`,
+              sender: "seller",
+              text: nextOfferText,
+              time: new Date().toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit",
+              }),
+              type: "text",
+            };
+            return prev.map((chat, i) =>
+              i === idx
+                ? {
+                    ...chat,
+                    messages: [...messages, sellerMsg],
+                    lastMessage: nextOfferText,
+                    lastMessageTime: sellerMsg.time,
+                    unread: (chat.unread ?? 0) + 1,
+                  }
+                : chat,
+            );
+          });
+          return;
+        }
 
         if (
           lowerText.includes("authentic") ||
@@ -1610,13 +1897,24 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       if (phase2Backend) {
         await phase2Backend.chats.setOfferStatus(messageId, status);
         await refreshChats();
+        return;
       }
+      setChats((prev) =>
+        prev.map((chat) => ({
+          ...chat,
+          messages: chat.messages.map((message) =>
+            message.id === messageId && message.type === "offer"
+              ? { ...message, offerStatus: status }
+              : message,
+          ),
+        })),
+      );
     },
-    [phase2Backend, refreshChats],
+    [phase2Backend, refreshChats, setChats],
   );
 
   const addAddress = useCallback(
-    (address: Omit<Address, "id">) => {
+    (address: Omit<Address, "id">): Awaitable<Address> => {
       if (phase2Backend) {
         return phase2Backend.addresses.create(address).then((created) => {
           setAddresses((prev) => {
@@ -1625,11 +1923,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
               : prev;
             return [...next, created];
           });
+          return created;
         });
       }
       const id = `addr-${Date.now()}`;
+      const created: Address = { ...address, id };
       setAddresses((prev) => {
-        const next: Address[] = [...prev, { ...address, id }];
+        const next: Address[] = [...prev, created];
         if (address.isDefault) {
           return next.map((a) => ({ ...a, isDefault: a.id === id }));
         }
@@ -1638,6 +1938,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
         }
         return next;
       });
+      return created;
     },
     [phase2Backend, setAddresses],
   );
@@ -1697,6 +1998,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const addPaymentMethod = useCallback(
     async (method: Omit<PaymentMethod, "id">): Promise<void> => {
+      if (!isPaymentsEnabled()) {
+        throw new Error("Payment methods are not available in Demo mode.");
+      }
       if (phase2Backend) {
         if (method.isDefault) {
           // Clear current defaults first so the new card becomes the unique default.
@@ -1786,26 +2090,52 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const recordOrder = useCallback(
     async (order: Order): Promise<string | null> => {
-      if (phase2Backend) {
-        // Resolve sellerId from the first line item (single-seller
-        // checkout — Phase 1 cart never mixes sellers). Phase 3 will
-        // support multi-seller orders by splitting the cart per seller.
-        const sellerId = order.lineItems[0]?.product.sellerId;
-        if (!sellerId) {
-          throw new Error(
-            "Cannot record order without a seller id on the line item.",
-          );
-        }
-        const input = buildCreateOrderInput({ order, sellerId });
-        const created = await phase2Backend.orders.create(input);
-        await refreshOrders();
-        return created.id;
-      }
-      setOrders((prev) => [order, ...prev]);
-      return order.id;
+      // Financial order creation has one server-owned path only. Demo
+      // checkout uses recordDemoOrder and never enters the order ledger.
+      // The future real checkout must call the atomic single-listing RPC.
+      void order;
+      throw new Error(
+        "Direct order creation is disabled. Use the atomic order RPC.",
+      );
     },
-    [phase2Backend, refreshOrders, setOrders],
+    [],
   );
+
+  const recordDemoOrder = useCallback((input: DemoOrderInput): string => {
+    if (typeof window === "undefined") {
+      throw new Error("Demo orders can only be saved in a browser.");
+    }
+
+    const id = `demo-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    const order: DemoOrder = {
+      ...input,
+      id,
+      createdAt: new Date().toISOString(),
+      isDemo: true,
+    };
+
+    // The generic local-storage hook intentionally swallows quota errors for
+    // settings. A checkout receipt must not show success when persistence
+    // failed, so write and verify this record here and rethrow any failure.
+    const raw = readMigratedStorage(STORAGE_KEYS.demoOrders);
+    let previous: DemoOrder[] = [];
+    if (raw) {
+      try {
+        const parsed = JSON.parse(raw) as unknown;
+        if (Array.isArray(parsed)) previous = parsed as DemoOrder[];
+      } catch {
+        previous = [];
+      }
+    }
+    const next = [order, ...previous];
+    const serialized = JSON.stringify(next);
+    window.localStorage.setItem(STORAGE_KEYS.demoOrders, serialized);
+    if (window.localStorage.getItem(STORAGE_KEYS.demoOrders) !== serialized) {
+      throw new Error("The Demo receipt could not be saved.");
+    }
+    window.dispatchEvent(new StorageEvent("storage", { key: STORAGE_KEYS.demoOrders }));
+    return id;
+  }, []);
 
   const updateOrderStatus = useCallback(
     async (id: string, status: Order["status"]): Promise<void> => {
@@ -1832,24 +2162,24 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
           // Append a timeline entry for the new status.
           const descriptionEn =
             status === "delivered"
-              ? "Delivered — escrow released to seller."
+              ? "Delivered in the sample timeline. No seller payout was created."
               : status === "shipped"
                 ? "Handed to courier, in transit."
                 : status === "returned"
-                  ? "Return received — refund processed."
+                  ? "Demo return recorded locally. No refund was processed."
                   : status === "cancelled"
                     ? "Order cancelled by buyer."
-                    : "Payment secured.";
+                    : "Demo order recorded. No payment was taken.";
           const descriptionAr =
             status === "delivered"
-              ? "تم التسليم — تحويل المبلغ للبائع."
+              ? "تم التسليم في الجدول التجريبي. لم يتم تحويل أي مبلغ للبائع."
               : status === "shipped"
                 ? "تم تسليم الشحنة لشركة الشحن."
                 : status === "returned"
-                  ? "تم استلام المرتجع — تم الاسترداد."
+                  ? "تم تسجيل الإرجاع التجريبي محلياً. لم يتم أي استرداد."
                   : status === "cancelled"
                     ? "تم إلغاء الطلب."
-                    : "تم تأمين المبلغ.";
+                    : "تم تسجيل الطلب التجريبي. لم يتم خصم أي مبلغ.";
           return {
             ...o,
             status,
@@ -2068,7 +2398,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const signInWithOAuth = useCallback(
     async (provider: "google") => {
-    if (!phase2Backend) return false; // TODO(phase-1): U1 — analyze and remove (see docs/audit-u1-mock-branches.md).
+    if (!phase2Backend) return false; // Demo mode: OIDC sign-in requires the Supabase backend. See docs/audit-u1-mock-branches.md.
       setAuthError(null);
       const result = await phase2Backend.auth.signInWithOAuth(provider);
       if (!result.ok) {
@@ -2145,6 +2475,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
         const created = await phase2Backend.reviews.create({
           sellerId,
           orderId: review.orderId || null,
+          listingId: review.listingId ?? null,
           rating: review.rating,
           bodyEn: review.title + "\n\n" + review.body,
           bodyAr: review.title + "\n\n" + review.body,
@@ -2179,12 +2510,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   const blockUser = useCallback(
     async (user: Omit<BlockedUser, "id" | "date">): Promise<void> => {
       if (phase2Backend) {
-        // Map the view-model fields onto the service's expected shape.
-        // The blocked user's id is encoded in the avatar URL path or
-        // extracted from the name; for now we generate a stable id from
-        // the avatar URL since the UI doesn't track a separate sellerId.
-        const blockedId =
-          user.avatar.match(/\/sellers\/([^.]+)\./)?.[1] ?? user.nameEn;
+        // Never derive an auth id from an avatar filename or display name.
+        const blockedId = user.userId;
+        if (!blockedId) {
+          throw new Error("A real user id is required to block a user.");
+        }
         await phase2Backend.blocks.block({
           blockedId,
           blockedNameEn: user.nameEn,
@@ -2197,6 +2527,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
         setRemoteBlockedUsers(
           next.map((r) => ({
             id: r.id,
+            userId: r.blockedId,
             nameEn: r.blockedNameEn,
             nameAr: r.blockedNameAr,
             avatar: r.blockedAvatar,
@@ -2250,7 +2581,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
         setRemoteReports((prev) => [local, ...prev]);
         return local;
       }
-      const caseNumber = `MOODAY-${String(
+      const caseNumber = `DANEG-${String(
         (reports.length + 1 + 10000).toString(),
       ).padStart(5, "0")}`;
       const record: ReportRecord = {
@@ -2292,7 +2623,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
             status: "open",
             date,
             descriptionEn:
-              "Dispute opened. Mooday support will reply within 24h.",
+              "Dispute opened. DANEG support will reply within 24h.",
             descriptionAr: "تم فتح النزاع. سيرد الدعم خلال ٢٤ ساعة.",
           },
         ],
@@ -2502,9 +2833,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       toggleLike,
       cart,
       addToCart,
+      cartError,
+      clearCartError,
       removeFromCart,
       updateQuantity,
       clearCart,
+      savedForLater,
+      saveForLater,
+      removeSavedForLater,
       chats: activeChats,
       setActiveChats,
       sendChatMessage,
@@ -2524,6 +2860,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       setDefaultPaymentMethod,
       orders,
       recordOrder,
+      demoOrders,
+      recordDemoOrder,
       updateOrderStatus,
       notifications: activeNotifications,
       markNotificationRead,
@@ -2592,10 +2930,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       toggleLike,
       cart,
       addToCart,
+      cartError,
+      clearCartError,
       removeFromCart,
       updateQuantity,
       clearCart,
+      savedForLater,
+      saveForLater,
+      removeSavedForLater,
       activeChats,
+      setActiveChats,
       sendChatMessage,
       createChatThread,
       markChatRead,
@@ -2613,6 +2957,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       setDefaultPaymentMethod,
       orders,
       recordOrder,
+      demoOrders,
+      recordDemoOrder,
       updateOrderStatus,
       activeNotifications,
       markNotificationRead,

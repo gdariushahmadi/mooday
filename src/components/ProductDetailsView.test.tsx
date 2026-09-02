@@ -61,6 +61,7 @@ function makeContext(
     updateQuantity: vi.fn(),
     clearCart: vi.fn(),
     chats: [],
+    setActiveChats: vi.fn(),
     sendChatMessage: vi.fn(),
     createChatThread: vi.fn(() => "thread-1"),
     markChatRead: vi.fn(),
@@ -174,7 +175,7 @@ describe("ProductDetailsView — depth", () => {
     expect(currentPage?.textContent).toBe("Bags");
   });
 
-  it("shows the discount % pill based on retail vs. mooday price", () => {
+  it("shows the discount % pill based on retail vs. daneg price", () => {
     renderView(HAND); // 1250 from 2500 = 50% off
 
     expect(screen.getByText(/50% off/i)).toBeInTheDocument();
@@ -197,7 +198,7 @@ describe("ProductDetailsView — depth", () => {
   it("shipping section is collapsed by default", () => {
     renderView(HAND);
 
-    const trigger = screen.getByRole("button", { name: /shipping & returns/i });
+    const trigger = screen.getByRole("button", { name: /demo order information/i });
     expect(trigger).toHaveAttribute("aria-expanded", "false");
   });
 
@@ -206,17 +207,17 @@ describe("ProductDetailsView — depth", () => {
     renderView(HAND);
 
     await user.click(
-      screen.getByRole("button", { name: /shipping & returns/i }),
+      screen.getByRole("button", { name: /demo order information/i }),
     );
 
     expect(
-      screen.getByText(/Ships within 24h from Dubai/i),
+      screen.getByText(/Demo orders are saved in this browser only/i),
     ).toBeInTheDocument();
     expect(
-      screen.getByText(/Free shipping on orders over AED 1,000/i),
+      screen.getByText(/No payment or shipment is created/i),
     ).toBeInTheDocument();
     expect(
-      screen.getByText(/Returns accepted within 7 days/i),
+      screen.getByText(/Real returns will be available in a later phase/i),
     ).toBeInTheDocument();
   });
 

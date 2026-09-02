@@ -1,6 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
 import { AppContext, type AppContextType } from "@/context/AppContext";
 import type { Order } from "@/data/orders";
 import { PayoutsView } from "@/components/PayoutsView";
@@ -46,7 +45,7 @@ function makeContext(overrides: Partial<AppContextType> = {}): AppContextType {
     language: "en", setLanguage: vi.fn(), listings: [], addListing: vi.fn(),
     updateListing: vi.fn(), removeListing: vi.fn(), likes: [], toggleLike: vi.fn(),
     cart: [], addToCart: vi.fn(), removeFromCart: vi.fn(), updateQuantity: vi.fn(),
-    clearCart: vi.fn(), chats: [], sendChatMessage: vi.fn(),
+    clearCart: vi.fn(), chats: [], setActiveChats: vi.fn(), sendChatMessage: vi.fn(),
     createChatThread: vi.fn(() => "t1"),
     markChatRead: vi.fn(),
     setChatOfferStatus: vi.fn(),
@@ -91,44 +90,26 @@ describe("PayoutsView (H-42)", () => {
     expect(screen.getByText("Payouts")).toBeInTheDocument();
   });
 
-  it("renders the available balance card", () => {
+  it("clearly marks payouts as unavailable in Demo mode", () => {
     render(
       <AppContext.Provider value={makeContext()}>
         <PayoutsView onBack={vi.fn()} />
       </AppContext.Provider>,
     );
-    expect(screen.getByText(/Available for payout/i)).toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent(/not available in Demo mode/i);
+    expect(screen.getByRole("status")).toHaveTextContent(/no seller balance or payout/i);
+    expect(screen.queryByText(/Available for payout/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Default payout method/i)).not.toBeInTheDocument();
   });
 
-  it("renders the default payout method", () => {
-    render(
-      <AppContext.Provider value={makeContext()}>
-        <PayoutsView onBack={vi.fn()} />
-      </AppContext.Provider>,
-    );
-    expect(screen.getByText(/Default payout method/i)).toBeInTheDocument();
-    expect(screen.getByText(/ENBD/i)).toBeInTheDocument();
-  });
-
-  it("renders a history row with payout pill", () => {
-    render(
-      <AppContext.Provider value={makeContext()}>
-        <PayoutsView onBack={vi.fn()} />
-      </AppContext.Provider>,
-    );
-    expect(screen.getByText("History")).toBeInTheDocument();
-    // The order id is shown in the history row.
-    expect(screen.getByText("ord-9001")).toBeInTheDocument();
-  });
-
-  it("empty state when no orders", () => {
+  it("does not expose fake payout history", () => {
     render(
       <AppContext.Provider value={makeContext({ orders: [] })}>
         <PayoutsView onBack={vi.fn()} />
       </AppContext.Provider>,
     );
-    // History section still shows the heading.
-    expect(screen.getByText("History")).toBeInTheDocument();
+    expect(screen.queryByText("History")).not.toBeInTheDocument();
+    expect(screen.queryByText("ord-9001")).not.toBeInTheDocument();
   });
 
   it("Arabic: renders Arabic title", () => {

@@ -8,6 +8,7 @@ import { redirect } from "next/navigation";
 import { Landing } from "@/components/landing/Landing";
 import { COPY, type Lang } from "@/components/landing/copy";
 import { DocumentDirSync } from "@/components/landing/DocumentDirSync";
+import { CANONICAL_SITE_URL } from "@/lib/feature-flags";
 
 interface PageProps {
   searchParams: Promise<{
@@ -31,9 +32,7 @@ export async function generateMetadata({
   return {
     title: t.metaTitle,
     description: t.metaDescription,
-    metadataBase: new URL(
-      process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000",
-    ),
+    metadataBase: new URL(CANONICAL_SITE_URL),
     alternates: {
       canonical: "/",
       languages: {
@@ -45,7 +44,7 @@ export async function generateMetadata({
       title: t.metaTitle,
       description: t.metaDescription,
       url: "/",
-      siteName: "Mooday",
+      siteName: "DANEG",
       locale: lang === "ar" ? "ar_AE" : "en_AE",
       type: "website",
       images: [
@@ -53,7 +52,7 @@ export async function generateMetadata({
           url: "/landing/og-default.jpg",
           width: 1280,
           height: 720,
-          alt: "Mooday — pre-loved fashion resale & rental",
+          alt: "DANEG — pre-loved fashion resale & rental",
         },
       ],
     },

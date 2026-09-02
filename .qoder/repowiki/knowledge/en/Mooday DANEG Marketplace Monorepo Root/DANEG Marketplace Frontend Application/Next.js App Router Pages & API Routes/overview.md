@@ -1,0 +1,1 @@
+Defines the Next.js App Router file-system routes for the DANEG marketplace — marketing landing, authenticated app shell, admin dashboard, auth callback, preview embed, and server-side API endpoints.

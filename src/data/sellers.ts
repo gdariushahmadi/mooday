@@ -13,7 +13,7 @@ export interface SellerProfile {
  * already consumes.
  */
 export interface SellerMeta {
-  /** ISO date string for when the seller joined Mooday. */
+  /** ISO date string for when the seller joined DANEG. */
   joinedAt: string;
   isVerified: boolean;
   /** 0–1, fraction of chats the seller replies to within responseTimeHours. */

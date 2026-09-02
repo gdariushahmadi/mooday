@@ -21,8 +21,8 @@ const DISMISS_COOLDOWN_MS = 1000 * 60 * 60 * 24 * 7;
 
 const COPY = {
   en: {
-    title: "Add Mooday to your home screen",
-    body: "Faster access, no app store needed — install Mooday as a lightweight app.",
+    title: "Add DANEG to your home screen",
+    body: "Faster access, no app store needed — install DANEG as a lightweight app.",
     install: "Install",
     howto: "How to",
     later: "Not now",
@@ -30,8 +30,8 @@ const COPY = {
       "Look for the share icon at the bottom of Safari, then choose “Add to Home Screen”.",
   },
   ar: {
-    title: "أضيفي موداي لشاشتك الرئيسية",
-    body: "وصول أسرع، بلا متجر تطبيقات — ثبّتي موداي كتطبيق خفيف.",
+    title: "أضيفي دانق لشاشتك الرئيسية",
+    body: "وصول أسرع، بلا متجر تطبيقات — ثبّتي دانق كتطبيق خفيف.",
     install: "ثبتّي",
     howto: "كيف؟",
     later: "ليس الآن",
@@ -119,7 +119,7 @@ export function LandingInstallPrompt({ lang }: { lang: Lang }) {
   return (
     <div
       role="dialog"
-      aria-label={isAr ? "تثبيت موداي" : "Install Mooday"}
+      aria-label={isAr ? "تثبيت دانق" : "Install DANEG"}
       dir="ltr"
       className="fixed left-1/2 -translate-x-1/2 bottom-6 z-[60] w-[min(94vw,420px)] rounded-2xl border border-surface-container-high bg-surface shadow-2xl p-4 backdrop-blur-md"
       style={{ paddingBottom: "max(16px, env(safe-area-inset-bottom))" }}
@@ -129,8 +129,8 @@ export function LandingInstallPrompt({ lang }: { lang: Lang }) {
           className="w-12 h-12 rounded-xl shrink-0 flex items-center justify-center font-serif italic text-3xl leading-none"
           style={{
             background:
-              "linear-gradient(135deg, #673657 0%, #512443 60%, #3a0e2f 100%)",
-            color: "#ffd8ed",
+              "linear-gradient(135deg, #154846 0%, #11302d 60%, #071714 100%)",
+            color: "#cfe9e2",
           }}
           aria-hidden="true"
         >

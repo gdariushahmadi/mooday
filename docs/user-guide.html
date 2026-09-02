@@ -1,0 +1,2278 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>راهنمای کاربری و معرفی امکانات — DANEG دانق</title>
+    <meta name="description" content="معرفی کامل امکانات، سیاست‌ها، منطق کسب‌وکار و راهنمای استفاده از پلتفرم دانق" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+    <style>
+
+:root {
+  --ink: #1a2421;
+  --ink-soft: #3e4a47;
+  --muted: #6b7672;
+  --brand: #124939;
+  --brand-deep: #0c2f25;
+  --brand-soft: #e8f0ed;
+  --gold: #F9A11B;
+  --gold-deep: #d68910;
+  --gold-soft: #fff4dc;
+  --cream: #fdf6e8;
+  --paper: #fffdf9;
+  --surface: #f7f3ec;
+  --line: #e6dfd4;
+  --line-soft: #f0eae0;
+  --green: #2f6b4a;
+  --green-soft: #eaf2ee;
+  --rose: #a33148;
+  --rose-soft: #fbe9ec;
+  --blue: #2b5a8a;
+  --blue-soft: #e7eff8;
+  --shadow-sm: 0 4px 16px rgba(18, 73, 57, 0.06);
+  --shadow-md: 0 14px 38px rgba(18, 73, 57, 0.10);
+  --shadow-lg: 0 28px 60px rgba(18, 73, 57, 0.18);
+  --radius: 14px;
+  --radius-sm: 10px;
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+
+body {
+  margin: 0;
+  color: var(--ink);
+  background: #ede6e0;
+  font-family: "Vazirmatn", "Segoe UI", Tahoma, sans-serif;
+  font-weight: 400;
+  line-height: 1.85;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+a { color: var(--brand); text-decoration: none; }
+a:hover { color: var(--brand-deep); }
+
+.toolbar {
+  position: fixed;
+  top: 18px;
+  left: 18px;
+  z-index: 50;
+  display: flex;
+  gap: 8px;
+}
+
+.toolbar button,
+.toolbar a {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 16px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgba(255, 253, 249, 0.94);
+  color: var(--brand);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  transition: all 0.2s;
+}
+
+.toolbar button:hover,
+.toolbar a:hover {
+  background: #fff;
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.document {
+  width: min(1180px, calc(100% - 32px));
+  margin: 32px auto;
+  background: var(--paper);
+  border-radius: 4px;
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+}
+
+/* COVER */
+.cover {
+  position: relative;
+  min-height: 760px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 8%;
+  color: #fffaf5;
+  text-align: center;
+  background:
+    radial-gradient(ellipse at top right, rgba(249, 161, 27, 0.18), transparent 60%),
+    radial-gradient(ellipse at bottom left, rgba(244, 201, 149, 0.12), transparent 50%),
+    linear-gradient(135deg, #0a1f18 0%, var(--brand-deep) 45%, var(--brand) 78%, #2a8f63 100%);
+  overflow: hidden;
+}
+
+.cover::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -20%;
+  width: 800px;
+  height: 800px;
+  border: 1px solid rgba(249, 161, 27, 0.08);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.cover::after {
+  content: '';
+  position: absolute;
+  bottom: -30%;
+  left: -10%;
+  width: 500px;
+  height: 500px;
+  border: 1px solid rgba(244, 201, 149, 0.06);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.cover-inner {
+  position: relative;
+  z-index: 1;
+  max-width: 760px;
+}
+
+.logo-cover {
+  display: block;
+  width: 280px;
+  height: auto;
+  margin: 0 auto 36px;
+  filter: drop-shadow(0 14px 30px rgba(0,0,0,0.28));
+}
+
+.eyebrow {
+  margin: 0 0 14px;
+  color: var(--gold);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+}
+
+h1, h2, h3, h4 {
+  margin: 0;
+  font-family: "Vazirmatn", Georgia, "Times New Roman", serif;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.cover h1 {
+  font-size: clamp(40px, 6vw, 72px);
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+
+.cover .tagline {
+  margin: 28px auto 0;
+  max-width: 620px;
+  font-size: 19px;
+  color: #fff2df;
+  font-weight: 400;
+  line-height: 1.9;
+}
+
+.cover .meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 16px;
+  margin: 44px 0 0;
+  padding: 12px 22px;
+  border: 1px solid rgba(249, 161, 27, 0.30);
+  border-radius: 999px;
+  color: rgba(255, 250, 245, 0.92);
+  font-size: 13px;
+  background: rgba(10, 31, 24, 0.30);
+}
+
+.cover .meta-divider {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: rgba(249, 161, 27, 0.6);
+}
+
+.content { padding: 70px 8% 30px; }
+
+/* INTRO */
+.intro {
+  display: grid;
+  grid-template-columns: 1.45fr 1fr;
+  gap: 50px;
+  align-items: start;
+  padding-bottom: 56px;
+  border-bottom: 1px solid var(--line);
+}
+
+.intro h2 {
+  font-size: 38px;
+  color: var(--brand);
+  font-weight: 800;
+  margin-bottom: 20px;
+}
+
+.intro h2 + p { margin: 0; }
+
+.lead {
+  font-size: 17px !important;
+  color: var(--ink) !important;
+  font-weight: 500;
+  line-height: 2.05 !important;
+}
+
+.section p {
+  max-width: 860px;
+  margin: 12px 0;
+  color: var(--ink-soft);
+  font-size: 15.5px;
+  line-height: 2.05;
+}
+
+/* STAT CARD */
+.stat-card {
+  padding: 26px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: linear-gradient(180deg, #fff 0%, #fdf8ec 100%);
+}
+
+.stat-card h3 {
+  margin: 0 0 16px;
+  color: var(--brand);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.stat-list {
+  display: grid;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.stat-list li {
+  display: flex;
+  justify-content: space-between;
+  padding: 11px 0;
+  border-bottom: 1px dashed var(--line);
+  font-size: 14px;
+}
+
+.stat-list li:last-child { border-bottom: none; }
+.stat-list span { color: var(--muted); }
+.stat-list strong { color: var(--brand-deep); font-weight: 700; }
+
+/* NOTICE / CALLOUT */
+.notice {
+  padding: 22px 26px;
+  border: 1px solid #f0c982;
+  border-right: 4px solid var(--gold);
+  border-radius: var(--radius-sm);
+  background: var(--gold-soft);
+  color: #5a4112;
+  font-size: 14px;
+}
+
+.notice strong {
+  display: block;
+  margin-bottom: 6px;
+  color: #7a5510;
+  font-weight: 700;
+}
+
+.notice--rose {
+  background: var(--rose-soft);
+  border-color: #e8b6bf;
+  border-right-color: var(--rose);
+  color: #6a1c2c;
+}
+.notice--rose strong { color: #862438; }
+
+.notice--blue {
+  background: var(--blue-soft);
+  border-color: #b8cce3;
+  border-right-color: var(--blue);
+  color: #1c3d5e;
+}
+.notice--blue strong { color: #234c75; }
+
+/* VALUES */
+.values {
+  margin: 50px 0 30px;
+  padding: 40px;
+  background: linear-gradient(135deg, #faf4e6 0%, #e8f0ed 100%);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+
+.values-eyebrow {
+  margin: 0 0 6px;
+  color: var(--brand);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+
+.values h2 {
+  margin: 0 0 28px;
+  color: var(--ink);
+  font-size: 30px;
+  font-weight: 800;
+}
+
+.values-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+}
+
+.value {
+  padding: 24px;
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  border-radius: var(--radius-sm);
+}
+
+.value-icon {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  margin-bottom: 16px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--brand), var(--brand-deep));
+  color: #fff;
+}
+
+.value h3 {
+  margin: 0 0 8px;
+  color: var(--brand-deep);
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.value p {
+  margin: 0;
+  font-size: 14px;
+  color: var(--ink-soft);
+  line-height: 1.95;
+}
+
+/* POLICY PANELS */
+.policy-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 18px;
+  margin-top: 20px;
+}
+
+.policy {
+  padding: 22px 24px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: #fff;
+}
+
+.policy h4 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 10px;
+  color: var(--brand);
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.policy h4::before {
+  content: '';
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  background: var(--gold);
+  flex-shrink: 0;
+}
+
+.policy p, .policy ul {
+  margin: 0;
+  font-size: 14px;
+  color: var(--ink-soft);
+  line-height: 1.95;
+}
+
+.policy ul { padding-right: 22px; margin-top: 6px; }
+.policy li { margin: 4px 0; }
+
+/* FLOW DIAGRAM */
+.flow {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 24px 0 12px;
+  padding: 22px;
+  background: linear-gradient(180deg, #fff 0%, #fdf8ec 100%);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+
+.flow-step {
+  flex: 1 1 0;
+  min-width: 130px;
+  padding: 14px 12px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  text-align: center;
+}
+
+.flow-step b {
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  margin-bottom: 8px;
+  border-radius: 50%;
+  color: #fff;
+  background: var(--brand);
+  font: 800 13px "Vazirmatn";
+}
+
+.flow-step strong {
+  display: block;
+  margin-bottom: 2px;
+  color: var(--brand-deep);
+  font-size: 13.5px;
+  font-weight: 700;
+}
+
+.flow-step span {
+  color: var(--muted);
+  font-size: 12.5px;
+  line-height: 1.7;
+}
+
+.flow-arrow {
+  align-self: center;
+  color: var(--gold);
+  font-size: 22px;
+  font-weight: 800;
+  flex: 0 0 auto;
+}
+
+/* TIER PILLS */
+.tiers {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin: 22px 0 12px;
+}
+
+.tier {
+  padding: 18px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line);
+}
+
+.tier--verified {
+  background: linear-gradient(180deg, #fff 0%, #e8f4ee 100%);
+  border-color: #b5d6c0;
+}
+
+.tier--review {
+  background: linear-gradient(180deg, #fff 0%, #fff4dc 100%);
+  border-color: #f0d28a;
+}
+
+.tier--self {
+  background: linear-gradient(180deg, #fff 0%, #f4f1ec 100%);
+  border-color: var(--line);
+}
+
+.tier-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+
+.tier--verified .tier-badge { background: var(--green); color: #fff; }
+.tier--review .tier-badge { background: var(--gold); color: #5a4112; }
+.tier--self .tier-badge { background: var(--muted); color: #fff; }
+
+.tier h4 {
+  margin: 0 0 6px;
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.tier p {
+  margin: 0;
+  font-size: 13px;
+  color: var(--ink-soft);
+  line-height: 1.85;
+}
+
+/* TOC */
+.toc {
+  margin: 60px 0 70px;
+  padding: 36px 40px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.toc-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 22px;
+}
+
+.toc h2 {
+  margin: 0;
+  color: var(--brand);
+  font-size: 26px;
+  font-weight: 800;
+}
+
+.toc-count {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.toc ol {
+  columns: 2;
+  margin: 0;
+  padding-right: 22px;
+}
+
+.toc li {
+  padding: 7px 0;
+  line-height: 1.75;
+  break-inside: avoid;
+}
+
+.toc li::marker { color: var(--gold); font-weight: 700; }
+
+.toc a { color: var(--ink-soft); }
+.toc a:hover { color: var(--brand); }
+
+/* SECTION */
+.section {
+  padding: 60px 0 0;
+  scroll-margin-top: 30px;
+}
+
+.section + .section {
+  margin-top: 28px;
+  border-top: 1px solid var(--line-soft);
+}
+
+.section-heading {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-bottom: 22px;
+}
+
+.section-number {
+  display: inline-grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  color: #fff;
+  background: linear-gradient(135deg, var(--brand), var(--brand-deep));
+  font: 800 22px "Vazirmatn", Georgia, serif;
+  box-shadow: 0 8px 22px rgba(18, 73, 57, 0.28);
+  flex-shrink: 0;
+}
+
+.section h2 {
+  color: var(--brand);
+  font-size: 32px;
+  font-weight: 800;
+}
+
+.section h3 {
+  margin-top: 28px;
+  color: var(--brand-deep);
+  font-size: 21px;
+  font-weight: 700;
+}
+
+/* STEPS */
+.steps {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin: 28px 0 32px;
+}
+
+.step {
+  min-height: 150px;
+  padding: 24px 22px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: #fff;
+  transition: all 0.2s;
+}
+
+.step:hover {
+  border-color: var(--brand-soft);
+  box-shadow: var(--shadow-sm);
+  transform: translateY(-2px);
+}
+
+.step b {
+  display: inline-grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  margin-bottom: 14px;
+  border-radius: 50%;
+  color: #fff;
+  background: linear-gradient(135deg, var(--brand), var(--brand-deep));
+  font-weight: 800;
+  font-size: 15px;
+  box-shadow: 0 4px 12px rgba(18, 73, 57, 0.28);
+}
+
+.step strong {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--brand-deep);
+  font-weight: 700;
+  font-size: 16px;
+}
+
+.step span {
+  color: var(--muted);
+  font-size: 13.5px;
+  line-height: 1.85;
+}
+
+/* FEATURE GRID */
+.feature-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 18px;
+  margin-top: 26px;
+}
+
+.feature {
+  padding: 24px 26px;
+  border: 1px solid var(--line);
+  border-right: 4px solid var(--gold);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  transition: all 0.2s;
+}
+
+.feature:hover {
+  background: #fff;
+  box-shadow: var(--shadow-sm);
+}
+
+.feature strong {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+  color: var(--brand);
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.feature strong::before {
+  content: '';
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--gold);
+}
+
+.feature p {
+  margin: 0;
+  font-size: 14px;
+  color: var(--ink-soft);
+  line-height: 1.95;
+  max-width: none;
+}
+
+/* SPEC TABLE */
+.spec-table {
+  width: 100%;
+  margin: 22px 0 12px;
+  border-collapse: collapse;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: #fff;
+  font-size: 14px;
+}
+
+.spec-table th, .spec-table td {
+  padding: 12px 16px;
+  text-align: right;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.spec-table th {
+  background: var(--brand-soft);
+  color: var(--brand-deep);
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: 0.02em;
+}
+
+.spec-table tr:last-child td { border-bottom: none; }
+.spec-table td:first-child { font-weight: 600; color: var(--ink); }
+.spec-table td:last-child { color: var(--ink-soft); }
+
+/* FIGURE */
+figure {
+  margin: 32px 0 8px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: #fff;
+  box-shadow: var(--shadow-md);
+}
+
+figure img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: var(--radius-sm);
+  background: #f7f3f0;
+}
+
+figcaption {
+  padding: 16px 6px 4px;
+  color: var(--ink-soft);
+  font-size: 13.5px;
+  line-height: 1.9;
+  border-top: 1px solid var(--line-soft);
+  margin-top: 14px;
+}
+
+figcaption strong { color: var(--brand); font-weight: 700; }
+
+/* SPLIT */
+.split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 32px;
+  align-items: start;
+  margin-top: 16px;
+}
+
+/* CHECKLIST */
+.checklist {
+  margin: 14px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.checklist li {
+  position: relative;
+  margin: 10px 0;
+  padding-right: 34px;
+  color: var(--ink-soft);
+  font-size: 14.5px;
+  line-height: 1.95;
+}
+
+.checklist li::before {
+  content: '\2713';
+  position: absolute;
+  right: 0;
+  top: 3px;
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: var(--green);
+  background: var(--green-soft);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.checklist--cross li::before {
+  content: '\2715';
+  color: var(--rose);
+  background: var(--rose-soft);
+}
+
+/* PATH PILL */
+.path {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin: 14px 0;
+  padding: 10px 18px;
+  border-radius: 999px;
+  color: var(--brand-deep);
+  background: var(--brand-soft);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.path::before {
+  content: '\2190';
+  font-weight: 800;
+}
+
+/* LOGIC BOX */
+.logic {
+  margin: 22px 0 8px;
+  padding: 18px 22px;
+  border: 1px dashed #c8b893;
+  border-radius: var(--radius-sm);
+  background: var(--cream);
+}
+
+.logic-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 10px;
+  color: var(--brand-deep);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.logic-title::before {
+  content: '';
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--gold);
+}
+
+.logic ul {
+  margin: 0;
+  padding-right: 20px;
+  font-size: 13.5px;
+  color: var(--ink-soft);
+  line-height: 2;
+}
+
+.logic li { margin: 4px 0; }
+
+/* FOOTER */
+.footer {
+  margin-top: 70px;
+  padding: 38px 8%;
+  border-top: 1px solid var(--line);
+  background: linear-gradient(180deg, var(--surface) 0%, #ece4d8 100%);
+}
+
+.footer-inner {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 32px;
+  align-items: center;
+  color: var(--muted);
+  font-size: 13.5px;
+  line-height: 1.95;
+}
+
+.footer-brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 12px;
+}
+
+.logo-horizontal {
+  height: 36px;
+  width: auto;
+}
+
+.footer strong { color: var(--brand); font-weight: 700; }
+
+.footer-meta {
+  text-align: left;
+  line-height: 1.9;
+  font-size: 13px;
+}
+
+.footer-meta strong { display: block; margin-bottom: 4px; }
+
+@media (max-width: 920px) {
+  .values-grid, .tiers { grid-template-columns: 1fr; }
+  .toc ol { columns: 1; }
+  .logo-cover { width: 220px; }
+}
+
+@media (max-width: 760px) {
+  .toolbar { top: 10px; left: 10px; }
+  .toolbar a { display: none; }
+  .document { width: 100%; margin: 0; border-radius: 0; }
+  .cover { min-height: 620px; padding: 70px 24px; }
+  .content { padding: 40px 24px 20px; }
+  .intro, .split, .policy-grid { grid-template-columns: 1fr; gap: 24px; }
+  .toc { padding: 28px 22px; }
+  .steps, .feature-grid { grid-template-columns: 1fr; }
+  .section h2 { font-size: 26px; }
+  .section-number { width: 48px; height: 48px; font-size: 19px; border-radius: 12px; }
+  .cover .meta { flex-wrap: wrap; gap: 10px; }
+  .footer-inner { grid-template-columns: 1fr; }
+  .footer-meta { text-align: right; }
+  .flow { flex-direction: column; }
+  .flow-arrow { transform: rotate(90deg); }
+}
+
+@media print {
+  body { background: #fff; }
+  .document { width: 100%; margin: 0; box-shadow: none; }
+  .toolbar { display: none; }
+  .cover { min-height: 92vh; break-after: page; }
+  .section { break-inside: avoid; }
+  figure { break-inside: avoid; box-shadow: none; }
+  .values, .toc, .policy-grid, .logic { break-inside: avoid; }
+  a { color: inherit; text-decoration: none; }
+}
+</style>
+  </head>
+  <body>
+
+    <div class="toolbar" aria-label="ابزارهای سند">
+      <button type="button" onclick="window.print()">چاپ / ذخیره PDF</button>
+      <a href="#contents">فهرست مطالب</a>
+    </div>
+
+    <main class="document">
+      <header class="cover">
+        <div class="cover-inner">
+          <svg class="logo-cover" version="1.1" id="DANEG-V" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
+	 viewBox="0 0 147.5 95" style="enable-background:new 0 0 147.5 95;" xml:space="preserve">
+<style type="text/css">
+	.st0{fill:#124939;}
+	.st1{fill:#F9A11B;}
+	.st2{fill:url(#DV-1_);}
+	.st3{fill:url(#DV-2_);}
+	.st4{fill:url(#DV-3_);}
+	.st5{fill:url(#DV-4_);}
+	.st6{fill:#F4C995;}
+	.st7{opacity:0.5;}
+	.st8{fill:#FFFFFF;}
+	.st9{opacity:0.25;}
+	.st10{opacity:0.26;fill:#414042;enable-background:new    ;}
+	.st11{fill:url(#DV-5_);}
+	.st12{fill:url(#DV-6_);}
+	.st13{fill:#F3C17C;}
+</style>
+<g>
+	<g>
+		<path class="st0" d="M22.7,94.6v-0.5h0.6c0.6,0,1-0.1,1.3-0.3c0.3-0.2,0.5-0.4,0.7-0.7c0.1-0.2,0.1-0.8,0.1-1.8V78.7
+			c0-1,0-1.6-0.2-1.8c-0.1-0.2-0.3-0.5-0.6-0.6c-0.3-0.2-0.8-0.3-1.3-0.3h-0.6v-0.5h8.6c2.3,0,4.2,0.3,5.6,0.9
+			c1.7,0.8,3,1.9,3.9,3.5s1.3,3.3,1.3,5.2c0,1.3-0.2,2.6-0.7,3.7c-0.4,1.1-1,2.1-1.7,2.8c-0.7,0.7-1.5,1.3-2.4,1.8
+			c-0.9,0.4-2,0.8-3.3,1c-0.6,0.1-1.5,0.2-2.7,0.2L22.7,94.6L22.7,94.6z M30.1,76.5v14.9c0,0.8,0,1.3,0.1,1.5
+			c0.1,0.2,0.2,0.3,0.4,0.4c0.3,0.1,0.6,0.2,1.1,0.2c1.6,0,2.8-0.5,3.6-1.6c1.1-1.4,1.7-3.7,1.7-6.8c0-2.5-0.4-4.4-1.2-5.9
+			c-0.6-1.2-1.4-1.9-2.4-2.3C32.8,76.7,31.7,76.5,30.1,76.5z"/>
+		<path class="st0" d="M54.9,89.1h-6.8L47.3,91c-0.3,0.6-0.4,1.1-0.4,1.5c0,0.5,0.2,0.9,0.7,1.2c0.3,0.2,0.9,0.3,1.9,0.3v0.5H43
+			v-0.5c0.7-0.1,1.3-0.4,1.7-0.8c0.4-0.5,1-1.4,1.7-2.9L53.3,75h0.3l7,15.7c0.7,1.5,1.2,2.4,1.6,2.8c0.3,0.3,0.8,0.5,1.4,0.5v0.5
+			h-9.3v-0.5h0.4c0.8,0,1.3-0.1,1.6-0.3c0.2-0.2,0.3-0.4,0.3-0.7c0-0.2,0-0.3-0.1-0.5c0-0.1-0.2-0.4-0.4-1.1L54.9,89.1z M54.4,88.1
+			l-2.9-6.6l-3,6.6H54.4z"/>
+		<path class="st0" d="M70.4,75.4l9.5,11.9v-8.2c0-1.2-0.2-1.9-0.5-2.3c-0.5-0.6-1.2-0.8-2.3-0.8v-0.5h6.4v0.5
+			c-0.8,0.1-1.4,0.2-1.7,0.4c-0.3,0.2-0.5,0.4-0.7,0.8s-0.2,1-0.2,1.9V95h-0.5l-13-15.9v12.2c0,1.1,0.3,1.8,0.8,2.2
+			c0.5,0.4,1.1,0.6,1.7,0.6h0.5v0.5h-6.8v-0.5c1.1,0,1.8-0.2,2.2-0.7s0.6-1.1,0.6-2.2V77.7L66,77.2c-0.4-0.5-0.8-0.8-1.1-1
+			c-0.3-0.2-0.8-0.3-1.3-0.3v-0.5C63.6,75.4,70.4,75.4,70.4,75.4z"/>
+		<path class="st0" d="M91.6,76.5v7.8H92c1.2,0,2.1-0.4,2.7-1.2c0.6-0.8,0.9-1.9,1.1-3.4h0.5v10h-0.5c-0.1-1.1-0.3-2-0.7-2.7
+			c-0.4-0.7-0.8-1.2-1.3-1.4c-0.5-0.2-1.2-0.4-2.1-0.4v5.4c0,1.1,0.1,1.7,0.1,1.9c0.1,0.2,0.3,0.4,0.5,0.6s0.7,0.2,1.2,0.2h1.2
+			c1.8,0,3.3-0.4,4.3-1.2s1.9-2.1,2.3-3.8h0.5l-0.9,6.1H84.2v-0.5h0.6c0.6,0,1-0.1,1.3-0.3c0.3-0.1,0.4-0.4,0.6-0.7
+			c0.1-0.2,0.2-0.8,0.2-1.8V78.7c0-0.9,0-1.4-0.1-1.6c-0.1-0.3-0.3-0.6-0.5-0.8c-0.4-0.3-0.9-0.4-1.5-0.4h-0.6v-0.5h16.2v5.7h-0.5
+			c-0.3-1.4-0.7-2.4-1.2-3c-0.5-0.6-1.2-1.1-2.1-1.3c-0.5-0.2-1.5-0.3-3-0.3L91.6,76.5L91.6,76.5z"/>
+		<path class="st0" d="M122.5,75v6.8H122c-0.6-1.8-1.6-3.3-2.9-4.2s-2.7-1.4-4.2-1.4c-1.4,0-2.6,0.4-3.6,1.2s-1.6,1.9-2,3.4
+			s-0.6,2.9-0.6,4.4c0,1.8,0.2,3.4,0.7,4.8c0.4,1.4,1.1,2.4,2.1,3.1c1,0.7,2.1,1,3.5,1c0.5,0,0.9-0.1,1.4-0.2c0.5-0.1,1-0.2,1.5-0.4
+			v-4c0-0.8-0.1-1.2-0.2-1.5c-0.1-0.2-0.3-0.4-0.6-0.6c-0.3-0.2-0.7-0.3-1.2-0.3h-0.5v-0.5h9.4v0.5c-0.7,0.1-1.2,0.1-1.5,0.3
+			s-0.5,0.4-0.6,0.7c-0.1,0.2-0.1,0.6-0.1,1.3v4c-1.2,0.6-2.5,1-3.9,1.2s-2.7,0.4-4.1,0.4c-1.8,0-3.4-0.3-4.6-0.7
+			c-1.2-0.5-2.3-1.1-3.2-1.9c-0.9-0.8-1.7-1.7-2.2-2.7c-0.7-1.3-1-2.8-1-4.4c0-2.9,1-5.3,3.1-7.3c2-2,4.6-3,7.7-3
+			c1,0,1.8,0.1,2.6,0.2c0.4,0.1,1.1,0.3,2,0.6c0.9,0.3,1.5,0.5,1.7,0.5c0.3,0,0.5-0.1,0.7-0.3c0.2-0.2,0.4-0.6,0.6-1.1L122.5,75
+			L122.5,75z"/>
+	</g>
+	<g>
+		<g>
+			<path class="st1" d="M61.8,37.3c-0.5-0.3-0.8-0.7-1-1.1l-12.1,6.9c0.1,0.1,0.2,0.2,0.2,0.4l23.7,0.1L61.8,37.3z"/>
+			<path class="st1" d="M98.7,14.5L88,20.6c0.2,0.4,0.4,0.9,0.4,1.3v13c0,1-0.5,1.8-1.3,2.3l-10.9,6.3l22.2,0.1
+				c0.6-0.8,0.9-1.7,0.9-2.7l0.1-24.2C99.3,16,99.1,15.2,98.7,14.5z"/>
+			
+				<linearGradient id="SVGID_1_" gradientUnits="userSpaceOnUse" x1="50.4408" y1="62.8883" x2="94.4363" y2="88.2921" gradientTransform="matrix(1 0 0 -1 0 98)">
+				<stop  offset="1.320000e-02" style="stop-color:#CC8E2B"/>
+				<stop  offset="0.5926" style="stop-color:#DDA944"/>
+				<stop  offset="1" style="stop-color:#E8C563"/>
+			</linearGradient>
+			<path class="st2" d="M60.4,35V22.3l-12,20.5c0.1,0.1,0.1,0.3,0.2,0.4l12.1-6.9C60.5,35.9,60.4,35.5,60.4,35z"/>
+			
+				<linearGradient id="SVGID_2_" gradientUnits="userSpaceOnUse" x1="47.292" y1="68.3416" x2="91.2874" y2="93.7455" gradientTransform="matrix(1 0 0 -1 0 98)">
+				<stop  offset="1.320000e-02" style="stop-color:#CC8E2B"/>
+				<stop  offset="0.5926" style="stop-color:#DDA944"/>
+				<stop  offset="1" style="stop-color:#E8C563"/>
+			</linearGradient>
+			<path class="st3" d="M73.1,13.1c0.4-0.2,0.9-0.4,1.3-0.4s0.9,0.1,1.3,0.4l11.3,6.5c0.4,0.2,0.8,0.6,1,1l10.7-6.1
+				c-0.4-0.7-1-1.3-1.7-1.7L76.1,0.6c-0.8-0.5-1.8-0.7-2.7-0.6L62.1,19.5L73.1,13.1z"/>
+			
+				<linearGradient id="SVGID_3_" gradientUnits="userSpaceOnUse" x1="61.6401" y1="91.9087" x2="47.3061" y2="63.9503" gradientTransform="matrix(1 0 0 -1 0 98)">
+				<stop  offset="0" style="stop-color:#E8BE5F"/>
+				<stop  offset="0.4074" style="stop-color:#F7DE81"/>
+				<stop  offset="0.9868" style="stop-color:#E0AB3F"/>
+			</linearGradient>
+			<path class="st4" d="M60.4,22c0-1,0.5-1.9,1.3-2.3l0.3-0.2L73.4,0c-0.7,0.1-1.3,0.3-1.9,0.6l-21,12c-1.4,0.8-2.3,2.3-2.3,4
+				l-0.1,24.2c0,0.7,0.1,1.3,0.4,1.9l12-20.5L60.4,22L60.4,22z"/>
+			
+				<linearGradient id="SVGID_4_" gradientUnits="userSpaceOnUse" x1="59.7348" y1="47.4156" x2="91.2731" y2="47.4156" gradientTransform="matrix(1 0 0 -1 0 98)">
+				<stop  offset="0" style="stop-color:#CD9535"/>
+				<stop  offset="1" style="stop-color:#B9782A"/>
+			</linearGradient>
+			<path class="st5" d="M75.8,43.9c-0.4,0.2-0.9,0.4-1.3,0.4s-0.9-0.1-1.3-0.4l-0.5-0.3l-23.7-0.1c0.4,0.5,0.9,1,1.4,1.3L71.3,57
+				c1.4,0.8,3.2,0.8,4.6,0l21-12c0.6-0.3,1.1-0.8,1.5-1.3l-22.2-0.1L75.8,43.9z"/>
+			<path class="st6" d="M88,20.6c-0.2-0.4-0.6-0.8-1-1l-11.3-6.5c-0.4-0.2-0.9-0.4-1.3-0.4s-0.9,0.1-1.3,0.4l-11,6.4l-0.3,0.2
+				c-0.8,0.5-1.3,1.4-1.3,2.3v0.3V35c0,0.4,0.1,0.9,0.3,1.2c0.2,0.5,0.6,0.8,1,1.1l10.8,6.3l0.5,0.3c0.4,0.2,0.9,0.4,1.3,0.4
+				s0.9-0.1,1.3-0.4l0.4-0.3l10.9-6.3c0.8-0.5,1.3-1.4,1.3-2.3V22C88.4,21.5,88.3,21,88,20.6z M87.7,35c0,0.7-0.4,1.3-1,1.7
+				l-11.3,6.5c-0.6,0.3-1.3,0.3-1.9,0l-11.3-6.5c-0.3-0.2-0.6-0.5-0.8-0.8c-0.1-0.3-0.2-0.5-0.2-0.9V22c0-0.7,0.4-1.3,1-1.7
+				l11.3-6.5c0.3-0.2,0.6-0.3,1-0.3c0.3,0,0.7,0.1,1,0.3l11.3,6.5c0.3,0.2,0.5,0.4,0.7,0.7c0.2,0.3,0.3,0.6,0.3,1V35z"/>
+		</g>
+		<g>
+			<g class="st7">
+				<path class="st8" d="M53.2,15.4c-1.4,0.8-2.3,2.3-2.3,4l0,7.5c0.5-3.1,1.3-6,2.6-8.3c1.6-2.7,4.3-5.2,7.3-7.4L53.2,15.4z"/>
+			</g>
+			<g class="st9">
+				<path class="st8" d="M95,43.3c1.4-0.8,2.3-2.3,2.3-4l0-7.5c-0.4,3.1-1.3,6-2.6,8.3c-1.6,2.7-4.3,5.2-7.3,7.4L95,43.3z"/>
+			</g>
+			<g>
+				<path class="st10" d="M90.8,13.7l-9.1-5.3c-1.4-0.8-3-0.8-4.4,0l-9.1,5.3c-1.4,0.8-2.2,2.2-2.2,3.8V28c0,1.6,0.8,3,2.2,3.8
+					l9.1,5.3c1.4,0.8,3,0.8,4.4,0l9.1-5.3C92.2,31,93,29.6,93,28V17.5C93,15.9,92.2,14.5,90.8,13.7z"/>
+				<g>
+					
+						<radialGradient id="SVGID_5_" cx="71.1552" cy="81.6874" r="21.5302" fx="54.0192" fy="72.1608" gradientTransform="matrix(1 0 0 -1 0 98)" gradientUnits="userSpaceOnUse">
+						<stop  offset="0.7272" style="stop-color:#FDBE67"/>
+						<stop  offset="0.7668" style="stop-color:#F9A11B"/>
+					</radialGradient>
+					<path class="st11" d="M92.4,13.5L79.7,6.2c-0.3-0.2-0.6-0.2-0.8,0l-12.7,7.3c-0.3,0.1-0.4,0.4-0.4,0.7v14.6
+						c0,0.3,0.2,0.6,0.4,0.7l12.7,7.3c0.3,0.2,0.6,0.2,0.8,0l12.7-7.3c0.3-0.1,0.4-0.4,0.4-0.7V14.2C92.8,13.9,92.6,13.6,92.4,13.5z
+						"/>
+					
+						<linearGradient id="SVGID_6_" gradientUnits="userSpaceOnUse" x1="66.7957" y1="67.3557" x2="93.5477" y2="86.9408" gradientTransform="matrix(1 0 0 -1 0 98)">
+						<stop  offset="0" style="stop-color:#FFDAA8"/>
+						<stop  offset="0.5053" style="stop-color:#FFF4E6"/>
+						<stop  offset="0.7884" style="stop-color:#FFE9CC"/>
+					</linearGradient>
+					<path class="st12" d="M79.3,37c-0.4,0-0.8-0.1-1.2-0.3l-11.3-6.5c-0.8-0.4-1.2-1.3-1.2-2.1V15c0-0.9,0.5-1.7,1.2-2.1l11.3-6.5
+						c0.8-0.4,1.7-0.4,2.4,0l11.3,6.5c0.8,0.4,1.2,1.3,1.2,2.1v13c0,0.9-0.5,1.7-1.2,2.1l-11.3,6.5C80.1,36.9,79.7,37,79.3,37z
+						 M79.3,6.5c-0.3,0-0.7,0.1-1,0.3L67,13.3c-0.6,0.4-1,1-1,1.7v13c0,0.7,0.4,1.3,1,1.7l11.3,6.5c0.6,0.3,1.3,0.3,1.9,0l11.3-6.5
+						c0.6-0.4,1-1,1-1.7V15c0-0.7-0.4-1.3-1-1.7L80.3,6.8C80,6.6,79.6,6.5,79.3,6.5z"/>
+				</g>
+				<g class="st7">
+					<path class="st8" d="M68.8,13.2c-0.7,0.4-1.1,1.1-1.1,1.9l0,3.6c0.2-1.5,0.6-2.9,1.3-4.1c0.8-1.3,2.1-2.6,3.6-3.6L68.8,13.2z"
+						/>
+				</g>
+				<g class="st9">
+					<path class="st8" d="M90.5,28.3c0.7-0.4,1.1-1.1,1.1-1.9l0-3.6c-0.2,1.5-0.6,2.9-1.3,4.1c-0.8,1.3-2.1,2.6-3.6,3.6L90.5,28.3z"
+						/>
+				</g>
+				<g>
+					<path class="st13" d="M73.7,57.7c-0.8,0-1.6-0.2-2.3-0.6L50.3,44.9c-1.4-0.8-2.3-2.3-2.3-3.9V16.7c0-1.6,0.9-3.1,2.3-3.9
+						L71.4,0.6c1.4-0.8,3.2-0.8,4.6,0l21.1,12.1c1.4,0.8,2.3,2.3,2.3,3.9V41c0,1.6-0.9,3.1-2.3,3.9L76,57.1
+						C75.3,57.5,74.5,57.7,73.7,57.7z M73.7,0.9c-0.6,0-1.3,0.2-1.8,0.5L50.8,13.6c-1.1,0.6-1.8,1.9-1.8,3.1V41
+						c0,1.3,0.7,2.5,1.8,3.1l21.1,12.1c1.1,0.7,2.5,0.6,3.6,0l21.1-12.1c1.1-0.7,1.8-1.8,1.8-3.1V16.7c0-1.3-0.7-2.5-1.8-3.1
+						L75.5,1.4C75,1.1,74.4,0.9,73.7,0.9z"/>
+				</g>
+			</g>
+		</g>
+	</g>
+</g>
+</svg>
+
+          <p class="eyebrow">DANEG · COMPREHENSIVE PRODUCT GUIDE</p>
+          <h1>راهنمای جامع پلتفرم دانگ</h1>
+          <p class="tagline">معرفی کامل محصول، سیاست‌ها، معماری، فرآیندها، منطق‌های کسب‌وکار، صفحات و راهنمای استفاده. این سند تمام جنبه‌های پلتفرم را برای آشنایی کارفرما پوشش می‌دهد.</p>
+          <div class="meta">
+            <span>نسخه ۱.۰</span>
+            <span class="meta-divider"></span>
+            <span>شهریور ۱۴۰۵</span>
+            <span class="meta-divider"></span>
+            <span>سند جامع برای کارفرما</span>
+          </div>
+        </div>
+      </header>
+
+      <article class="content">
+
+        <section class="section" id="overview">
+          <div class="section-heading"><span class="section-number">۰۱</span><h2>معرفی پروژه</h2></div>
+<p class="lead">این بخش، پروژه دانگ را از زاویه‌های مختلف معرفی می‌کند: هویت برند، مأموریت، مخاطب هدف، وضعیت فعلی و جایگاه محصول در بازار.</p>
+
+          <h3>۱.۱ هویت برند</h3>
+          <p>دانگ (DANEG) یک بازار آنلاین تخصصی برای مد لوکس دست‌دوم است که توسط شرکت <strong>DANEG FZ-LLC</strong>، یک شرکت ثبت‌شده در امارات متحده عربی، اداره می‌شود. این برند با شعار <strong>«Pre-loved Luxury. Authenticated.»</strong> به بازار عرضه می‌شود و بر دو ارزش اصلی تأکید دارد: اصالت و ارزشمندی کالاهای دست‌دوم.</p>
+          <p>نام برند در سه زبان به شکل زیر استفاده می‌شود:</p>
+          <table class="spec-table">
+            <thead><tr><th>زبان</th><th>نام</th><th>محل استفاده</th></tr></thead>
+            <tbody>
+              <tr><td>انگلیسی</td><td>DANEG</td><td>زبان پیش‌فرض رابط کاربری، متا دیتا، لینک‌ها، اعلان‌های سیستمی.</td></tr>
+              <tr><td>فارسی (در این سند)</td><td>دانگ</td><td>متن‌های راهنما، مکاتبات با کارفرما، ترجمه‌های آزاد.</td></tr>
+              <tr><td>عربی</td><td>دانق</td><td>رابط کاربری عربی، صفحات حقوقی، ایمیل‌های رسمی به کاربران عرب‌زبان.</td></tr>
+            </tbody>
+          </table>
+
+          <h3>۱.۲ مأموریت و چشم‌انداز</h3>
+          <p>دانگ با هدف ایجاد یک بازار امن و قابل اعتماد برای خرید و فروش مد لوکس دست‌دوم در منطقه خاورمیانه ساخته شده است. سه ضلع اصلی این بازار عبارتند از:</p>
+          <ul class="checklist">
+            <li><strong>کشف کالا</strong> — کاربران بتوانند به‌راحتی قطعات مورد نظرشان را در میان هزاران آگهی پیدا کنند.</li>
+            <li><strong>اعتماد به فروشنده</strong> — هر خریدار بتواند پیش از خرید، از اصالت و کیفیت کالا و اعتبار فروشنده مطمئن شود.</li>
+            <li><strong>گفت‌وگوی مستقیم</strong> — ارتباط بی‌واسطه میان خریدار و فروشنده برای مذاکره و هماهنگی.</li>
+          </ul>
+
+          <h3>۱.۳ مخاطب هدف</h3>
+          <p>دانگ به‌طور خاص برای <strong>زنان ساکن امارات متحده عربی</strong> طراحی شده است. این انتخاب بر اساس تحلیل بازار منطقه‌ای و الگوهای رفتاری کاربران هدف بوده است:</p>
+          <div class="feature-grid">
+            <div class="feature"><strong>زنان ۲۵ تا ۵۰ سال</strong><p>گروه اصلی کاربران که به دنبال قطعات خاص و با اصالت برای موقعیت‌های مختلف هستند.</p></div>
+            <div class="feature"><strong>فروشندگان خانگی</strong><p>زنانی که کمد لباس خود را به‌طور دوره‌ای به‌روزرسانی می‌کنند و قطعات قدیمی را می‌فروشند.</p></div>
+            <div class="feature"><strong>علاقه‌مندان به مد پایدار</strong><p>افرادی که به پایداری محیط‌زیستی و مد مسئولانه اهمیت می‌دهند.</p></div>
+            <div class="feature"><strong>خریداران هوشمند</strong><p>کاربرانی که به دنبال قطعات برند با قیمت مناسب‌تر از قیمت خرده‌فروشی هستند.</p></div>
+          </div>
+
+          <h3>۱.۴ وضعیت فعلی پروژه</h3>
+          <p>پروژه دانگ در حال حاضر در <strong>نسخه نمایشی عمومی (Public Demo)</strong> قرار دارد. این نسخه برای نمایش مسیرهای کاربری، اعتبارسنجی تجربه کاربری و جمع‌آوری بازخورد طراحی شده است.</p>
+          <div class="notice"><strong>محدودیت‌های نسخه نمایشی</strong>در نسخه فعلی، هیچ تراکنش مالی واقعی انجام نمی‌شود. پرداخت، ارسال، ضمانت (escrow) و تبدیل درآمد فروشندگان (payouts) غیرفعال هستند. تمام سفارش‌ها به‌صورت محلی در مرورگر کاربر ذخیره می‌شوند.</div>
+
+          <h3>۱.۵ ساختار شرکت و تیم</h3>
+          <p>دانگ توسط یک تیم چندوظیفه‌ای توسعه داده می‌شود که شامل نقش‌های زیر است:</p>
+          <ul class="checklist">
+            <li><strong>تیم محصول</strong> — تعریف نیازمندی‌ها، اولویت‌بندی ویژگی‌ها، تست کاربری.</li>
+            <li><strong>تیم مهندسی فرانت‌اند</strong> — پیاده‌سازی رابط کاربری با Next.js و React.</li>
+            <li><strong>تیم مهندسی بک‌اند</strong> — طراحی API، پایگاه داده، احراز هویت.</li>
+            <li><strong>تیم طراحی</strong> — طراحی تجربه کاربری، هویت بصری، گرافیک.</li>
+            <li><strong>تیم عملیات</strong> — مدیریت محتوا، نظارت، پشتیبانی کاربران.</li>
+            <li><strong>تیم حقوقی و انطباق</strong> — تهیه اسناد حقوقی، رعایت قوانین محلی.</li>
+          </ul>
+
+          <h3>۱.۶ موقعیت رقابتی</h3>
+          <p>در مقایسه با رقبای منطقه‌ای، دانگ سه تمایز اصلی دارد:</p>
+          <table class="spec-table">
+            <thead><tr><th>ویژگی</th><th>دانگ</th><th>پلتفرم‌های مشابه</th></tr></thead>
+            <tbody>
+              <tr><td>تمرکز جغرافیایی</td><td>منطقه خاورمیانه، به‌ویژه امارات</td><td>عموماً جهانی یا منطقه‌ای دیگر</td></tr>
+              <tr><td>تمرکز محصولی</td><td>مد لوکس دست‌دوم تخصصی</td><td>عمومی یا تمرکز بر کالاهای نو</td></tr>
+              <tr><td>احراز اصالت</td><td>سطوح رسمی اصالت با نظارت تیم</td><td>معمولاً فقط اظهار فروشنده</td></tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section class="section" id="values">
+          <div class="section-heading"><span class="section-number">۰۲</span><h2>اهداف و ارزش‌های محصول</h2></div>
+<p class="lead">این بخش، شش ارزش اصلی محصول را معرفی می‌کند که تمام تصمیمات طراحی و توسعه بر اساس آن‌ها گرفته می‌شود.</p>
+
+          <div class="feature-grid">
+            <div class="feature"><strong>اعتماد و شفافیت</strong><p>پروفایل عمومی فروشنده، نشانگرهای اصالت، تاریخچه فعالیت، نرخ پاسخ‌گویی و گفت‌وگوی مستقیم، فضایی مطمئن برای معامله می‌سازد.</p></div>
+            <div class="feature"><strong>جست‌وجوی هوشمند</strong><p>فیلترهای قابل ترکیب بر اساس دسته، سایز، رنگ، وضعیت و قیمت، رسیدن به کالای دلخواه را سریع‌تر می‌کند.</p></div>
+            <div class="feature"><strong>ارتباط بی‌واسطه</strong><p>گفت‌وگوی درون‌برنامه‌ای میان خریدار و فروشنده، نیاز به ابزارهای خارجی را حذف می‌کند.</p></div>
+            <div class="feature"><strong>کنترل کیفیت بازار</strong><p>پنل مدیریت با صف بررسی آگهی‌ها، رسیدگی به گزارش‌ها و اعلان عمومی، سلامت بازار را تضمین می‌کند.</p></div>
+            <div class="feature"><strong>تجربه موبایل‌محور</strong><p>طراحی ریسپانسیو با نوار دسترسی پایین صفحه، استفاده از اپلیکیشن را در موبایل ساده و سریع کرده است.</p></div>
+            <div class="feature"><strong>چندزبانه و آماده بازار منطقه‌ای</strong><p>پشتیبانی از انگلیسی و عربی برای دسترسی به بازار منطقه‌ای گسترده‌تر.</p></div>
+          </div>
+
+          <h3>۲.۱ ماتریس تصمیم‌گیری</h3>
+          <p>هنگام توسعه هر ویژگی جدید، تیم محصول این شش ارزش را به‌عنوان معیار ارزیابی استفاده می‌کند:</p>
+          <table class="spec-table">
+            <thead><tr><th>ارزش</th><th>سؤال کلیدی</th></tr></thead>
+            <tbody>
+              <tr><td>اعتماد</td><td>آیا این ویژگی به کاربر اطمینان بیشتری می‌دهد؟</td></tr>
+              <tr><td>شفافیت</td><td>آیا اطلاعات به‌صورت واضح و قابل فهم ارائه می‌شوند؟</td></tr>
+              <tr><td>سادگی</td><td>آیا تجربه کاربر روان و بدون اصطکاک است؟</td></tr>
+              <tr><td>امنیت</td><td>آیا اطلاعات شخصی و مالی کاربر محافظت می‌شود؟</td></tr>
+              <tr><td>اعتبار</td><td>آیا اعتماد میان خریدار و فروشنده تقویت می‌شود؟</td></tr>
+              <tr><td>پایداری</td><td>آیا این ویژگی ارزش بلندمدت برای کاربر ایجاد می‌کند؟</td></tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section class="section" id="policies">
+          <div class="section-heading"><span class="section-number">۰۳</span><h2>سیاست‌های کلی سایت و حاکمیت بازار</h2></div>
+<p class="lead">دانگ علاوه بر تجربه کاربری، مجموعه‌ای از سیاست‌ها و فرآیندهای نظارتی دارد که سلامت بازار و اعتماد کاربران را تضمین می‌کند. این بخش، منطق‌ها و قواعد حاکم بر هر بخش از محصول را توضیح می‌دهد.</p>
+          <h3>۳.۱ هویت برند و لحن ارتباطی</h3>
+          <p>دانگ با شعار <strong>«Pre-loved Luxury. Authenticated.»</strong> به بازار عرضه می‌شود. لحن ارتباطی در سراسر محصول شامل اپلیکیشن، صفحات حقوقی، اعلان‌ها و مکاتبات پشتیبانی، بر یکپارچگی برند و احترام به کاربر تأکید دارد.</p>
+          <div class="policy-grid">
+<div class="policy"><h4>واژگان مجاز</h4><p>برای توصیف کالاها از عبارات «pre-loved» (انگلیسی) یا معادل‌های مناسب در زبان‌های دیگر استفاده می‌شود. این واژگان حس مثبت و ارزشمندی کالای دست‌دوم را منتقل می‌کنند.</p></div>
+<div class="policy"><h4>واژگان ممنوع</h4><p>استفاده از عبارات «second-hand»، «secondhand»، «second hand» در متن‌های انگلیسی و معادل‌های عربی «مستعمل/مستعملة» در متن‌های بازاریابی ممنوع است. این محدودیت توسط تست خودکار <code>copyGuard</code> در فرآیند بیلد اعمال می‌شود.</p></div>
+</div>
+          <h3>۳.۲ سطوح اصالت کالا</h3>
+          <p>هر کالا در دانگ یکی از سه سطح اصالت زیر را دارد که به‌صورت نشان رنگی روی کارت کالا و صفحه جزئیات نمایش داده می‌شود:</p>
+          <div class="tiers">
+            <div class="tier tier--verified">
+              <span class="tier-badge">تأیید شده</span>
+              <h4>Verified by DANEG</h4>
+              <p>کالا توسط تیم دانگ بررسی و اسناد اصالت آن تأیید شده است. خریدار با اطمینان کامل می‌تواند خرید کند.</p>
+            </div>
+            <div class="tier tier--review">
+              <span class="tier-badge">در حال بررسی</span>
+              <h4>In Review</h4>
+              <p>اسناد اصالت توسط فروشنده ارائه شده و در صف بررسی تیم دانگ قرار دارد. کالا پس از تأیید، به سطح Verified منتقل می‌شود.</p>
+            </div>
+            <div class="tier tier--self">
+              <span class="tier-badge">اظهار فروشنده</span>
+              <h4>Self-declared</h4>
+              <p>فروشنده اصالت کالا را اعلام کرده اما بررسی تیم دانگ هنوز کامل نشده است. خریدار باید با احتیاط بیشتری عمل کند.</p>
+            </div>
+          </div>
+          <p><strong>قانون برندهای لوکس:</strong> آگهی برندهای Chanel, Dior, Hermes, Louis Vuitton, Celine, Gucci, Bottega Veneta, Prada, Loewe و Chloe فقط در سطح Verified قابل انتشار است.</p>
+
+          <h3>۳.۳ فرآیند بررسی آگهی‌ها</h3>
+          <p>هر آگهی قبل از نمایش عمومی، چرخه بررسی زیر را طی می‌کند:</p>
+          <div class="flow">
+<div class="flow-step"><b>۱</b><strong>ثبت آگهی</strong><span>فروشنده فرم را با عکس و مشخصات تکمیل می‌کند.</span></div>
+<span class="flow-arrow">←</span>
+<div class="flow-step"><b>۲</b><strong>اعتبارسنجی خودکار</strong><span>فرمت عکس، حجم فایل، دسته‌بندی و قیمت بررسی می‌شود.</span></div>
+<span class="flow-arrow">←</span>
+<div class="flow-step"><b>۳</b><strong>صف بررسی مدیر</strong><span>آگهی در پنل مدیریت برای تأیید نهایی قرار می‌گیرد.</span></div>
+<span class="flow-arrow">←</span>
+<div class="flow-step"><b>۴</b><strong>تأیید / رد / ویژه</strong><span>مدیر آگهی را منتشر، ویرایش یا رد می‌کند.</span></div>
+<span class="flow-arrow">←</span>
+<div class="flow-step"><b>۵</b><strong>انتشار عمومی</strong><span>آگهی در فید کشف و نتایج جست‌وجو نمایش داده می‌شود.</span></div>
+</div>
+          <h3>۳.۴ قوانین ثبت کالا</h3>
+          <div class="policy-grid">
+<div class="policy"><h4>الزامی</h4><ul><li>عکس اصلی و تکمیلی واقعی از کالای در حال فروش</li><li>عنوان و توضیحات به انگلیسی (و در صورت نیاز عربی)</li><li>انتخاب دسته، وضعیت، سایز و رنگ</li><li>قیمت فروش به درهم (AED) و قیمت اصلی برای نمایش درصد تخفیف</li><li>تأیید اظهار اصالت توسط فروشنده</li></ul></div>
+<div class="policy"><h4>ممنوع</h4><ul class="checklist checklist--cross" style="padding-right:0"><li>تصاویر غیر واقعی، کپی از اینترنت یا عکس برند به‌جای کالای واقعی</li><li>کالاهای تقلیدی، دزدی یا غیرقانونی</li><li>کالاهایی که فروش آن‌ها طبق قوانین ممنوع است</li><li>توصیف نادقیق، پنهان کردن عیوب یا عکس‌های دستکاری‌شده</li><li>درج اطلاعات تماس شخصی در شرح کالا</li></ul></div>
+</div>
+          <h3>۳.۵ فرآیند گزارش‌دهی</h3>
+          <p>هر کاربر می‌تواند یک آگهی یا فروشنده را گزارش دهد. گزارش‌ها با شناسه شفاف (DANEG-XXXXX) به تیم نظارت ارسال می‌شوند.</p>
+          <table class="spec-table"><thead><tr><th>دلیل گزارش</th><th>توضیح</th></tr></thead><tbody><tr><td>تقلب یا فیک</td><td>کالا اصل نیست یا اسناد جعلی ارائه شده.</td></tr><tr><td>محتوای نامناسب</td><td>عکس یا متن مغایر با قوانین.</td></tr><tr><td>هرزنامه یا کلاهبرداری</td><td>تلاش برای فریب کاربران یا ارسال پیام اسپم.</td></tr><tr><td>دسته‌بندی نادرست</td><td>کالا در دسته‌بندی اشتباه ثبت شده.</td></tr><tr><td>مظنون به سرقت</td><td>کالا مشکوک به سرقتی بودن است.</td></tr><tr><td>سایر</td><td>سایر موارد نیازمند بررسی.</td></tr></tbody></table>
+          <p>پس از ثبت، گزارش وارد یکی از چهار وضعیت <strong>open</strong>، <strong>investigating</strong>، <strong>resolved</strong> یا <strong>dismissed</strong> می‌شود.</p>
+
+          <h3>۳.۶ حل اختلاف و مرجوعی</h3>
+          <p>در مواردی که خریدار و فروشنده نتوانند از طریق گفت‌وگو به توافق برسند، خریدار می‌تواند از صفحه جزئیات سفارش، اختلاف را باز کند:</p>
+          <table class="spec-table"><thead><tr><th>دلیل اختلاف</th><th>معنا</th></tr></thead><tbody><tr><td>کالا دریافت نشد</td><td>پس از مهلت مقرر، بسته به دست خریدار نرسیده.</td></tr><tr><td>کالای اشتباه ارسال شد</td><td>کالای تحویلی با سفارش مغایرت دارد.</td></tr><tr><td>کالا در حمل آسیب دید</td><td>بسته در زمان تحویل آسیب فیزیکی دارد.</td></tr><tr><td>مطابق توضیحات نبود</td><td>کالا با عکس یا شرح فروشنده تفاوت محسوس دارد.</td></tr><tr><td>مظنون به تقلب</td><td>کالا اصل به نظر نمی‌رسد.</td></tr><tr><td>سایر</td><td>سایر موارد.</td></tr></tbody></table>
+          <div class="flow">
+<div class="flow-step"><b>۱</b><strong>باز کردن اختلاف</strong><span>از صفحه سفارش، دکمه «Open Dispute».</span></div>
+<span class="flow-arrow">←</span>
+<div class="flow-step"><b>۲</b><strong>ثبت دلیل و شرح</strong><span>انتخاب دلیل، شرح و عکس‌های واقعی از مشکل.</span></div>
+<span class="flow-arrow">←</span>
+<div class="flow-step"><b>۳</b><strong>بررسی پشتیبانی</strong><span>تیم پشتیبانی پرونده را بررسی و با دو طرف گفت‌وگو می‌کند.</span></div>
+<span class="flow-arrow">←</span>
+<div class="flow-step"><b>۴</b><strong>تصمیم نهایی</strong><span>اختلاف به یکی از نتایج open / under_review / resolved / rejected ختم می‌شود.</span></div>
+</div>
+          <h3>۳.۷ گفت‌وگوی درون‌برنامه‌ای</h3>
+          <p>تمام مکالمات خریدار و فروشنده در داخل پلتفرم انجام می‌شود تا امنیت، قابلیت پیگیری و حفاظت از اطلاعات کاربران حفظ شود:</p>
+          <ul class="checklist">
+            <li>پیام‌رسانی خارج از پلتفرم برای دور زدن کارمزد یا حفاظت خریدار ممنوع است.</li>
+            <li>ارسال اطلاعات تماس شخصی در چت توسط سیستم پایش می‌شود.</li>
+            <li>از داخل گفت‌وگو می‌توان مستقیماً به صفحه کالا یا فرآیند خرید رفت.</li>
+            <li>امکان مسدود کردن کاربر از تنظیمات فراهم است.</li>
+            <li>پیشنهاد قیمت (Make an Offer) در چت امکان مذاکره را فراهم می‌کند.</li>
+          </ul>
+
+          <h3>۳.۸ امنیت حساب و قفل اپلیکیشن</h3>
+          <div class="policy-grid">
+<div class="policy"><h4>رمز عددی (PIN)</h4><p>رمز ۴ تا ۸ رقمی با الگوریتم <strong>PBKDF2-SHA-256</strong> و ۱۲۰ هزار تکرار، همراه با Salt تصادفی هش می‌شود.</p></div>
+<div class="policy"><h4>احراز بیومتریک</h4><p>از طریق <strong>WebAuthn</strong> و سنسور Touch ID / Face ID / Windows Hello.</p></div>
+<div class="policy"><h4>زمان‌بندی قفل خودکار</h4><p>اپلیکیشن پس از ۱، ۵، ۱۵، ۳۰ یا ۶۰ دقیقه بی‌استفاده ماندن قفل می‌شود.</p></div>
+<div class="policy"><h4>محدوده تهدید</h4><p>این لایه، دسترسی فیزیکی تصادفی به گوشی باز را پوشش می‌دهد.</p></div>
+</div>
+          <h3>۳.۹ حریم خصوصی و داده‌ها</h3>
+          <p>دانگ با قوانین حفاظت از داده‌های شخصی امارات (Federal Decree-Law No. 45 of 2021) سازگار است:</p>
+          <div class="policy-grid">
+<div class="policy"><h4>داده‌های جمع‌آوری‌شده</h4><ul><li>اطلاعات حساب (نام، ایمیل، تلفن، هش رمز)</li><li>محتوای آگهی‌ها و چت</li><li>داده‌های نمایشی (receipts محلی در مرورگر)</li><li>لاگ‌های فنی (IP، نوع دستگاه، تعاملات)</li></ul></div>
+<div class="policy"><h4>نگهداری داده</h4><ul><li>اطلاعات حساب تا زمان فعال بودن</li><li>سوابق مالی تا ۷ سال (الزام قانونی)</li><li>تصاویر آگهی فقط تا زمان حذف آگهی</li></ul></div>
+<div class="policy"><h4>حقوق کاربر</h4><ul><li>دسترسی، اصلاح و حذف داده‌ها</li><li>محدودسازی یا اعتراض به پردازش</li><li>دریافت داده‌ها به فرمت قابل انتقال</li><li>شکایت به دفتر حفاظت داده امارات</li></ul></div>
+<div class="policy"><h4>اشتراک‌گذاری</h4><ul><li>با سایر کاربران فقط در حد نیاز سفارش</li><li>با ارائه‌دهندگان زیرساخت</li><li>با مراجع قانونی در صورت الزام</li><li><strong>هرگز فروش داده‌ها</strong></li></ul></div>
+</div>
+          <h3>۳.۱۰ پنل مدیریت و ابزارهای نظارت</h3>
+          <div class="feature-grid">
+<div class="feature"><strong>آمار کلی</strong><p>تعداد کاربران، آگهی‌ها، آگهی‌های در انتظار، اختلافات باز، گزارش‌های فعال.</p></div>
+<div class="feature"><strong>بررسی آگهی‌ها</strong><p>صف آگهی‌های در انتظار تأیید.</p></div>
+<div class="feature"><strong>مدیریت کاربران</strong><p>تعلیق حساب، بازنشانی رمز، تاریخچه فعالیت.</p></div>
+<div class="feature"><strong>رسیدگی به اختلاف</strong><p>مرور پرونده‌ها و ثبت تصمیم نهایی.</p></div>
+<div class="feature"><strong>مدیریت گزارش‌ها</strong><p>صف گزارش‌ها با اولویت‌بندی.</p></div>
+<div class="feature"><strong>لاگ ممیزی</strong><p>تاریخچه اقدامات مدیران.</p></div>
+<div class="feature"><strong>اعلان عمومی</strong><p>ارسال پیام همگانی.</p></div>
+<div class="feature"><strong>همکاری‌ها و Affiliates</strong><p>مدیریت لینک‌های همکاری.</p></div>
+</div>
+          <h3>۳.۱۱ صفحات حقوقی</h3>
+          <table class="spec-table"><thead><tr><th>سند</th><th>موضوع</th></tr></thead><tbody><tr><td><strong>Terms of Service</strong></td><td>شرایط استفاده، اهلیت، تعهدات، کارمزد، مالکیت محتوا.</td></tr><tr><td><strong>Privacy Policy</strong></td><td>نحوه جمع‌آوری، استفاده و حفاظت از داده‌های شخصی.</td></tr><tr><td><strong>Returns &amp; Refunds</strong></td><td>شرایط بازگشت، رسیدگی به شکایات، محدودیت‌های نسخه نمایشی.</td></tr></tbody></table>
+          <div class="notice notice--rose"><strong>نکته برای عرضه عمومی</strong>اسناد حقوقی فعلی شامل چند <code>PLACEHOLDER</code> (آدرس دفتر ثبت‌شده، شماره مجوز تجاری) هستند که پیش از لانچ باید با اطلاعات واقعی شرکت جایگزین شوند.</div>
+        </section>
+
+        <section class="section" id="specs">
+          <div class="section-heading"><span class="section-number">۰۴</span><h2>مشخصات فنی سیستم</h2></div>
+<p class="lead">این بخش، محدودیت‌ها، تاکسونومی‌ها، و وضعیت‌های مختلف سیستم را به‌عنوان مرجع سریع مستند می‌کند.</p>
+          <h3>۴.۱ قوانین بارگذاری تصویر</h3>
+          <table class="spec-table"><thead><tr><th>پارامتر</th><th>محدودیت</th></tr></thead><tbody><tr><td>فرمت‌های مجاز</td><td>JPEG, PNG, WebP</td></tr><tr><td>حداکثر حجم هر تصویر (listing)</td><td>۱۰ مگابایت</td></tr><tr><td>حداکثر حجم آواتار</td><td>۲ مگابایت</td></tr><tr><td>حداکثر طول بزرگ‌ترین ضلع (listing)</td><td>۱۶۰۰ پیکسل (تغییر اندازه خودکار)</td></tr><tr><td>حداکثر طول بزرگ‌ترین ضلع (avatar)</td><td>۱۰۲۴ پیکسل (تغییر اندازه خودکار)</td></tr><tr><td>تعداد تصاویر هر آگهی</td><td>بدون محدودیت، پیشنهاد: ۳-۵ تصویر</td></tr><tr><td>مسیر ذخیره‌سازی</td><td><code>{userId}/{listingId}/{uuid}.{ext}</code></td></tr><tr><td>سیاست‌های RLS</td><td>فقط صاحب آگهی دسترسی دارد</td></tr></tbody></table>
+
+          <h3>۴.۲ تاکسونومی دسته‌بندی‌ها</h3>
+          <table class="spec-table"><thead><tr><th>دسته اصلی (EN)</th><th>دسته اصلی (AR)</th><th>زیر دسته‌های ممکن</th></tr></thead><tbody><tr><td>Bags</td><td>حقائب</td><td>Handbags, Clutches, Backpacks, Crossbody, Bucket Bags</td></tr><tr><td>Shoes</td><td>أحذية</td><td>Heels, Sneakers, Flats</td></tr><tr><td>Dresses</td><td>فساتين</td><td>Maxi &amp; Gowns, Midi, Kaftans &amp; Abayas, Wedding</td></tr><tr><td>Accessories</td><td>إكسسوارات</td><td>Watches, Jewellery, Scarves &amp; Hijabs, Sunglasses, Belts</td></tr><tr><td>Clothing</td><td>ملابس</td><td>Blazers &amp; Jackets, Tops, Trousers, Knitwear</td></tr></tbody></table>
+          <p>زیر دسته‌ها به‌صورت خودکار از طریق تابع <code>deriveSubCategory</code> بر اساس کلمات کلیدی موجود در عنوان کالا شناسایی می‌شوند.</p>
+
+          <h3>۴.۳ سطوح وضعیت کالا</h3>
+          <table class="spec-table"><thead><tr><th>وضعیت (EN)</th><th>وضعیت (AR)</th><th>توضیح</th></tr></thead><tbody><tr><td>New with Tags</td><td>جديد بالملصقات</td><td>کالا کاملاً نو، با برچسب فروشگاه اصلی.</td></tr><tr><td>Excellent Condition</td><td>حالة ممتازة</td><td>کالا چندین بار استفاده شده، بدون علامت واضح استفاده.</td></tr><tr><td>Gently Used</td><td>مستعمل خفيف</td><td>کالا استفاده شده با علائم ملایم و قابل مشاهده.</td></tr></tbody></table>
+
+          <h3>۴.۴ سایزها و رنگ‌ها</h3>
+          <div class="policy-grid"><div class="policy"><h4>سایزهای موجود</h4><p><code>XS, S, M, L, XL, OS</code> (One Size = مقاس واحد)</p></div><div class="policy"><h4>رنگ‌های تعریف‌شده</h4><p>۱۲ رنگ استاندارد با نام انگلیسی، نام عربی و کد HEX.</p></div></div>
+
+          <h3>۴.۵ وضعیت‌های آگهی (Listing)</h3>
+          <table class="spec-table"><thead><tr><th>وضعیت</th><th>توضیح</th></tr></thead><tbody><tr><td>draft</td><td>پیش‌نویس، فقط برای صاحب آگهی قابل مشاهده</td></tr><tr><td>active</td><td>فعال و در حال نمایش عمومی</td></tr><tr><td>reserved</td><td>رزرو شده برای مشتری خاص</td></tr><tr><td>sold</td><td>فروخته شده، از فید عمومی حذف می‌شود</td></tr><tr><td>archived</td><td>بایگانی شده توسط صاحب یا مدیر</td></tr></tbody></table>
+
+          <h3>۴.۶ وضعیت‌های سفارش (Order)</h3>
+          <table class="spec-table"><thead><tr><th>وضعیت</th><th>توضیح</th></tr></thead><tbody><tr><td>processing</td><td>سفارش ثبت شده، در انتظار پردازش توسط فروشنده</td></tr><tr><td>shipped</td><td>ارسال شده، کد رهگیری ثبت شده</td></tr><tr><td>delivered</td><td>تحویل به خریدار تأیید شده</td></tr><tr><td>returned</td><td>کالا توسط خریدار مرجوع شده</td></tr><tr><td>cancelled</td><td>سفارش قبل از ارسال لغو شده</td></tr></tbody></table>
+
+          <h3>۴.۷ سطوح اصالت (Authenticity Tiers)</h3>
+          <table class="spec-table"><thead><tr><th>سطح</th><th>رنگ نشان</th><th>الزامات</th></tr></thead><tbody><tr><td>verified</td><td>سبز پررنگ</td><td>تأیید توسط تیم دانگ + اسناد اصالت</td></tr><tr><td>in_review</td><td>طلایی</td><td>اسناد ارائه شده، در صف بررسی</td></tr><tr><td>self_declared</td><td>خاکستری</td><td>فقط اظهار فروشنده</td></tr></tbody></table>
+
+          <h3>۴.۸ انواع اعلان</h3>
+          <table class="spec-table"><thead><tr><th>نوع</th><th>توضیح</th></tr></thead><tbody><tr><td>chat</td><td>پیام جدید در گفت‌وگو</td></tr><tr><td>offer</td><td>پیشنهاد قیمت جدید</td></tr><tr><td>follow</td><td>دنبال‌کننده جدید</td></tr><tr><td>price_drop</td><td>کاهش قیمت روی کالای ذخیره‌شده</td></tr><tr><td>like</td><td>پسندیدن آگهی شما</td></tr><tr><td>item_saved</td><td>ذخیره شدن آگهی شما</td></tr><tr><td>order</td><td>تغییر وضعیت سفارش</td></tr><tr><td>system</td><td>اعلان‌های سیستمی</td></tr></tbody></table>
+        </section>
+
+        <section class="section" id="architecture">
+          <div class="section-heading"><span class="section-number">۰۵</span><h2>معماری فنی</h2></div>
+<p class="lead">این بخش، ساختار فنی پلتفرم، لایه‌های مختلف و نحوه ارتباط آن‌ها را توضیح می‌دهد.</p>
+          <h3>۵.۱ پشته فناوری</h3>
+          <div class="feature-grid">
+<div class="feature"><strong>فریم‌ورک فرانت‌اند</strong><p>Next.js 15 با App Router، React 19، TypeScript.</p></div>
+<div class="feature"><strong>استایل‌دهی</strong><p>Tailwind CSS با تم سفارشی، کلاس‌های utility-first.</p></div>
+<div class="feature"><strong>فونت‌ها</strong><p>Hanken Grotesk، Bodoni Moda، Noto Sans Arabic، El Messiri.</p></div>
+<div class="feature"><strong>بک‌اند</strong><p>Supabase (PostgreSQL، Auth، Storage، Realtime).</p></div>
+<div class="feature"><strong>PWA</strong><p>Service Worker برای حالت آفلاین، manifest.json برای نصب.</p></div>
+<div class="feature"><strong>مدیریت وضعیت</strong><p>React Context API + localStorage.</p></div>
+<div class="feature"><strong>تست</strong><p>Vitest برای واحد، Playwright برای E2E.</p></div>
+</div>
+          <h3>۵.۲ ساختار پوشه‌ها</h3>
+          <table class="spec-table"><thead><tr><th>پوشه</th><th>محتوا</th></tr></thead><tbody><tr><td><code>src/app/</code></td><td>صفحات Next.js با App Router</td></tr><tr><td><code>src/components/</code></td><td>کامپوننت‌های React قابل استفاده مجدد</td></tr><tr><td><code>src/context/</code></td><td>React Context برای وضعیت سراسری</td></tr><tr><td><code>src/data/</code></td><td>داده‌های نمونه (mock)</td></tr><tr><td><code>src/services/</code></td><td>لایه سرویس‌ها (backend, admin, mocks)</td></tr><tr><td><code>src/lib/</code></td><td>توابع کمکی</td></tr><tr><td><code>src/hooks/</code></td><td>React Hooks سفارشی</td></tr><tr><td><code>public/</code></td><td>فایل‌های استاتیک</td></tr><tr><td><code>docs/</code></td><td>مستندات پروژه</td></tr></tbody></table>
+
+          <h3>۵.۳ سه فاز توسعه</h3>
+          <div class="flow">
+<div class="flow-step"><b>۱</b><strong>Phase 1 (Mock)</strong><span>داده‌ها در localStorage، تمام جریان‌ها قابل نمایش.</span></div>
+<span class="flow-arrow">←</span>
+<div class="flow-step"><b>۲</b><strong>Phase 2 (Backend)</strong><span>اتصال به Supabase، احراز هویت واقعی، ذخیره‌سازی ابری.</span></div>
+<span class="flow-arrow">←</span>
+<div class="flow-step"><b>۳</b><strong>Phase 3 (Production)</strong><span>پرداخت واقعی، ارسال، عوارض، گزارش‌دهی مالی.</span></div>
+</div>
+          <h3>۵.۴ مدیریت وضعیت</h3>
+          <p>وضعیت سراسری اپلیکیشن در <code>AppContext</code> نگهداری می‌شود که شامل موارد زیر است:</p>
+          <ul class="checklist">
+            <li><strong>کاربر و احراز هویت</strong> — اطلاعات حساب، نشست، توکن.</li>
+            <li><strong>محصولات</strong> — لیست آگهی‌ها، علاقه‌مندی‌ها، سبد خرید.</li>
+            <li><strong>سفارشات</strong> — لیست خریدها و فروش‌ها.</li>
+            <li><strong>مکاتبات</strong> — گفت‌وگوها، پیام‌ها، اعلان‌ها.</li>
+            <li><strong>تنظیمات</strong> — زبان، امنیت، ترجیحات.</li>
+          </ul>
+
+          <h3>۵.۵ ساختار مسیریابی</h3>
+          <table class="spec-table"><thead><tr><th>مسیر</th><th>هدف</th></tr></thead><tbody><tr><td><code>/</code></td><td>صفحه لندینگ بازاریابی</td></tr><tr><td><code>/app</code></td><td>اپلیکیشن اصلی پس از ورود</td></tr><tr><td><code>/app?view=...</code></td><td>انواع صفحه‌های داخلی</td></tr><tr><td><code>/admin</code></td><td>پنل مدیریت</td></tr><tr><td><code>/legal/{terms,privacy,refunds}</code></td><td>صفحات حقوقی</td></tr><tr><td><code>/auth/callback</code></td><td>بازگشت از احراز هویت اجتماعی</td></tr><tr><td><code>/go/[shortId]</code></td><td>لینک‌های کوتاه affiliate</td></tr><tr><td><code>/preview</code></td><td>محیط پیش‌نمایش</td></tr><tr><td><code>/api/stripe/*</code></td><td>API پرداخت</td></tr><tr><td><code>/api/health</code></td><td>بررسی سلامت سرویس</td></tr></tbody></table>
+        </section>
+
+        <section class="section" id="landing">
+          <div class="section-heading"><span class="section-number">۰۶</span><h2>صفحه لندینگ و بازاریابی</h2></div>
+<p class="lead">این بخش، صفحه لندینگ عمومی دانگ را که اولین نقطه تماس کاربران جدید با برند است، توضیح می‌دهد.</p>
+          <h3>۶.۱ هدف صفحه لندینگ</h3>
+          <p>صفحه لندینگ (<code>/</code>) سه هدف اصلی دارد:</p>
+          <ul class="checklist">
+            <li>معرفی برند و ارزش پیشنهادی به کاربران جدید.</li>
+            <li>هدایت کاربران به سمت دانلود یا استفاده از اپلیکیشن.</li>
+            <li>ارائه اطلاعات لازم برای تصمیم‌گیری کاربران درباره ثبت‌نام.</li>
+          </ul>
+
+          <h3>۶.۲ ساختار صفحه</h3>
+          <p>صفحه لندینگ از ۹ بخش اصلی تشکیل شده است:</p>
+          <div class="flow">
+<div class="flow-step"><b>۱</b><strong>Top Bar</strong><span>لوگو، لینک‌های ناوبری، انتخاب زبان، دکمه Open App.</span></div>
+<span class="flow-arrow">←</span>
+<div class="flow-step"><b>۲</b><strong>Hero</strong><span>عنوان اصلی، توضیح کوتاه، دکمه‌های CTA، تصویر پس‌زمینه.</span></div>
+<span class="flow-arrow">←</span>
+<div class="flow-step"><b>۳</b><strong>Pulse Stats</strong><span>چهار آمار کلیدی: Demo mode، 1 listing per order، AED 0 payment، UAE built.</span></div>
+<span class="flow-arrow">←</span>
+<div class="flow-step"><b>۴</b><strong>Marquee</strong><span>نوار افقی با کالاهای منتخب برای ایجاد جذابیت بصری.</span></div>
+<span class="flow-arrow">←</span>
+<div class="flow-step"><b>۵</b><strong>Value Props</strong><span>سه ارزش اصلی: فروش در چند دقیقه، اجاره از طراحان، نسخه نمایشی.</span></div>
+<span class="flow-arrow">←</span>
+<div class="flow-step"><b>۶</b><strong>Categories</strong><span>پنج دسته اصلی به‌صورت کاشی‌های بصری.</span></div>
+<span class="flow-arrow">←</span>
+<div class="flow-step"><b>۷</b><strong>Lifestyle</strong><span>بخش احساسی درباره خزانه مشترک.</span></div>
+<span class="flow-arrow">←</span>
+<div class="flow-step"><b>۸</b><strong>How It Works</strong><span>سه مرحله: کشف، گفت‌وگو و پیشنهاد، تسویه نمایشی.</span></div>
+<span class="flow-arrow">←</span>
+<div class="flow-step"><b>۹</b><strong>Trust + Footer</strong><span>سیگنال‌های اعتماد و فوتر با لینک‌های حقوقی.</span></div>
+</div>
+          <h3>۶.۳ بهینه‌سازی SEO</h3>
+          <p>صفحه لندینگ به‌صورت Server Component پیاده‌سازی شده و برای SEO بهینه است:</p>
+          <ul class="checklist">
+            <li>تگ‌های متا به‌صورت پویا بر اساس زبان تولید می‌شوند.</li>
+            <li>Open Graph و Twitter Card برای اشتراک‌گذاری در شبکه‌های اجتماعی.</li>
+            <li>تگ‌های hreflang برای زبان‌های مختلف (<code>en</code> و <code>ar</code>).</li>
+            <li>structured data (JSON-LD) برای موتورهای جست‌وجو.</li>
+            <li>Lighthouse score بالای ۹۰ در معیارهای Performance و SEO.</li>
+          </ul>
+
+          <h3>۶.۴ PWA و نصب اپلیکیشن</h3>
+          <p>دانگ به‌صورت PWA (Progressive Web App) طراحی شده و قابل نصب روی دستگاه‌های مختلف است:</p>
+          <table class="spec-table"><thead><tr><th>دستگاه</th><th>روش نصب</th></tr></thead><tbody><tr><td>iOS</td><td>از منوی Share گزینه «Add to Home Screen» را انتخاب کنید.</td></tr><tr><td>Android</td><td>بنر نصب خودکار یا از منوی مرورگر گزینه «Install App» را انتخاب کنید.</td></tr><tr><td>Desktop (Chrome/Edge)</td><td>نشانگر نصب در نوار آدرس یا از منوی «Install DANEG».</td></tr></tbody></table>
+          <p>پس از نصب، اپلیکیشن به‌صورت تمام‌صفحه اجرا می‌شود و آفلاین نیز برخی صفحه‌ها را نمایش می‌دهد.</p>
+
+          <h3>۶.۵ تغییر زبان</h3>
+          <p>زبان صفحه لندینگ با پارامتر URL <code>?lang=ar</code> تنظیم می‌شود:</p>
+          <ul class="checklist">
+            <li><code>/</code> — نسخه انگلیسی (پیش‌فرض).</li>
+            <li><code>/?lang=ar</code> — نسخه عربی با چیدمان راست‌به‌چپ.</li>
+            <li>زبان در cookie <code>daneg_language</code> ذخیره می‌شود.</li>
+          </ul>
+        </section>
+
+        <section class="section" id="auth">
+          <div class="section-heading"><span class="section-number">۰۷</span><h2>احراز هویت و مدیریت حساب</h2></div>
+<p class="lead">این بخش، تمام مسیرهای مربوط به ثبت‌نام، ورود، بازیابی رمز عبور و احراز هویت اجتماعی را توضیح می‌دهد.</p>
+          <h3>۷.۱ ثبت‌نام</h3>
+          <p>کاربر جدید با چهار فیلد ساده ثبت‌نام می‌کند:</p>
+          <table class="spec-table"><thead><tr><th>فیلد</th><th>اعتبارسنجی</th></tr></thead><tbody><tr><td>نام</td><td>حداقل ۲ کاراکتر</td></tr><tr><td>ایمیل</td><td>فرمت استاندارد ایمیل + بررسی یکتا بودن</td></tr><tr><td>تلفن</td><td>فرمت بین‌المللی + بررسی یکتا بودن</td></tr><tr><td>رمز عبور</td><td>حداقل ۸ کاراکتر شامل حرف و عدد</td></tr></tbody></table>
+          <p>پس از ثبت‌نام موفق، یک کد OTP به شماره تلفن ارسال می‌شود.</p>
+
+          <h3>۷.۲ تأیید OTP</h3>
+          <div class="flow">
+<div class="flow-step"><b>۱</b><strong>دریافت کد</strong><span>کد ۶ رقمی به شماره تلفن ارسال می‌شود.</span></div>
+<span class="flow-arrow">←</span>
+<div class="flow-step"><b>۲</b><strong>ورود کد</strong><span>کاربر کد را در ۲ دقیقه وارد می‌کند.</span></div>
+<span class="flow-arrow">←</span>
+<div class="flow-step"><b>۳</b><strong>تأیید حساب</strong><span>حساب فعال و نشست ایجاد می‌شود.</span></div>
+<span class="flow-arrow">←</span>
+<div class="flow-step"><b>۴</b><strong>هدایت به اپ</strong><span>کاربر به صفحه اصلی اپلیکیشن هدایت می‌شود.</span></div>
+</div>
+          <div class="notice notice--rose"><strong>امنیت OTP</strong>پس از ۳ تلاش ناموفق، شماره تلفن به مدت ۱۵ دقیقه مسدود می‌شود. کد OTP منقضی‌شدنی است و تنها یک‌بار قابل استفاده.</div>
+
+          <h3>۷.۳ ورود</h3>
+          <p>کاربران موجود می‌توانند با ایمیل و رمز عبور وارد شوند. نشست فعال تا ۳۰ روز حفظ می‌شود.</p>
+
+          <h3>۷.۴ احراز هویت اجتماعی</h3>
+          <p>ورود با حساب Google یکپارچه شده است. پس از بازگشت از OAuth provider، کاربر به صفحه callback هدایت شده و نشست ایجاد می‌شود.</p>
+
+          <h3>۷.۵ بازیابی رمز عبور</h3>
+          <div class="flow">
+<div class="flow-step"><b>۱</b><strong>درخواست بازیابی</strong><span>کاربر ایمیل یا تلفن خود را وارد می‌کند.</span></div>
+<span class="flow-arrow">←</span>
+<div class="flow-step"><b>۲</b><strong>دریافت کد</strong><span>کد OTP به روش انتخابی ارسال می‌شود.</span></div>
+<span class="flow-arrow">←</span>
+<div class="flow-step"><b>۳</b><strong>تأیید کد</strong><span>کاربر کد را وارد می‌کند.</span></div>
+<span class="flow-arrow">←</span>
+<div class="flow-step"><b>۴</b><strong>تنظیم رمز جدید</strong><span>رمز جدید با موفقیت جایگزین می‌شود.</span></div>
+</div>
+          <h3>۷.۶ مدیریت نشست</h3>
+          <p>نشست کاربر در localStorage مرورگر ذخیره می‌شود. توکن دسترسی JWT برای تأیید هویت در Server Actions استفاده می‌شود.</p>
+        </section>
+
+        <section class="section" id="discover">
+          <div class="section-heading"><span class="section-number">۰۸</span><h2>کشف و مرور کالاها</h2></div>
+<p class="lead">این بخش، صفحه اصلی اپلیکیشن، فید کشف، و الگوریتم شخصی‌سازی را توضیح می‌دهد.</p><figure>
+            <img src="user-guide-assets/01-home.png" alt="صفحه اصلی دانگ" />
+            <figcaption><strong>تصویر ۱. صفحه اصلی دانگ در نمای دسکتاپ با چهار تب محتوایی.</strong></figcaption>
+          </figure>
+          <h3>۸.۱ چهار جریان محتوایی اصلی</h3>
+          <table class="spec-table"><thead><tr><th>تب</th><th>محتوا</th></tr></thead><tbody><tr><td><strong>For You</strong></td><td>پیشنهادهای شخصی‌سازی‌شده بر اساس سلیقه و رفتار اخیر کاربر.</td></tr><tr><td><strong>Trending</strong></td><td>کالاهایی که در روزهای اخیر بیشترین توجه کاربران را جلب کرده‌اند.</td></tr><tr><td><strong>Designers</strong></td><td>مرور کالاها بر اساس فروشنده یا مجموعه‌های منتخب برندها.</td></tr><tr><td><strong>New In</strong></td><td>تازه‌ترین آگهی‌های منتشرشده در بازار برای کشف سریع.</td></tr></tbody></table>
+          <h3>۸.۲ الگوریتم شخصی‌سازی</h3>
+          <div class="logic"><p class="logic-title">منطق شخصی‌سازی For You</p><ul><li>برای کاربران جدید، تب For You با کالاهای پرطرفدار عمومی پر می‌شود.</li><li>پس از ثبت ۵ تعامل (لایک، ذخیره، بازدید)، الگوریتم شروع به شخصی‌سازی می‌کند.</li><li>وزن‌دهی بر اساس: دسته دلخواه + سایز معمول + بازه قیمتی + تعاملات اخیر.</li><li>آگهی‌های در حالت pending یا rejected هرگز در فید عمومی نمایش داده نمی‌شوند.</li><li>نمایش به‌صورت infinite scroll با بارگذاری تدریجی.</li></ul></div>
+          <h3>۸.۳ نوار دسترسی پایین (موبایل)</h3>
+          <p>در نمای موبایل، پنج دکمه اصلی در پایین صفحه قرار دارد:</p>
+          <ul class="checklist">
+            <li><strong>خانه</strong> — فید کشف.</li>
+            <li><strong>جست‌وجو</strong> — صفحه فیلترها.</li>
+            <li><strong>فروش</strong> — دکمه برجسته برای شروع فرآیند فروش.</li>
+            <li><strong>فعالیت</strong> — اعلان‌ها و گفت‌وگوها.</li>
+            <li><strong>خزانه</strong> — پروفایل و تنظیمات.</li>
+          </ul>
+
+          <h3>۸.۴ حالت نمایش کالاها</h3>
+          <p>کاربر می‌تواند بین دو حالت نمایش جابجا شود:</p>
+          <div class="feature-grid">
+<div class="feature"><strong>حالت گرید</strong><p>نمایش ۲-۳ کالا در هر ردیف، مناسب برای مرور سریع.</p></div>
+<div class="feature"><strong>حالت لیست</strong><p>نمایش یک کالا در هر ردیف با جزئیات بیشتر.</p></div>
+</div>
+        </section>
+
+        <section class="section" id="product">
+          <div class="section-heading"><span class="section-number">۰۹</span><h2>صفحه جزئیات کالا و آگهی‌ها</h2></div>
+<p class="lead">این بخش، صفحه جزئیات کالا، فرم ثبت آگهی، و قوانین اعتبارسنجی را توضیح می‌دهد.</p><figure>
+            <img src="user-guide-assets/02-product.png" alt="صفحه جزئیات کالا" />
+            <figcaption><strong>تصویر ۲. صفحه جزئیات کالا با تصویر، قیمت، وضعیت اصالت، معرفی فروشنده و دکمه‌های اقدام.</strong></figcaption>
+          </figure>
+          <h3>۹.۱ ساختار صفحه جزئیات</h3>
+          <div class="feature-grid">
+<div class="feature"><strong>تصویر بزرگ</strong><p>تصویر اصلی با قابلیت بزرگ‌نمایی، اسلایدر تصاویر تکمیلی.</p></div>
+<div class="feature"><strong>اطلاعات قیمت</strong><p>قیمت فروش، قیمت اصلی، درصد تخفیف، وضعیت اصالت.</p></div>
+<div class="feature"><strong>مشخصات کالا</strong><p>دسته‌بندی، سایز، رنگ، وضعیت، عنوان و توضیحات.</p></div>
+<div class="feature"><strong>اطلاعات فروشنده</strong><p>نام، آواتار، نوع، دکمه مشاهده پروفایل.</p></div>
+<div class="feature"><strong>سیگنال‌های اعتماد</strong><p>سه نشان: بائع موثق، اصالت، پرداخت امن.</p></div>
+<div class="feature"><strong>دکمه‌های اقدام</strong><p>افزودن به کیف، خرید مستقیم، گفت‌وگو، ذخیره، اشتراک.</p></div>
+</div>
+          <h3>۹.۲ منطق نمایش و تعامل</h3>
+          <div class="logic"><p class="logic-title">قوانین صفحه جزئیات</p><ul><li>نشان اصالت (Verified / In Review / Self-declared) در کنار عنوان نمایش داده می‌شود.</li><li>اگر کالا متعلق به خود کاربر باشد، دکمه‌های «ویرایش» و «حذف» نمایش داده می‌شود.</li><li>اگر کالا قبلاً فروخته شده باشد، دکمه خرید غیرفعال و وضعیت نمایش داده می‌شود.</li><li>اشتراک‌گذاری از طریق پروتکل <code>web+daneg</code> با لینک عمیق قابل اشتراک‌گذاری است.</li><li>گزارش آگهی از منوی سه‌نقطه در دسترس است.</li></ul></div>
+          <h3>۹.۳ فرم ثبت آگهی (Sell)</h3>
+          <p>فرم ثبت آگهی از هفت مرحله تشکیل شده است:</p>
+          <div class="steps">
+<div class="step"><b>۱</b><strong>بارگذاری عکس</strong><span>انتخاب عکس اصلی و تکمیلی از گالری یا دوربین.</span></div>
+<div class="step"><b>۲</b><strong>عنوان و توضیحات</strong><span>نوشتن عنوان و توضیحات به انگلیسی (و در صورت نیاز عربی).</span></div>
+<div class="step"><b>۳</b><strong>دسته‌بندی</strong><span>انتخاب دسته اصلی و زیر دسته.</span></div>
+<div class="step"><b>۴</b><strong>وضعیت و سایز</strong><span>انتخاب وضعیت کالا، سایز و رنگ.</span></div>
+<div class="step"><b>۵</b><strong>اصالت</strong><span>تأیید اصالت و ارائه اسناد (برای برندهای لوکس).</span></div>
+<div class="step"><b>۶</b><strong>قیمت‌گذاری</strong><span>ثبت قیمت فروش و قیمت اصلی.</span></div>
+<div class="step"><b>۷</b><strong>انتشار</strong><span>انتشار فوری یا ذخیره به‌عنوان پیش‌نویس.</span></div>
+</div>
+          <h3>۹.۴ اعتبارسنجی فرم</h3>
+          <table class="spec-table"><thead><tr><th>فیلد</th><th>اعتبارسنجی</th></tr></thead><tbody><tr><td>عنوان</td><td>حداقل ۵ کاراکتر، حداکثر ۱۰۰ کاراکتر.</td></tr><tr><td>توضیحات</td><td>حداقل ۲۰ کاراکتر، حداکثر ۲۰۰۰ کاراکتر.</td></tr><tr><td>قیمت فروش</td><td>عدد مثبت، حداکثر ۱ میلیون درهم.</td></tr><tr><td>قیمت اصلی</td><td>باید بیشتر از قیمت فروش باشد (برای نمایش تخفیف).</td></tr><tr><td>عکس</td><td>حداقل ۱ عکس، حداکثر ۱۰ عکس.</td></tr><tr><td>وضعیت</td><td>انتخاب از لیست سه‌گانه.</td></tr><tr><td>سایز</td><td>انتخاب از لیست شش‌گانه.</td></tr></tbody></table><figure>
+            <img src="user-guide-assets/04-sell.png" alt="فرم فروش کالا" />
+            <figcaption><strong>تصویر ۳. فرم ثبت کالا برای فروش با فیلدهای مختلف.</strong></figcaption>
+          </figure>
+          <h3>۹.۵ ویرایش آگهی</h3>
+          <p>فروشنده می‌تواند آگهی‌های خود را در هر زمان ویرایش کند. تغییرات در وضعیت‌های زیر متفاوت عمل می‌کنند:</p>
+          <ul class="checklist">
+            <li><strong>draft</strong> — تغییرات بدون نیاز به بازبینی.</li>
+            <li><strong>active</strong> — تغییرات جزئی (قیمت، توضیحات) فوری اعمال می‌شوند.</li>
+            <li><strong>reserved/sold</strong> — تغییرات فقط برای صاحب و مدیر قابل مشاهده است.</li>
+          </ul>
+        </section>
+
+        <section class="section" id="search">
+          <div class="section-heading"><span class="section-number">۱۰</span><h2>جست‌وجوی پیشرفته و فیلتر</h2></div>
+<p class="lead">این بخش، صفحه جست‌وجو، فیلترها، و الگوریتم رتبه‌بندی نتایج را توضیح می‌دهد.</p><figure>
+            <img src="user-guide-assets/03-search.png" alt="صفحه جست‌وجو و فیلتر" />
+            <figcaption><strong>تصویر ۴. صفحه جست‌وجو با فیلترهای مختلف.</strong></figcaption>
+          </figure>
+          <h3>۱۰.۱ ساختار صفحه جست‌وجو</h3>
+          <p>صفحه جست‌وجو از دو بخش اصلی تشکیل شده است:</p>
+          <ul class="checklist">
+            <li><strong>نوار جست‌وجو</strong> — ورود متنی در بالای صفحه.</li>
+            <li><strong>فیلترها</strong> — فیلترهای قابل ترکیب در زیر نوار جست‌وجو.</li>
+          </ul>
+
+          <h3>۱۰.۲ فیلترهای موجود</h3>
+          <div class="feature-grid">
+<div class="feature"><strong>دسته‌بندی</strong><p>انتخاب گروه محصول برای محدود کردن نتیجه‌ها.</p></div>
+<div class="feature"><strong>وضعیت و سایز</strong><p>محدودسازی بر اساس نو یا دست‌دوم بودن و اندازه دقیق.</p></div>
+<div class="feature"><strong>رنگ</strong><p>انتخاب از میان ۱۲ پالت تعریف‌شده.</p></div>
+<div class="feature"><strong>قیمت و نوع عرضه</strong><p>تعیین محدوده قیمتی و انتخاب بین خرید یا اجاره.</p></div>
+<div class="feature"><strong>اصالت</strong><p>فیلتر بر اساس سطح اصالت کالا.</p></div>
+<div class="feature"><strong>فروشنده</strong><p>محدودسازی به فروشندگان خاص.</p></div>
+</div>
+          <h3>۱۰.۳ منطق جست‌وجو و رتبه‌بندی</h3>
+          <div class="logic"><p class="logic-title">الگوریتم جست‌وجو</p><ul><li>جست‌وجو در عنوان، توضیح انگلیسی و نام برند کالا انجام می‌شود.</li><li>پشتیبانی از جست‌وجوی تقریبی (fuzzy match) برای غلط‌های املایی.</li><li>ترتیب نتایج بر اساس امتیاز ترکیبی: تازگی + محبوبیت + تطابق با فیلتر.</li><li>کالاهای فروخته‌شده به‌طور پیش‌فرض از نتایج حذف می‌شوند.</li><li>نمایش نتایج به‌صورت صفحه‌بندی شده با ۲۴ کالا در هر صفحه.</li></ul></div>
+          <h3>۱۰.۴ صفحه دسته‌بندی (Category Landing)</h3>
+          <p>هر دسته اصلی یک صفحه فرود اختصاصی دارد:</p>
+          <ul class="checklist">
+            <li>نمایش کالاهای فعال در آن دسته به‌صورت گرید.</li>
+            <li>فیلتر زیر دسته‌ها به‌صورت تراشه‌های افقی.</li>
+            <li>مرتب‌سازی بر اساس: تازه‌ترین، محبوب‌ترین، ارزان‌ترین، گران‌ترین.</li>
+            <li>breadcrumb برای نمایش مسیر دسته.</li>
+          </ul>
+        </section>
+
+        <section class="section" id="shopping">
+          <div class="section-heading"><span class="section-number">۱۱</span><h2>خرید، کیف و تسویه</h2></div>
+<p class="lead">این بخش، فرآیند خرید، مدیریت کیف، آدرس‌ها، روش‌های پرداخت و گردش سفارش را توضیح می‌دهد.</p>
+          <h3>۱۱.۱ کیف خرید (Shopping Bag)</h3>
+          <p>کیف خرید در نسخه نمایشی فقط یک کالا را در خود جای می‌دهد. این محدودیت عمداً برای سادگی فرآیند نمایشی اعمال شده است.</p>
+          <div class="logic"><p class="logic-title">منطق کیف</p><ul><li>حداکثر ۱ کالا در کیف به‌طور هم‌زمان (نسخه نمایشی).</li><li>کالاهای فروخته‌شده یا حذف‌شده به‌طور خودکار از کیف خارج می‌شوند.</li><li>تغییر قیمت یا تخفیف فروشنده، قیمت کیف را به‌روزرسانی می‌کند.</li><li>سفارش نمایشی پس از ثبت، یک شماره سفارش منحصربه‌فرد (DANEG-ORDER-XXXXX) دریافت می‌کند.</li></ul></div>
+          <h3>۱۱.۲ فرآیند تسویه</h3>
+          <div class="flow">
+<div class="flow-step"><b>۱</b><strong>بررسی کیف</strong><span>مشاهده کالا، قیمت، و هزینه ارسال تخمینی.</span></div>
+<span class="flow-arrow">←</span>
+<div class="flow-step"><b>۲</b><strong>انتخاب آدرس</strong><span>انتخاب از آدرس‌های ذخیره‌شده یا افزودن آدرس جدید.</span></div>
+<span class="flow-arrow">←</span>
+<div class="flow-step"><b>۳</b><strong>انتخاب روش پرداخت</strong><span>در نسخه نمایشی فقط نمایش داده می‌شود.</span></div>
+<span class="flow-arrow">←</span>
+<div class="flow-step"><b>۴</b><strong>تأیید نهایی</strong><span>مرور سفارش و تأیید.</span></div>
+<span class="flow-arrow">←</span>
+<div class="flow-step"><b>۵</b><strong>دریافت رسید</strong><span>رسید نمایشی در مرورگر ذخیره می‌شود.</span></div>
+</div>
+          <div class="notice notice--rose"><strong>نسخه نمایشی</strong>در نسخه فعلی، سفارش‌ها فقط برای نمایش جریان کار ثبت می‌شوند. هیچ پرداخت، ارسال یا تراکنش واقعی انجام نمی‌شود. اتصال به درگاه پرداخت Stripe در فاز بعدی پروژه اضافه خواهد شد.</div>
+          <h3>۱۱.۳ مدیریت آدرس‌ها</h3>
+          <p>کاربر می‌تواند چندین آدرس ذخیره کند:</p>
+          <table class="spec-table"><thead><tr><th>فیلد</th><th>توضیح</th></tr></thead><tbody><tr><td>نام گیرنده</td><td>نام کامل فرد دریافت‌کننده.</td></tr><tr><td>شماره تماس</td><td>برای هماهنگی ارسال.</td></tr><tr><td>شهر</td><td>انتخاب از لیست شهرهای امارات.</td></tr><tr><td>منطقه</td><td>نام منطقه یا محله.</td></tr><tr><td>خیابان و پلاک</td><td>آدرس دقیق.</td></tr><tr><td>یادداشت</td><td>توضیحات اضافی برای پیک (اختیاری).</td></tr><tr><td>آدرس پیش‌فرض</td><td>فقط یک آدرس می‌تواند پیش‌فرض باشد.</td></tr></tbody></table>
+          <h3>۱۱.۴ روش‌های پرداخت</h3>
+          <p>در نسخه نمایشی، روش‌های پرداخت فقط نمایش داده می‌شوند و تراکنشی انجام نمی‌دهند:</p>
+          <div class="feature-grid">
+<div class="feature"><strong>Visa</strong><p>کارت‌های اعتباری Visa.</p></div>
+<div class="feature"><strong>Mastercard</strong><p>کارت‌های اعتباری Mastercard.</p></div>
+<div class="feature"><strong>American Express</strong><p>کارت‌های Amex.</p></div>
+<div class="feature"><strong>Apple Pay</strong><p>پرداخت سریع از طریق Apple Pay.</p></div>
+</div>
+          <p>هیچ‌گونه شماره کارت، CVV یا تاریخ انقضا در سرور ذخیره نمی‌شود.</p>
+          <h3>۱۱.۵ گردش سفارش</h3>
+          <div class="flow">
+<div class="flow-step"><b>۱</b><strong>processing</strong><span>سفارش در سیستم ثبت شده.</span></div>
+<span class="flow-arrow">←</span>
+<div class="flow-step"><b>۲</b><strong>shipped</strong><span>فروشنده کالا را ارسال کرده و کد رهگیری را وارد کرده.</span></div>
+<span class="flow-arrow">←</span>
+<div class="flow-step"><b>۳</b><strong>delivered</strong><span>خریدار تحویل را تأیید کرده.</span></div>
+<span class="flow-arrow">←</span>
+<div class="flow-step"><b>۴</b><strong>بازگشت یا بسته شدن</strong><span>سفارش بسته می‌شود یا فرآیند مرجوعی آغاز می‌شود.</span></div>
+</div>
+        </section>
+
+        <section class="section" id="profile">
+          <div class="section-heading"><span class="section-number">۱۲</span><h2>پروفایل، خزانه و تنظیمات</h2></div>
+<p class="lead">این بخش، صفحه پروفایل، خزانه شخصی، ویرایش اطلاعات، آدرس‌ها، روش‌های پرداخت، تنظیمات امنیتی و مدیریت حساب را توضیح می‌دهد.</p><figure>
+            <img src="user-guide-assets/05-profile.png" alt="صفحه حساب کاربری و خزانه" />
+            <figcaption><strong>تصویر ۵. صفحه پروفایل و خزانه با اطلاعات کاربر، آمار و دسترسی‌های سریع.</strong></figcaption>
+          </figure>
+          <h3>۱۲.۱ ساختار صفحه پروفایل</h3>
+          <div class="feature-grid">
+<div class="feature"><strong>اطلاعات پروفایل</strong><p>نام، نام کاربری، شهر، امتیاز، تعداد دنبال‌کنندگان.</p></div>
+<div class="feature"><strong>آمار کاربر</strong><p>تعداد آگهی‌ها، خریدها، فروش‌ها.</p></div>
+<div class="feature"><strong>دسترسی‌های سریع</strong><p>پیام‌ها، آدرس‌ها، روش‌های پرداخت، کاربران مسدودشده.</p></div>
+<div class="feature"><strong>تنظیمات</strong><p>ویرایش پروفایل، امنیت، اعلان‌ها.</p></div>
+</div>
+          <h3>۱۲.۲ خزانه (My Closet)</h3>
+          <p>خزانه، نمای اصلی فروشنده است که آگهی‌های او را در چهار دسته نمایش می‌دهد:</p>
+          <div class="feature-grid">
+<div class="feature"><strong>آگهی‌های فعال</strong><p>در حال نمایش عمومی.</p></div>
+<div class="feature"><strong>پیش‌نویس‌ها</strong><p>ذخیره شده برای تکمیل بعدی.</p></div>
+<div class="feature"><strong>در حال بررسی</strong><p>ارسال شده به مدیر برای تأیید.</p></div>
+<div class="feature"><strong>فروخته شده</strong><p>تاریخچه فروش‌های موفق.</p></div>
+</div>
+          <h3>۱۲.۳ ویرایش پروفایل</h3>
+          <div class="logic"><p class="logic-title">قوانین ویرایش پروفایل</p><ul><li>هر کاربر فقط به آگهی‌های خود دسترسی ویرایش دارد.</li><li>تغییر نام کاربری محدود به یک‌بار در ۳۰ روز است.</li><li>حذف حساب، تمام آگهی‌های فعال را به حالت پنهان می‌برد و سابقه سفارش‌ها در سیستم باقی می‌ماند.</li><li>آواتار با محدودیت حجم ۲ مگابایت و تغییر اندازه خودکار به ۱۰۲۴ پیکسل بارگذاری می‌شود.</li></ul></div>
+          <h3>۱۲.۴ تنظیمات امنیتی</h3>
+          <p>از بخش Settings → Security & App Lock می‌توان:</p>
+          <ul class="checklist">
+            <li>قفل خودکار را فعال یا غیرفعال کرد.</li>
+            <li>زمان‌بندی قفل (۱، ۵، ۱۵، ۳۰ یا ۶۰ دقیقه) را تنظیم کرد.</li>
+            <li>PIN چهار تا هشت رقمی تعریف کرد.</li>
+            <li>احراز بیومتریک (Touch ID / Face ID) را فعال کرد.</li>
+            <li>قفل فوری (Lock Now) را اجرا کرد.</li>
+          </ul>
+          <h3>۱۲.۵ کاربران مسدودشده (Blocked Users)</h3>
+          <p>کاربر می‌تواند کاربران دیگر را مسدود کند. مسدودسازی:</p>
+          <ul class="checklist">
+            <li>از ارسال پیام جدید جلوگیری می‌کند.</li>
+            <li>اعلان‌های مربوط به آن‌ها را حذف می‌کند.</li>
+            <li>آگهی‌های آن‌ها را از فید کاربر حذف می‌کند.</li>
+          </ul>
+        </section>
+
+        <section class="section" id="activity">
+          <div class="section-heading"><span class="section-number">۱۳</span><h2>فعالیت، گفت‌وگو و اعلان‌ها</h2></div>
+<p class="lead">این بخش، فید فعالیت، سیستم گفت‌وگو، اعلان‌ها و تعاملات کاربران را توضیح می‌دهد.</p><figure>
+            <img src="user-guide-assets/06-activity.png" alt="صفحه فعالیت‌های کاربر" />
+            <figcaption><strong>تصویر ۶. صفحه فعالیت‌های کاربر شامل پیام‌ها، اعلان‌ها و رویدادها.</strong></figcaption>
+          </figure>
+          <h3>۱۳.۱ فید فعالیت</h3>
+          <p>فید فعالیت، تمام رویدادهای مهم حساب کاربر را در یک نمایش واحد جمع‌آوری می‌کند:</p>
+          <table class="spec-table"><thead><tr><th>نوع</th><th>شرح</th></tr></thead><tbody><tr><td>پیام جدید</td><td>پیام از فروشنده یا خریدار.</td></tr><tr><td>پیشنهاد قیمت</td><td>دریافت یا ارسال پیشنهاد قیمت.</td></tr><tr><td>دنبال‌کننده</td><td>دنبال‌کننده جدید.</td></tr><tr><td>تغییر قیمت</td><td>کاهش قیمت کالای ذخیره‌شده.</td></tr><tr><td>پسند و ذخیره</td><td>لایک یا ذخیره آگهی شما.</td></tr><tr><td>سفارش</td><td>تغییر وضعیت سفارش.</td></tr><tr><td>سیستمی</td><td>اعلان‌های عمومی و به‌روزرسانی‌ها.</td></tr></tbody></table>
+          <h3>۱۳.۲ سیستم گفت‌وگو</h3>
+          <p>گفت‌وگوی درون‌برنامه‌ای بین خریدار و فروشنده با ویژگی‌های زیر:</p>
+          <div class="feature-grid">
+<div class="feature"><strong>پیام متنی</strong><p>پیام‌های متنی ساده با پشتیبانی از ایموجی.</p></div>
+<div class="feature"><strong>ارسال تصویر</strong><p>امکان ارسال تصاویر اضافی از کالا.</p></div>
+<div class="feature"><strong>پیشنهاد قیمت</strong><p>مذاکره بر سر قیمت نهایی با قابلیت پذیرش/رد.</p></div>
+<div class="feature"><strong>پیش‌نویس پیام</strong><p>پیش‌نویس‌های خودکار برای سه سؤال رایج.</p></div>
+<div class="feature"><strong>اشتراک‌گذاری کالا</strong><p>اشتراک‌گذاری کالای فعلی در گفت‌وگو.</p></div>
+<div class="feature"><strong>وضعیت آنلاین</strong><p>نمایش وضعیت آنلاین فروشنده.</p></div>
+</div>
+          <h3>۱۳.۳ منطق اعلان‌ها</h3>
+          <div class="logic"><p class="logic-title">منطق اعلان‌ها</p><ul><li>اعلان‌ها بر اساس اولویت (سفارش، پیام، سیستمی) گروه‌بندی می‌شوند.</li><li>پیام‌های خوانده‌نشده با شمارنده قرمز در نوار پایین نمایش داده می‌شوند.</li><li>پیام‌های حاوی شماره تلفن یا ایمیل توسط سیستم ضد اسپم پرچم‌گذاری می‌شوند.</li><li>مسدود کردن کاربر، تمام پیام‌های آینده او را بدون اطلاع‌رسانی حذف می‌کند.</li><li>مرکز اعلان‌ها (Notifications Centre) اعلان‌ها را بر اساس نوع فیلتر می‌کند.</li></ul></div>
+          <h3>۱۳.۴ اشتراک‌گذاری خارجی</h3>
+          <p>هر کالا یا صفحه‌ای از دانگ را می‌توان از طریق Web Share API یا کپی لینک به اشتراک گذاشت:</p>
+          <ul class="checklist">
+            <li>پروتکل اشتراک: <code>web+daneg</code></li>
+            <li>Open Graph metadata برای نمایش زیبا در شبکه‌های اجتماعی.</li>
+            <li>لینک‌های کوتاه برای اشتراک‌گذاری آسان.</li>
+          </ul>
+        </section>
+
+        <section class="section" id="reviews">
+          <div class="section-heading"><span class="section-number">۱۴</span><h2>نظرات، امتیازها و بازخورد</h2></div>
+<p class="lead">این بخش، سیستم نظرات، امتیازدهی، برچسب‌های سریع و تأیید خرید را توضیح می‌دهد.</p>
+          <h3>۱۴.۱ انواع نظرات</h3>
+          <p>دانگ دو نوع نظر دارد:</p>
+          <div class="feature-grid">
+<div class="feature"><strong>نظر روی فروشنده</strong><p>نظر عمومی که در پروفایل فروشنده نمایش داده می‌شود.</p></div>
+<div class="feature"><strong>نظر شخصی (My Reviews)</strong><p>نظر خصوصی که فقط برای نویسنده قابل مشاهده است.</p></div>
+</div>
+          <h3>۱۴.۲ ایجاد نظر</h3>
+          <p>کاربر می‌تواند فقط برای سفارش‌های تحویل‌شده نظر ثبت کند:</p>
+          <div class="flow">
+<div class="flow-step"><b>۱</b><strong>انتخاب سفارش</strong><span>از My Purchases سفارش تحویل‌شده را انتخاب کنید.</span></div>
+<span class="flow-arrow">←</span>
+<div class="flow-step"><b>۲</b><strong>امتیازدهی</strong><span>۱ تا ۵ ستاره.</span></div>
+<span class="flow-arrow">←</span>
+<div class="flow-step"><b>۳</b><strong>انتخاب برچسب‌ها</strong><span>برچسب‌های سریع (مطابق توضیح، ارسال سریع، ارتباط عالی، دوستش داشتم).</span></div>
+<span class="flow-arrow">←</span>
+<div class="flow-step"><b>۴</b><strong>نوشتن متن</strong><span>توضیح اختیاری.</span></div>
+<span class="flow-arrow">←</span>
+<div class="flow-step"><b>۵</b><strong>افزودن عکس</strong><span>تا ۳ عکس اختیاری.</span></div>
+<span class="flow-arrow">←</span>
+<div class="flow-step"><b>۶</b><strong>ارسال</strong><span>نظر ثبت و منتشر می‌شود.</span></div>
+</div>
+          <h3>۱۴.۳ برچسب‌های سریع</h3>
+          <table class="spec-table"><thead><tr><th>برچسب (EN)</th><th>برچسب (AR)</th><th>معنا</th></tr></thead><tbody><tr><td>asDescribed</td><td>كما هو موصوف</td><td>کالا با توضیحات مطابقت داشت.</td></tr><tr><td>fastShipping</td><td>شحن سريع</td><td>ارسال سریع انجام شد.</td></tr><tr><td>greatCommunication</td><td>تواصل ممتاز</td><td>ارتباط با فروشنده عالی بود.</td></tr><tr><td>lovedIt</td><td>أحببته</td><td>کاربر از کالا راضی بود.</td></tr></tbody></table>
+          <h3>۱۴.۴ تأیید خرید (Verified Purchase)</h3>
+          <p>نظرات دارای برچسب «خرید تأییدشده» فقط برای کاربرانی نمایش داده می‌شوند که واقعاً آن کالا را خریداری کرده‌اند. این مکانیزم از نظرات جعلی جلوگیری می‌کند.</p>
+
+          <h3>۱۴.۵ نمایش نظرات</h3>
+          <ul class="checklist">
+            <li>نمایش در صفحه عمومی فروشنده با توزیع امتیاز (مثلاً ۴.۸ از ۵).</li>
+            <li>نمایش در صفحه جزئیات کالا با ۳ نظر اخیر.</li>
+            <li>مرتب‌سازی بر اساس تازه‌ترین، مفیدترین، یا امتیاز.</li>
+          </ul>
+
+          <h3>۱۴.۶ نرخ پاسخ‌گویی فروشنده</h3>
+          <p>نرخ پاسخ‌گویی و زمان متوسط پاسخ در پروفایل فروشنده نمایش داده می‌شود:</p>
+          <table class="spec-table"><thead><tr><th>شاخص</th><th>نحوه محاسبه</th></tr></thead><tbody><tr><td>نرخ پاسخ‌گویی</td><td>درصد چت‌هایی که فروشنده در ۲۴ ساعت پاسخ داده.</td></tr><tr><td>زمان پاسخ</td><td>میانگین ساعت از اولین پیام تا اولین پاسخ فروشنده.</td></tr><tr><td>فروش موفق</td><td>تعداد کالاهای فروخته‌شده در ۹۰ روز گذشته.</td></tr></tbody></table>
+        </section>
+
+        <section class="section" id="reports">
+          <div class="section-heading"><span class="section-number">۱۵</span><h2>گزارش‌ها، مرجوعی و حل اختلاف</h2></div>
+<p class="lead">این بخش، سیستم گزارش‌دهی، درخواست مرجوعی، و حل اختلاف بین خریدار و فروشنده را توضیح می‌دهد.</p>
+          <h3>۱۵.۱ گزارش آگهی یا فروشنده</h3>
+          <p>هر کاربر می‌تواند یک آگهی یا فروشنده را گزارش دهد. گزارش‌ها با شناسه شفاف (DANEG-XXXXX) به تیم نظارت ارسال می‌شوند.</p>
+          <table class="spec-table"><thead><tr><th>دلیل</th><th>شرح</th></tr></thead><tbody><tr><td>counterfeit</td><td>کالا تقلبی یا فیک است.</td></tr><tr><td>inappropriate</td><td>محتوا یا عکس نامناسب دارد.</td></tr><tr><td>spam</td><td>هرزنامه یا تلاش برای کلاهبرداری.</td></tr><tr><td>wrong_category</td><td>کالا در دسته‌بندی اشتباه ثبت شده.</td></tr><tr><td>stolen</td><td>کالا مشکوک به سرقتی بودن.</td></tr><tr><td>other</td><td>سایر موارد با شرح دقیق.</td></tr></tbody></table>
+          <p>گزارش‌ها وارد یکی از چهار وضعیت می‌شوند: <strong>open</strong>، <strong>investigating</strong>، <strong>resolved</strong> یا <strong>dismissed</strong>.</p>
+
+          <h3>۱۵.۲ درخواست مرجوعی (Return Request)</h3>
+          <div class="notice notice--rose"><strong>نسخه نمایشی</strong>این یک درخواست نمایشی است. فقط در مرورگر ذخیره می‌شود و هیچ بازگشت وجه یا ارسال واقعی ایجاد نمی‌شود.</div>
+          <p>پس از تحویل کالا، خریدار می‌تواند درخواست مرجوعی ثبت کند:</p>
+          <div class="flow">
+<div class="flow-step"><b>۱</b><strong>انتخاب سفارش</strong><span>سفارش تحویل‌شده را از My Purchases انتخاب کنید.</span></div>
+<span class="flow-arrow">←</span>
+<div class="flow-step"><b>۲</b><strong>انتخاب دلیل</strong><span>از بین ۶ دلیل تعریف‌شده.</span></div>
+<span class="flow-arrow">←</span>
+<div class="flow-step"><b>۳</b><strong>شرح مشکل</strong><span>توضیح دقیق مشکل با کالا.</span></div>
+<span class="flow-arrow">←</span>
+<div class="flow-step"><b>۴</b><strong>بارگذاری عکس</strong><span>تا ۳ عکس واقعی از مشکل.</span></div>
+<span class="flow-arrow">←</span>
+<div class="flow-step"><b>۵</b><strong>ارسال</strong><span>درخواست ثبت و به تیم پشتیبانی ارسال می‌شود.</span></div>
+</div>
+          <h3>۱۵.۳ حل اختلاف (Dispute)</h3>
+          <p>اگر خریدار و فروشنده نتوانند از طریق گفت‌وگو به توافق برسند، اختلاف رسمی باز می‌شود:</p>
+          <table class="spec-table"><thead><tr><th>دلیل اختلاف</th><th>معنا</th></tr></thead><tbody><tr><td>not_received</td><td>کالا پس از مهلت مقرر دریافت نشده.</td></tr><tr><td>wrong_item</td><td>کالای اشتباهی ارسال شده.</td></tr><tr><td>damaged</td><td>کالا در حمل آسیب دیده.</td></tr><tr><td>not_as_described</td><td>کالا با توضیحات مغایرت دارد.</td></tr><tr><td>counterfeit</td><td>کالا اصل به نظر نمی‌رسد.</td></tr><tr><td>other</td><td>سایر موارد.</td></tr></tbody></table>
+          <h3>۱۵.۴ وضعیت‌های اختلاف</h3>
+          <div class="flow">
+<div class="flow-step"><b>۱</b><strong>open</strong><span>اختلاف باز شده و در صف بررسی.</span></div>
+<span class="flow-arrow">←</span>
+<div class="flow-step"><b>۲</b><strong>under_review</strong><span>تیم پشتیبانی در حال بررسی.</span></div>
+<span class="flow-arrow">←</span>
+<div class="flow-step"><b>۳</b><strong>resolved</strong><span>اختلاف به نفع یکی از طرفین حل شده.</span></div>
+<span class="flow-arrow">←</span>
+<div class="flow-step"><b>۴</b><strong>rejected</strong><span>اختلاف رد شده (مثلاً به دلیل مدارک ناکافی).</span></div>
+</div>
+          <h3>۱۵.۵ لاگ ممیزی</h3>
+          <p>تمام اقدامات انجام‌شده روی گزارش‌ها، مرجوعی‌ها و اختلافات در یک لاگ ممیزی زمان‌بندی‌شده ثبت می‌شود تا امکان پیگیری و حسابرسی وجود داشته باشد.</p>
+        </section>
+
+        <section class="section" id="admin">
+          <div class="section-heading"><span class="section-number">۱۶</span><h2>پنل مدیریت و کنترل بازار</h2></div>
+<p class="lead">این بخش، پنل مدیریت، دسترسی‌ها، ابزارهای نظارتی و فرآیندهای اداری را توضیح می‌دهد.</p><figure>
+            <img src="user-guide-assets/07-admin-login.png" alt="صفحه ورود مدیر دانگ" />
+            <figcaption><strong>تصویر ۷. صفحه ورود مدیر با دسترسی محدود.</strong></figcaption>
+          </figure><figure>
+            <img src="user-guide-assets/08-admin-dashboard.png" alt="داشبورد پنل مدیریت دانگ" />
+            <figcaption><strong>تصویر ۸. داشبورد پنل مدیریت با آمار و دسترسی سریع.</strong></figcaption>
+          </figure>
+          <h3>۱۶.۱ دسترسی به پنل</h3>
+          <p>پنل مدیریت در مسیر <code>/admin</code> قرار دارد و فقط برای حساب‌هایی با دسترسی admin قابل استفاده است:</p>
+          <div class="notice notice--rose"><strong>امنیت دسترسی</strong>دسترسی به پنل مدیریت باید فقط در اختیار اعضای تیم عملیات و مدیران ارشد باشد. هر اقدام مدیریتی در لاگ ممیزی ثبت می‌شود.</div>
+          <h3>۱۶.۲ ساختار پنل</h3>
+          پنل مدیریت از ۸ تب اصلی تشکیل شده است:
+          <div class="feature-grid">
+<div class="feature"><strong>Overview</strong><p>داشبورد کلی با آمار و نمودار.</p></div>
+<div class="feature"><strong>Users</strong><p>مدیریت کاربران: مشاهده، تعلیق، بازنشانی رمز.</p></div>
+<div class="feature"><strong>Listings</strong><p>صف آگهی‌های در انتظار بررسی.</p></div>
+<div class="feature"><strong>Orders</strong><p>سفارشات اخیر و وضعیت آن‌ها.</p></div>
+<div class="feature"><strong>Disputes</strong><p>اختلافات باز و در حال بررسی.</p></div>
+<div class="feature"><strong>Reports</strong><p>گزارش‌های کاربران.</p></div>
+<div class="feature"><strong>Broadcast</strong><p>ارسال اعلان عمومی.</p></div>
+<div class="feature"><strong>Affiliate</strong><p>مدیریت لینک‌های همکاری و گزارش‌ها.</p></div>
+</div>
+          <h3>۱۶.۳ آمار کلی داشبورد</h3>
+          <table class="spec-table"><thead><tr><th>شاخص</th><th>توضیح</th></tr></thead><tbody><tr><td>Total Users</td><td>تعداد کل کاربران ثبت‌نام‌شده.</td></tr><tr><td>Total Listings</td><td>تعداد کل آگهی‌های موجود.</td></tr><tr><td>Pending Approval</td><td>تعداد آگهی‌های در انتظار بررسی (با هایلایت).</td></tr><tr><td>Open Disputes</td><td>تعداد اختلافات باز.</td></tr><tr><td>Open Reports</td><td>تعداد گزارش‌های فعال.</td></tr><tr><td>Suspended Users</td><td>تعداد حساب‌های تعلیق‌شده.</td></tr></tbody></table>
+          <h3>۱۶.۴ بررسی آگهی‌ها</h3>
+          <p>مدیر می‌تواند در صف Listings آگهی‌ها را بررسی کند:</p>
+          <div class="flow">
+<div class="flow-step"><b>۱</b><strong>مشاهده آگهی</strong><span>تصاویر، توضیحات، اطلاعات فروشنده.</span></div>
+<span class="flow-arrow">←</span>
+<div class="flow-step"><b>۲</b><strong>تأیید</strong><span>آگهی منتشر می‌شود و به فروشنده اطلاع‌رسانی می‌شود.</span></div>
+<span class="flow-arrow">←</span>
+<div class="flow-step"><b>۳</b><strong>رد</strong><span>آگهی با دلیل رد به فروشنده بازمی‌گردد.</span></div>
+<span class="flow-arrow">←</span>
+<div class="flow-step"><b>۴</b><strong>ویژه‌کردن</strong><span>آگهی در صدر جست‌وجو قرار می‌گیرد.</span></div>
+</div>
+          <h3>۱۶.۵ اقدامات مدیریتی و عواقب</h3>
+          <table class="spec-table"><thead><tr><th>اقدام</th><th>نتیجه</th></tr></thead><tbody><tr><td>تأیید آگهی</td><td>انتشار عمومی + ایمیل اطلاع‌رسانی به فروشنده.</td></tr><tr><td>رد آگهی</td><td>بازگشت به فروشنده با دلیل + امکان ویرایش.</td></tr><tr><td>تعلیق کاربر</td><td>عدم دسترسی به حساب تا رفع تعلیق.</td></tr><tr><td>حذف آگهی</td><td>حذف از فید عمومی + حفظ سابقه.</td></tr><tr><td>ارسال اعلان عمومی</td><td>نمایش به همه کاربران فعال.</td></tr><tr><td>بازنشانی رمز</td><td>ارسال ایمیل بازنشانی به کاربر.</td></tr></tbody></table>
+          <h3>۱۶.۶ لاگ ممیزی (Audit Log)</h3>
+          <p>تمام اقدامات مدیران در یک لاگ زمان‌بندی‌شده ثبت می‌شود:</p>
+          <ul class="checklist">
+            <li>شناسه مدیر</li>
+            <li>نوع اقدام</li>
+            <li>هدف (آگهی، کاربر، سفارش، و غیره)</li>
+            <li>زمان دقیق</li>
+            <li>توضیحات</li>
+          </ul>
+
+          <h3>۱۶.۷ برنامه همکاری (Affiliate)</h3>
+          <p>مدیر می‌تواند برنامه همکاری فروش را مدیریت کند:</p>
+          <div class="feature-grid">
+<div class="feature"><strong>شریکای تجاری</strong><p>تعریف شرکای تجاری (مثلاً Amazon، Noon).</p></div>
+<div class="feature"><strong>لینک‌های همکاری</strong><p>تولید لینک کوتاه برای هر کالا.</p></div>
+<div class="feature"><strong>گزارش کلیک</strong><p>تعداد کلیک روی هر لینک و نرخ تبدیل.</p></div>
+<div class="feature"><strong>تسویه‌حساب</strong><p>محاسبه کمیسیون و صدور فاکتور.</p></div>
+</div>
+        </section>
+
+        <section class="section" id="pwa">
+          <div class="section-heading"><span class="section-number">۱۷</span><h2>PWA، موبایل و حالت آفلاین</h2></div>
+<p class="lead">این بخش، قابلیت‌های Progressive Web App، نصب روی دستگاه‌ها، و رفتار آفلاین را توضیح می‌دهد.</p>
+          <h3>۱۷.۱ ویژگی‌های PWA</h3>
+          <div class="feature-grid">
+<div class="feature"><strong>قابل نصب</strong><p>روی iOS، Android و دسکتاپ قابل نصب است.</p></div>
+<div class="feature"><strong>آفلاین</strong><p>برخی صفحه‌ها بدون اتصال اینترنت نمایش داده می‌شوند.</p></div>
+<div class="feature"><strong>تمام‌صفحه</strong><p>پس از نصب، بدون نوار آدرس مرورگر اجرا می‌شود.</p></div>
+<div class="feature"><strong>آیکون سفارشی</strong><p>آیکون اپلیکیشن روی صفحه اصلی دستگاه.</p></div>
+<div class="feature"><strong>Splash Screen</strong><p>تصویر شروع هنگام باز کردن اپلیکیشن.</p></div>
+<div class="feature"><strong>Push Notifications</strong><p>اعلان‌های سیستمی (در فازهای بعدی).</p></div>
+</div>
+          <h3>۱۷.۲ Service Worker</h3>
+          <p>Service Worker فایل <code>/public/sw.js</code> مسئول مدیریت کش، آفلاین و push notification است:</p>
+          <ul class="checklist">
+            <li>کش استراتژی: <strong>Stale While Revalidate</strong> برای منابع استاتیک.</li>
+            <li>کش استراتژی: <strong>Network First</strong> برای API calls.</li>
+            <li>کش استراتژی: <strong>Cache Only</strong> برای فونت‌ها و تصاویر لوگو.</li>
+            <li>صفحه آفلاین اختصاصی برای زمانی که اتصال قطع است.</li>
+          </ul>
+
+          <h3>۱۷.۳ Web App Manifest</h3>
+          <p>فایل <code>/public/manifest.json</code> تنظیمات PWA را تعریف می‌کند:</p>
+          <table class="spec-table"><thead><tr><th>فیلد</th><th>مقدار</th></tr></thead><tbody><tr><td>name</td><td>DANEG</td></tr><tr><td>short_name</td><td>DANEG</td></tr><tr><td>start_url</td><td>/app</td></tr><tr><td>display</td><td>standalone</td></tr><tr><td>background_color</td><td>#fffdf9</td></tr><tr><td>theme_color</td><td>#F9A11B</td></tr><tr><td>orientation</td><td>portrait</td></tr><tr><td>icons</td><td>۱۶، ۳۲، ۱۹۲، ۵۱۲ پیکسل + maskable</td></tr></tbody></table>
+          <h3>۱۷.۴ تجربه نصب</h3>
+          <div class="flow">
+<div class="flow-step"><b>۱</b><strong>تشخیص قابلیت نصب</strong><span>اپلیکیشن شرایط PWA را بررسی می‌کند.</span></div>
+<span class="flow-arrow">←</span>
+<div class="flow-step"><b>۲</b><strong>نمایش بنر</strong><span>بنر هوشمند در زمان مناسب نمایش داده می‌شود.</span></div>
+<span class="flow-arrow">←</span>
+<div class="flow-step"><b>۳</b><strong>تأیید کاربر</strong><span>کاربر روی «نصب» کلیک می‌کند.</span></div>
+<span class="flow-arrow">←</span>
+<div class="flow-step"><b>۴</b><strong>نصب</strong><span>اپلیکیشن روی دستگاه نصب می‌شود.</span></div>
+<span class="flow-arrow">←</span>
+<div class="flow-step"><b>۵</b><strong>اجرا</strong><span>از صفحه اصلی یا منوی اپلیکیشن‌ها اجرا می‌شود.</span></div>
+</div>
+          <h3>۱۷.۵ محدودیت‌های iOS</h3>
+          <div class="notice notice--blue"><strong>محدودیت iOS</strong>در iOS، Service Worker محدودیت‌هایی دارد. کش کمتر قابل اعتماد است و push notification نیاز به مجوزهای اضافی دارد. تجربه PWA در Chrome (Android) کامل‌تر است.</div>
+        </section>
+
+        <section class="section" id="legal">
+          <div class="section-heading"><span class="section-number">۱۸</span><h2>حقوقی و انطباق</h2></div>
+<p class="lead">این بخش، اسناد حقوقی، حوزه قضایی، و فرآیندهای انطباق را توضیح می‌دهد.</p>
+          <h3>۱۸.۱ اسناد حقوقی رسمی</h3>
+          <p>سه سند حقوقی رسمی در اپلیکیشن منتشر شده است که رابطه حقوقی بین کاربر و شرکت را تنظیم می‌کند:</p>
+          <table class="spec-table"><thead><tr><th>سند</th><th>مسیر</th><th>تاریخ بازنگری</th></tr></thead><tbody><tr><td><strong>Terms of Service</strong></td><td><code>/legal/terms</code></td><td>۲۴ اوت ۲۰۲۶</td></tr><tr><td><strong>Privacy Policy</strong></td><td><code>/legal/privacy</code></td><td>۲۴ اوت ۲۰۲۶</td></tr><tr><td><strong>Returns &amp; Refunds</strong></td><td><code>/legal/refunds</code></td><td>۲۴ اوت ۲۰۲۶</td></tr></tbody></table>
+          <h3>۱۸.۲ حوزه قضایی</h3>
+          <p>دانگ تحت قوانین <strong>امارات متحده عربی</strong> فعالیت می‌کند:</p>
+          <ul class="checklist">
+            <li>شرکت در منطقه آزاد امارات (Free Zone) ثبت شده است.</li>
+            <li>قوانین حفاظت از داده‌های شخصی (Federal Decree-Law No. 45 of 2021) رعایت می‌شود.</li>
+            <li>اختلافات در دادگاه‌های امارات رسیدگی می‌شود.</li>
+          </ul>
+
+          <h3>۱۸.۳ ساختار Terms of Service</h3>
+          <div class="feature-grid">
+<div class="feature"><strong>بخش ۱: هویت ما</strong><p>معرفی شرکت و حوزه قضایی.</p></div>
+<div class="feature"><strong>بخش ۲: پذیرش شرایط</strong><p>شرایط استفاده و توافق.</p></div>
+<div class="feature"><strong>بخش ۳: اهلیت</strong><p>حداقل سن ۱۸ سال و ظرفیت قانونی.</p></div>
+<div class="feature"><strong>بخش ۴: ماهیت دانگ</strong><p>پلتفرم واسط، نه فروشنده مستقیم.</p></div>
+<div class="feature"><strong>بخش ۵: فروش در دانگ</strong><p>تعهدات فروشنده و ممنوعیت‌ها.</p></div>
+<div class="feature"><strong>بخش ۶: خرید در دانگ</strong><p>حقوق خریدار و نسخه نمایشی.</p></div>
+<div class="feature"><strong>بخش ۷: پرداخت‌های نمایشی</strong><p>محدودیت‌های نسخه فعلی.</p></div>
+<div class="feature"><strong>بخش ۸: کارمزد و مالیات</strong><p>مسئولیت‌های مالیاتی کاربران.</p></div>
+<div class="feature"><strong>بخش ۹: محتوای شما</strong><p>مالکیت محتوا و مجوز استفاده.</p></div>
+<div class="feature"><strong>بخش ۱۰: استفاده مجاز</strong><p>قوانین رفتاری کاربران.</p></div>
+<div class="feature"><strong>بخش ۱۱: نظارت و تعليق</strong><p>حقوق مدیران در حذف آگهی و تعليق حساب.</p></div>
+<div class="feature"><strong>بخش ۱۲: حل اختلاف</strong><p>فرآیند حل اختلاف بین کاربران.</p></div>
+<div class="feature"><strong>بخش ۱۳: مسئولیت</strong><p>محدودیت‌های مسئولیت شرکت.</p></div>
+<div class="feature"><strong>بخش ۱۴: تغییرات شرایط</strong><p>نحوه اطلاع‌رسانی به‌روزرسانی‌ها.</p></div>
+<div class="feature"><strong>بخش ۱۵: قانون حاکم</strong><p>قانون امارات.</p></div>
+<div class="feature"><strong>بخش ۱۶: تماس</strong><p>ایمیل پشتیبانی.</p></div>
+</div>
+          <h3>۱۸.۴ نکات مهم برای عرضه عمومی</h3>
+          <div class="notice notice--rose"><strong>نکات مهم قبل از لانچ</strong>اسناد حقوقی فعلی شامل چند <code>PLACEHOLDER</code> هستند که باید با اطلاعات واقعی شرکت جایگزین شوند: آدرس دفتر ثبت‌شده، شماره مجوز تجاری. این اسناد همچنین باید توسط وکیل حقوقی امارات بازبینی و تأیید شوند.</div>
+        </section>
+
+        <section class="section" id="seo">
+          <div class="section-heading"><span class="section-number">۱۹</span><h2>SEO، عملکرد و دسترسی‌پذیری</h2></div>
+<p class="lead">این بخش، بهینه‌سازی‌های SEO، اهداف عملکردی، و استانداردهای دسترسی‌پذیری را توضیح می‌دهد.</p>
+          <h3>۱۹.۱ بهینه‌سازی SEO</h3>
+          <div class="feature-grid">
+<div class="feature"><strong>تگ‌های متا پویا</strong><p>تولید خودکار بر اساس زبان و صفحه.</p></div>
+<div class="feature"><strong>Open Graph</strong><p>نمایش زیبا در اشتراک‌گذاری فیسبوک و لینکدین.</p></div>
+<div class="feature"><strong>Twitter Cards</strong><p>نمایش زیبا در توییتر.</p></div>
+<div class="feature"><strong>hreflang</strong><p>نشانی نسخه‌های مختلف زبان.</p></div>
+<div class="feature"><strong>Structured Data</strong><p>JSON-LD برای موتورهای جست‌وجو.</p></div>
+<div class="feature"><strong>Sitemap</strong><p>تولید خودکار در <code>/sitemap.xml</code>.</p></div>
+<div class="feature"><strong>Robots.txt</strong><p>دستورالعمل‌های crawl در <code>/robots.txt</code>.</p></div>
+</div>
+          <h3>۱۹.۲ اهداف عملکردی</h3>
+          <table class="spec-table"><thead><tr><th>معیار</th><th>هدف</th><th>ابزار اندازه‌گیری</th></tr></thead><tbody><tr><td>First Contentful Paint</td><td>< ۱.۸ ثانیه</td><td>Lighthouse</td></tr><tr><td>Largest Contentful Paint</td><td>< ۲.۵ ثانیه</td><td>Lighthouse</td></tr><tr><td>Time to Interactive</td><td>< ۳.۸ ثانیه</td><td>Lighthouse</td></tr><tr><td>Cumulative Layout Shift</td><td>< ۰.۱</td><td>Lighthouse</td></tr><tr><td>First Input Delay</td><td>< ۱۰۰ میلی‌ثانیه</td><td>Lighthouse</td></tr><tr><td>Bundle Size</td><td>< ۲۵۰ کیلوبایت (initial)</td><td>Webpack Analyzer</td></tr><tr><td>Lighthouse Performance</td><td>> ۹۰</td><td>Lighthouse</td></tr><tr><td>Lighthouse SEO</td><td>> ۹۵</td><td>Lighthouse</td></tr></tbody></table>
+          <h3>۱۹.۳ بهینه‌سازی‌های عملکردی</h3>
+          <ul class="checklist">
+            <li><strong>Code Splitting</strong> — هر صفحه فقط منابع مورد نیاز خود را بارگذاری می‌کند.</li>
+            <li><strong>Image Optimization</strong> — تغییر اندازه خودکار و فرمت WebP.</li>
+            <li><strong>Lazy Loading</strong> — تصاویر و کامپوننت‌ها در صورت نیاز بارگذاری می‌شوند.</li>
+            <li><strong>Caching</strong> — استفاده از SWR pattern برای داده‌های پرتکرار.</li>
+            <li><strong>Font Optimization</strong> — فونت‌ها با display: swap بارگذاری می‌شوند.</li>
+          </ul>
+
+          <h3>۱۹.۴ دسترسی‌پذیری (Accessibility)</h3>
+          <p>دانگ تلاش می‌کند با استانداردهای WCAG 2.1 سطح AA سازگار باشد:</p>
+          <div class="feature-grid">
+<div class="feature"><strong>کنتراست رنگ</strong><p>نسبت کنتراست حداقل ۴.۵:۱ برای متن.</p></div>
+<div class="feature"><strong>ناوبری کیبورد</strong><p>تمام عملکردها با کیبورد قابل دسترسی.</p></div>
+<div class="feature"><strong>برچسب‌های ARIA</strong><p>استفاده صحیح از aria-label و role.</p></div>
+<div class="feature"><strong>تمرکز قابل مشاهده</strong><p>حلقه تمرکز واضح روی المان‌ها.</p></div>
+<div class="feature"><strong>متن جایگزین</strong><p>تصاویر دارای alt text مناسب.</p></div>
+<div class="feature"><strong>زبان واضح</strong><p>تگ lang در المان html.</p></div>
+</div>
+        </section>
+
+        <section class="section" id="testing">
+          <div class="section-heading"><span class="section-number">۲۰</span><h2>تست و تضمین کیفیت</h2></div>
+<p class="lead">این بخش، استراتژی تست، انواع تست‌های خودکار و دستی، و استانداردهای کیفی پروژه را توضیح می‌دهد.</p>
+          <h3>۲۰.۱ انواع تست‌ها</h3>
+          <div class="feature-grid">
+<div class="feature"><strong>Unit Tests</strong><p>تست توابع و کامپوننت‌های منفرد با Vitest.</p></div>
+<div class="feature"><strong>Integration Tests</strong><p>تست تعامل بین ماژول‌ها.</p></div>
+<div class="feature"><strong>Component Tests</strong><p>تست رفتار کامپوننت‌های React.</p></div>
+<div class="feature"><strong>E2E Tests</strong><p>تست جریان‌های کاربر با Playwright.</p></div>
+<div class="feature"><strong>Smoke Tests</strong><p>تست‌های سریع برای بررسی سلامت.</p></div>
+<div class="feature"><strong>Copy Guard</strong><p>تست خودکار واژگان ممنوع.</p></div>
+</div>
+          <h3>۲۰.۲ تست‌های امنیتی</h3>
+          <p>تست‌های امنیتی خودکار روی منطق حساس اجرا می‌شوند:</p>
+          <table class="spec-table"><thead><tr><th>نوع تست</th><th>هدف</th></tr></thead><tbody><tr><td>brand.test.ts</td><td>تست یکپارچگی ثابت‌های برند.</td></tr><tr><td>security.test.ts</td><td>تست هش کردن PIN و بیومتریک.</td></tr><tr><td>ownership.test.ts</td><td>تست تشخیص مالکیت آگهی.</td></tr><tr><td>format.test.ts</td><td>تست فرمت قیمت و تاریخ.</td></tr><tr><td>hooks.test.ts</td><td>تست React Hooks سفارشی.</td></tr><tr><td>imageStage.test.ts</td><td>تست تغییر اندازه و آپلود تصاویر.</td></tr></tbody></table>
+          <h3>۲۰.۳ تست Copy Guard</h3>
+          <p>تست خودکار برای اطمینان از عدم استفاده از واژگان ممنوع:</p>
+          <div class="logic"><p class="logic-title">منطق تست Copy Guard</p><ul><li>اسکن تمام فایل‌های متنی پروژه برای یافتن واژگان ممنوع.</li><li>مستثنا کردن فایل‌های تست، fixtures، و اسناد تاریخی.</li><li>گزارش خطا در صورت یافتن واژه ممنوع.</li><li>اجرا به‌صورت خودکار قبل از هر commit.</li></ul></div>
+          <h3>۲۰.۴ تست‌های E2E</h3>
+          <p>تست‌های Playwright سناریوهای واقعی کاربر را شبیه‌سازی می‌کنند:</p>
+          <ul class="checklist">
+            <li>ثبت‌نام و تأیید OTP</li>
+            <li>مرور و جست‌وجوی کالاها</li>
+            <li>افزودن به کیف و ثبت سفارش</li>
+            <li>ثبت آگهی جدید</li>
+            <li>گفت‌وگو با فروشنده</li>
+            <li>گزارش و حل اختلاف</li>
+          </ul>
+
+          <h3>۲۰.۵ استانداردهای کیفی</h3>
+          <table class="spec-table"><thead><tr><th>معیار</th><th>هدف</th></tr></thead><tbody><tr><td>پوشش تست واحد</td><td>> ۸۰٪ برای کدهای حساس</td></tr><tr><td>تست‌های قبولی</td><td>همه باید قبل از merge پاس شوند</td></tr><tr><td>Lint</td><td>بدون خطا و warning</td></tr><tr><td>Type Check</td><td>TypeScript بدون خطا</td></tr><tr><td>Build</td><td>موفق در هر PR</td></tr></tbody></table>
+        </section>
+
+        <section class="section" id="deployment">
+          <div class="section-heading"><span class="section-number">۲۱</span><h2>استقرار و عملیات</h2></div>
+<p class="lead">این بخش، فرآیند استقرار، محیط‌ها، و ابزارهای عملیاتی پروژه را توضیح می‌دهد.</p>
+          <h3>۲۱.۱ محیط‌ها</h3>
+          <table class="spec-table"><thead><tr><th>محیط</th><th>هدف</th><th>نشانی</th></tr></thead><tbody><tr><td>Development</td><td>توسعه محلی با hot reload.</td><td>http://localhost:3000</td></tr><tr><td>Preview</td><td>پیش‌نمایش تغییرات هر PR.</td><td>/preview</td></tr><tr><td>Staging</td><td>محیط آزمایشی شبیه به تولید.</td><td>staging.daneg.ae</td></tr><tr><td>Production</td><td>محیط نهایی برای کاربران واقعی.</td><td>app.daneg.ae</td></tr></tbody></table>
+          <h3>۲۱.۲ فرآیند استقرار</h3>
+          <div class="flow">
+<div class="flow-step"><b>۱</b><strong>توسعه</strong><span>توسعه‌دهنده روی شاخه feature کار می‌کند.</span></div>
+<span class="flow-arrow">←</span>
+<div class="flow-step"><b>۲</b><strong>Pull Request</strong><span>PR به شاخه اصلی باز می‌شود.</span></div>
+<span class="flow-arrow">←</span>
+<div class="flow-step"><b>۳</b><strong>تست‌های خودکار</strong><span>تست‌های CI اجرا می‌شوند.</span></div>
+<span class="flow-arrow">←</span>
+<div class="flow-step"><b>۴</b><strong>بررسی کد</strong><span>حداقل یک بازبین توسط هم‌تیمی.</span></div>
+<span class="flow-arrow">←</span>
+<div class="flow-step"><b>۵</b><strong>ادغام</strong><span>ادغام به شاخه main.</span></div>
+<span class="flow-arrow">←</span>
+<div class="flow-step"><b>۶</b><strong>ساخت</strong><span>Build production در Vercel.</span></div>
+<span class="flow-arrow">←</span>
+<div class="flow-step"><b>۷</b><strong>استقرار</strong><span>Deploy خودکار به Production.</span></div>
+<span class="flow-arrow">←</span>
+<div class="flow-step"><b>۸</b><strong>پایش</strong><span>مانیتورینگ لحظه‌ای خطاها و عملکرد.</span></div>
+</div>
+          <h3>۲۱.۳ پایش و مانیتورینگ</h3>
+          <div class="feature-grid">
+<div class="feature"><strong>Vercel Analytics</strong><p>معیارهای Core Web Vitals.</p></div>
+<div class="feature"><strong>Health Check API</strong><p>بررسی سلامت سرویس در <code>/api/health</code>.</p></div>
+<div class="feature"><strong>Error Tracking</strong><p>لاگ خودکار خطاهای production.</p></div>
+<div class="feature"><strong>Performance Metrics</strong><p>زمان بارگذاری و نرخ تبدیل.</p></div>
+<div class="feature"><strong>Database Monitoring</strong><p>مانیتورینگ کوئری‌های کند.</p></div>
+</div>
+          <h3>۲۱.۴ پشتیبان‌گیری و بازیابی</h3>
+          <ul class="checklist">
+            <li>پشتیبان‌گیری روزانه از پایگاه داده Supabase.</li>
+            <li>نگهداری فایل‌های رسانه در Storage ابری با تکرارپذیری خودکار.</li>
+            <li>طرح بازیابی فاجعه (DR) با RPO کمتر از ۱ ساعت.</li>
+            <li>تست دوره‌ای بازیابی از پشتیبان.</li>
+          </ul>
+        </section>
+
+        <section class="section" id="roadmap">
+          <div class="section-heading"><span class="section-number">۲۲</span><h2>نقشه راه و آینده محصول</h2></div>
+<p class="lead">این بخش، وضعیت فعلی پروژه و برنامه‌های آینده را برای آگاهی کارفرما ترسیم می‌کند.</p>
+          <h3>۲۲.۱ وضعیت فعلی</h3>
+          <table class="spec-table"><thead><tr><th>فاز</th><th>وضعیت</th><th>توضیح</th></tr></thead><tbody><tr><td>Phase 1 (Mock)</td><td>✅ تکمیل</td><td>تمام صفحه‌ها و جریان‌ها با داده‌های نمونه.</td></tr><tr><td>Phase 2 (Backend)</td><td>🔄 در حال توسعه</td><td>اتصال به Supabase، احراز هویت واقعی.</td></tr><tr><td>Phase 3 (Production)</td><td>⏳ برنامه‌ریزی شده</td><td>پرداخت واقعی، ارسال، کمیسیون.</td></tr></tbody></table>
+          <h3>۲۲.۲ ویژگی‌های آینده</h3>
+          <div class="feature-grid">
+<div class="feature"><strong>پرداخت واقعی</strong><p>اتصال به Stripe برای پرداخت Visa، Mastercard، Apple Pay.</p></div>
+<div class="feature"><strong>ارسال و لجستیک</strong><p>اتصال به شرکای ارسال مانند Aramex و Fetchr.</p></div>
+<div class="feature"><strong>سرویس احراز اصالت</strong><p>احراز اصالت توسط شرکای متخصص.</p></div>
+<div class="feature"><strong>مدل اجاره</strong><p>اجاره کالا با بازگشت خودکار و ضمانت.</p></div>
+<div class="feature"><strong>اپلیکیشن iOS/Android</strong><p>اپلیکیشن بومی موبایل با React Native.</p></div>
+<div class="feature"><strong>Push Notifications</strong><p>اعلان‌های لحظه‌ای روی دستگاه.</p></div>
+<div class="feature"><strong>سیستم امتیازدهی پیشرفته</strong><p>الگوریتم اعتماد چندعاملی.</p></div>
+<div class="feature"><strong>بازاریابی Influencer</strong><p>پنل همکاری با تأثیرگذاران.</p></div>
+</div>
+          <h3>۲۲.۳ معیارهای موفقیت</h3>
+          <table class="spec-table"><thead><tr><th>شاخص</th><th>هدف سال اول</th></tr></thead><tbody><tr><td>کاربران ثبت‌نام‌شده</td><td>۱۰,۰۰۰+</td></tr><tr><td>آگهی‌های فعال</td><td>۵,۰۰۰+</td></tr><tr><td>گردش مالی ماهانه</td><td>۱۰۰,۰۰۰ AED+</td></tr><tr><td>نرخ تبدیل بازدید به خرید</td><td>> ۳٪</td></tr><tr><td>رضایت کاربران (CSAT)</td><td>> ۸۵٪</td></tr><tr><td>زمان متوسط پاسخ‌گویی فروشنده</td><td>< ۶ ساعت</td></tr></tbody></table>
+          <h3>۲۲.۴ ریسک‌ها و راهکارها</h3>
+          <div class="notice notice--rose"><strong>ریسک‌های شناسایی‌شده</strong>ریسک‌های اصلی شامل: (۱) اعتمادسازی کاربران به پلتفرم جدید، (۲) کیفیت احراز اصالت، (۳) رقابت با پلتفرم‌های بزرگ‌تر. راهکارها: تمرکز بر تجربه کاربری عالی، سرمایه‌گذاری روی احراز اصالت، و ایجاد جامعه وفادار.</div>
+        </section>
+
+        <nav class="toc" id="contents" aria-labelledby="contents-title">
+          <div class="toc-header">
+            <h2 id="contents-title">فهرست مطالب</h2>
+            <span class="toc-count">۲۲ بخش اصلی + ضمیمه</span>
+          </div>
+          <ol>
+            <li><a href="#overview">معرفی پروژه</a></li>
+            <li><a href="#values">اهداف و ارزش‌های محصول</a></li>
+            <li><a href="#policies">سیاست‌های کلی سایت و حاکمیت بازار</a></li>
+            <li><a href="#specs">مشخصات فنی سیستم</a></li>
+            <li><a href="#architecture">معماری فنی</a></li>
+            <li><a href="#landing">صفحه لندینگ و بازاریابی</a></li>
+            <li><a href="#auth">احراز هویت و مدیریت حساب</a></li>
+            <li><a href="#discover">کشف و مرور کالاها</a></li>
+            <li><a href="#product">صفحه جزئیات کالا و آگهی‌ها</a></li>
+            <li><a href="#search">جست‌وجوی پیشرفته و فیلتر</a></li>
+            <li><a href="#shopping">خرید، کیف و تسویه</a></li>
+            <li><a href="#profile">پروفایل، خزانه و تنظیمات</a></li>
+            <li><a href="#activity">فعالیت، گفت‌وگو و اعلان‌ها</a></li>
+            <li><a href="#reviews">نظرات، امتیازها و بازخورد</a></li>
+            <li><a href="#reports">گزارش‌ها، مرجوعی و حل اختلاف</a></li>
+            <li><a href="#admin">پنل مدیریت و کنترل بازار</a></li>
+            <li><a href="#pwa">PWA، موبایل و حالت آفلاین</a></li>
+            <li><a href="#legal">حقوقی و انطباق</a></li>
+            <li><a href="#seo">SEO، عملکرد و دسترسی‌پذیری</a></li>
+            <li><a href="#testing">تست و تضمین کیفیت</a></li>
+            <li><a href="#deployment">استقرار و عملیات</a></li>
+            <li><a href="#roadmap">نقشه راه و آینده محصول</a></li>
+            <li><a href="#summary">جمع‌بندی نهایی</a></li>
+          </ol>
+        </nav>
+
+        <section class="section" id="summary">
+          <div class="section-heading"><span class="section-number">۲۳</span><h2>جمع‌بندی نهایی</h2></div>
+<p class="lead">این سند، تصویری جامع از پلتفرم دانگ را برای آشنایی کارفرما ارائه کرد. در اینجا خلاصه‌ای از مهم‌ترین نکات آورده شده است.</p>
+          <h3>۲۳.۱ سه مسیر اصلی محصول</h3>
+          <div class="feature-grid">
+<div class="feature"><strong>مسیر خرید</strong><p>کشف کالا → جزئیات و بررسی فروشنده → افزودن به کیف → آدرس → تأیید سفارش.</p></div>
+<div class="feature"><strong>مسیر فروش</strong><p>دکمه Sell → بارگذاری عکس و مشخصات → انتشار یا ذخیره پیش‌نویس → بررسی مدیر.</p></div>
+<div class="feature"><strong>مسیر اعتماد</strong><p>بررسی پروفایل فروشنده، نشانگر اصالت، گفت‌وگوی مستقیم، گزارش تخلف.</p></div>
+</div>
+          <h3>۲۳.۲ اصول کلیدی محصول</h3>
+          <ul class="checklist">
+            <li><strong>اعتماد محور:</strong> تمام ویژگی‌ها حول محور اعتمادسازی بین خریدار و فروشنده طراحی شده‌اند.</li>
+            <li><strong>سادگی:</strong> رابط کاربری ساده و بدون اصطکاک، حتی برای کاربران غیرفنی.</li>
+            <li><strong>شفافیت:</strong> تمام وضعیت‌ها و فرآیندها به‌صورت واضح به کاربر نمایش داده می‌شود.</li>
+            <li><strong>امنیت:</strong> حفاظت از داده‌ها و تراکنش‌ها در اولویت است.</li>
+            <li><strong>پایداری:</strong> مد به‌عنوان یک اکوسیستم پایدار ترویج می‌شود.</li>
+          </ul>
+
+          <h3>۲۳.۳ مزیت‌های رقابتی</h3>
+          <div class="feature-grid">
+<div class="feature"><strong>تمرکز جغرافیایی</strong><p>منطقه خاورمیانه با تمرکز ویژه بر امارات.</p></div>
+<div class="feature"><strong>تمرکز محصولی</strong><p>مد لوکس دست‌دوم تخصصی.</p></div>
+<div class="feature"><strong>احراز اصالت</strong><p>سه سطح رسمی اصالت با نظارت تیم.</p></div>
+<div class="feature"><strong>رابط کاربری</strong><p>تجربه کاربری مدرن و ریسپانسیو.</p></div>
+<div class="feature"><strong>بدون کارمزد اولیه</strong><p>در نسخه نمایشی، هیچ هزینه‌ای از کاربر دریافت نمی‌شود.</p></div>
+</div>
+          <h3>۲۳.۴ وضعیت پروژه برای ارائه</h3>
+          <div class="notice notice--blue"><strong>وضعیت پروژه</strong>تمام صفحه‌های مستندشده در این سند، در نسخه نمایشی فعال و قابل بازدید هستند. سیاست‌ها و منطق‌های توضیح داده‌شده، در کدبیس محصول پیاده‌سازی شده‌اند. موارد نیازمند تکمیل برای لانچ واقعی در بخش ۱۸.۴ فهرست شده‌اند.</div>
+          <h3>۲۳.۵ گام‌های بعدی</h3>
+          <div class="flow">
+<div class="flow-step"><b>۱</b><strong>تأیید کارفرما</strong><span>بازخورد و تأیید این سند توسط کارفرما.</span></div>
+<span class="flow-arrow">←</span>
+<div class="flow-step"><b>۲</b><strong>تکمیل اسناد حقوقی</strong><span>جایگزینی PLACEHOLDERها با اطلاعات واقعی.</span></div>
+<span class="flow-arrow">←</span>
+<div class="flow-step"><b>۳</b><strong>اتصال به بک‌اند</strong><span>تکمیل Phase 2 با Supabase.</span></div>
+<span class="flow-arrow">←</span>
+<div class="flow-step"><b>۴</b><strong>تست‌های نهایی</strong><span>اجرای کامل تست‌های E2E و امنیتی.</span></div>
+<span class="flow-arrow">←</span>
+<div class="flow-step"><b>۵</b><strong>لانچ بتا</strong><span>عرضه محدود برای کاربران اولیه.</span></div>
+<span class="flow-arrow">←</span>
+<div class="flow-step"><b>۶</b><strong>لانچ عمومی</strong><span>عرضه کامل با تمام ویژگی‌ها.</span></div>
+</div>
+        </section>
+      </article>
+
+      <footer class="footer">
+        <div class="footer-inner">
+          <div>
+            <div class="footer-brand">
+              <svg class="logo-horizontal" version="1.1" id="DANEG-H" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
+	 viewBox="0 0 244.7 44.6" style="enable-background:new 0 0 244.7 44.6;" xml:space="preserve">
+<style type="text/css">
+	.st0{fill:#F7EFEC;}
+	.st1{fill:#F9A11B;}
+	.st2{fill:url(#DH-1_);}
+	.st3{fill:url(#DH-2_);}
+	.st4{fill:url(#DH-3_);}
+	.st5{fill:url(#DH-4_);}
+	.st6{fill:#F4C995;}
+	.st7{opacity:0.5;}
+	.st8{fill:#FFFFFF;}
+	.st9{opacity:0.25;}
+	.st10{opacity:0.26;fill:#414042;enable-background:new    ;}
+	.st11{fill:url(#DH-5_);}
+	.st12{fill:url(#DH-6_);}
+	.st13{fill:#F3C17C;}
+</style>
+<g>
+	<g>
+		<path class="st0" d="M90.3,34.2v-0.7h0.8c0.7,0,1.2-0.1,1.6-0.3c0.4-0.2,0.6-0.5,0.8-0.9c0.1-0.3,0.2-1,0.2-2.2V14.5
+			c0-1.2-0.1-2-0.2-2.3c-0.1-0.3-0.4-0.6-0.8-0.8c-0.4-0.2-0.9-0.3-1.6-0.3h-0.8v-0.6H101c2.9,0,5.1,0.4,6.9,1.1
+			c2.1,0.9,3.7,2.4,4.8,4.3c1.1,1.9,1.6,4.1,1.6,6.5c0,1.7-0.3,3.2-0.8,4.6c-0.5,1.4-1.2,2.6-2.1,3.5s-1.9,1.6-3,2.2s-2.5,1-4.1,1.3
+			c-0.7,0.1-1.9,0.2-3.4,0.2L90.3,34.2L90.3,34.2z M99.4,11.8v18.5c0,1,0.1,1.6,0.1,1.8c0.1,0.2,0.3,0.4,0.5,0.5
+			c0.3,0.2,0.8,0.3,1.4,0.3c2,0,3.5-0.7,4.5-2c1.4-1.8,2.1-4.6,2.1-8.4c0-3-0.5-5.5-1.4-7.3c-0.8-1.4-1.7-2.4-2.9-2.9
+			C102.8,12,101.4,11.8,99.4,11.8z"/>
+		<path class="st0" d="M130.1,27.4h-8.4l-1,2.3c-0.3,0.8-0.5,1.4-0.5,1.9c0,0.7,0.3,1.1,0.8,1.5c0.3,0.2,1.1,0.3,2.3,0.4v0.7h-7.9
+			v-0.7c0.9-0.1,1.6-0.5,2.1-1.1c0.6-0.6,1.2-1.8,2.1-3.6l8.6-18.9h0.3l8.6,19.4c0.8,1.8,1.5,3,2,3.5c0.4,0.4,1,0.6,1.7,0.6v0.7
+			h-11.6v-0.7h0.5c0.9,0,1.6-0.1,2-0.4c0.3-0.2,0.4-0.5,0.4-0.8c0-0.2,0-0.4-0.1-0.6c0-0.1-0.2-0.5-0.5-1.3L130.1,27.4z M129.5,26.1
+			L126,18l-3.7,8.2H129.5z"/>
+		<path class="st0" d="M149.3,10.5l11.8,14.7V15c0-1.4-0.2-2.4-0.6-2.9c-0.6-0.7-1.5-1-2.8-1v-0.6h7.9v0.6c-1,0.1-1.7,0.3-2,0.5
+			c-0.4,0.2-0.6,0.5-0.8,1s-0.3,1.3-0.3,2.4v19.7h-0.6L145.6,15v15.1c0,1.4,0.3,2.3,0.9,2.8c0.6,0.5,1.4,0.7,2.2,0.7h0.6v0.7h-8.5
+			v-0.7c1.3,0,2.2-0.3,2.8-0.8s0.8-1.4,0.8-2.7V13.3l-0.5-0.6c-0.5-0.6-0.9-1-1.3-1.2s-0.9-0.3-1.7-0.3v-0.6H149.3z"/>
+		<path class="st0" d="M175.5,11.8v9.6h0.5c1.5,0,2.6-0.5,3.3-1.4c0.7-0.9,1.1-2.3,1.3-4.2h0.7v12.4h-0.7c-0.1-1.4-0.4-2.5-0.9-3.3
+			s-1-1.4-1.6-1.7s-1.5-0.5-2.6-0.5v6.7c0,1.3,0.1,2.1,0.2,2.4c0.1,0.3,0.3,0.5,0.6,0.7c0.3,0.2,0.8,0.3,1.5,0.3h1.4
+			c2.2,0,4-0.5,5.4-1.5c1.4-1,2.3-2.6,2.9-4.7h0.6l-1.1,7.5h-20.7v-0.7h0.8c0.7,0,1.3-0.1,1.7-0.4c0.3-0.2,0.5-0.4,0.7-0.8
+			c0.1-0.3,0.2-1,0.2-2.2V14.5c0-1.1,0-1.7-0.1-2c-0.1-0.4-0.3-0.7-0.6-0.9c-0.4-0.3-1.1-0.5-1.8-0.5h-0.8v-0.6h20v7h-0.7
+			c-0.3-1.7-0.8-2.9-1.4-3.7s-1.5-1.3-2.6-1.6c-0.7-0.2-1.9-0.3-3.7-0.3L175.5,11.8L175.5,11.8z"/>
+		<path class="st0" d="M213.7,9.9v8.4h-0.6c-0.8-2.3-2-4-3.5-5.2c-1.6-1.2-3.3-1.8-5.2-1.8c-1.8,0-3.3,0.5-4.5,1.5
+			c-1.2,1-2,2.4-2.5,4.2s-0.7,3.6-0.7,5.5c0,2.3,0.3,4.3,0.8,6s1.4,3,2.6,3.8c1.2,0.8,2.6,1.2,4.3,1.2c0.6,0,1.2-0.1,1.8-0.2
+			s1.2-0.3,1.9-0.5v-4.9c0-0.9-0.1-1.5-0.2-1.8c-0.1-0.3-0.4-0.5-0.8-0.7c-0.4-0.2-0.9-0.3-1.5-0.3h-0.6v-0.6h11.6v0.6
+			c-0.9,0.1-1.5,0.2-1.8,0.4c-0.4,0.2-0.6,0.5-0.8,0.9c-0.1,0.2-0.2,0.8-0.2,1.6v4.9c-1.5,0.7-3.1,1.2-4.8,1.5
+			c-1.6,0.3-3.4,0.5-5.1,0.5c-2.3,0-4.1-0.3-5.6-0.9c-1.5-0.6-2.8-1.4-4-2.4c-1.1-1-2-2.1-2.7-3.4c-0.8-1.6-1.2-3.4-1.2-5.4
+			c0-3.6,1.3-6.6,3.8-9s5.7-3.7,9.5-3.7c1.2,0,2.3,0.1,3.2,0.3c0.5,0.1,1.4,0.4,2.5,0.8c1.2,0.4,1.8,0.6,2.1,0.6
+			c0.3,0,0.6-0.1,0.9-0.4c0.3-0.2,0.5-0.7,0.8-1.4L213.7,9.9L213.7,9.9z"/>
+	</g>
+	<g>
+		<g>
+			<path class="st1" d="M38.7,28.9c-0.4-0.2-0.6-0.5-0.8-0.9l-9.3,5.3c0,0.1,0.1,0.2,0.2,0.3l18.4,0.1L38.7,28.9z"/>
+			<path class="st1" d="M67.3,11.2L59.1,16c0.2,0.3,0.3,0.7,0.3,1v10.1c0,0.7-0.4,1.4-1,1.8l-8.4,4.8l17.2,0.1
+				c0.4-0.6,0.7-1.3,0.7-2.1L67.8,13C67.8,12.4,67.6,11.8,67.3,11.2z"/>
+			
+				<linearGradient id="SVGID_1_" gradientUnits="userSpaceOnUse" x1="29.9556" y1="18.8226" x2="64.0071" y2="38.4846" gradientTransform="matrix(1 0 0 -1 0 46)">
+				<stop  offset="1.320000e-02" style="stop-color:#CC8E2B"/>
+				<stop  offset="0.5926" style="stop-color:#DDA944"/>
+				<stop  offset="1" style="stop-color:#E8C563"/>
+			</linearGradient>
+			<path class="st2" d="M37.7,27.1v-9.9l-9.3,15.9c0,0.1,0.1,0.2,0.1,0.3l9.3-5.3C37.8,27.8,37.7,27.4,37.7,27.1z"/>
+			
+				<linearGradient id="SVGID_2_" gradientUnits="userSpaceOnUse" x1="27.517" y1="23.0457" x2="61.5686" y2="42.7077" gradientTransform="matrix(1 0 0 -1 0 46)">
+				<stop  offset="1.320000e-02" style="stop-color:#CC8E2B"/>
+				<stop  offset="0.5926" style="stop-color:#DDA944"/>
+				<stop  offset="1" style="stop-color:#E8C563"/>
+			</linearGradient>
+			<path class="st3" d="M47.5,10.1c0.3-0.2,0.7-0.3,1-0.3s0.7,0.1,1,0.3l8.7,5.1c0.3,0.2,0.6,0.5,0.8,0.8l8.3-4.7
+				c-0.3-0.5-0.8-1-1.3-1.3L49.8,0.5C49.2,0.1,48.4,0,47.7,0l-8.8,15.1L47.5,10.1z"/>
+			
+				<linearGradient id="SVGID_3_" gradientUnits="userSpaceOnUse" x1="38.6198" y1="41.2868" x2="27.5256" y2="19.6476" gradientTransform="matrix(1 0 0 -1 0 46)">
+				<stop  offset="0" style="stop-color:#E8BE5F"/>
+				<stop  offset="0.4074" style="stop-color:#F7DE81"/>
+				<stop  offset="0.9868" style="stop-color:#E0AB3F"/>
+			</linearGradient>
+			<path class="st4" d="M37.7,17c0-0.7,0.4-1.4,1-1.8l0.2-0.1L47.7,0c-0.5,0-1,0.2-1.5,0.4L30,9.8c-1.1,0.6-1.8,1.8-1.8,3.1
+				l-0.1,18.8c0,0.5,0.1,1,0.3,1.5l9.3-15.9V17z"/>
+			
+				<linearGradient id="SVGID_4_" gradientUnits="userSpaceOnUse" x1="37.1479" y1="6.8518" x2="61.5578" y2="6.8518" gradientTransform="matrix(1 0 0 -1 0 46)">
+				<stop  offset="0" style="stop-color:#CD9535"/>
+				<stop  offset="1" style="stop-color:#B9782A"/>
+			</linearGradient>
+			<path class="st5" d="M49.6,34c-0.3,0.2-0.7,0.3-1,0.3s-0.7-0.1-1-0.3l-0.4-0.2l-18.4-0.1c0.3,0.4,0.7,0.8,1.1,1l16.2,9.4
+				c1.1,0.6,2.5,0.7,3.6,0l16.3-9.3c0.5-0.3,0.8-0.6,1.1-1l-17.2-0.1L49.6,34z"/>
+			<path class="st6" d="M59.1,16c-0.2-0.3-0.4-0.6-0.8-0.8l-8.7-5.1c-0.3-0.2-0.7-0.3-1-0.3c-0.4,0-0.7,0.1-1,0.3l-8.5,4.9l-0.2,0.1
+				c-0.6,0.4-1,1.1-1,1.8v0.2v9.9c0,0.3,0.1,0.7,0.2,1c0.2,0.4,0.5,0.6,0.8,0.9l8.4,4.8l0.3,0.2c0.3,0.2,0.7,0.3,1,0.3
+				s0.7-0.1,1-0.3l0.3-0.2l8.4-4.9c0.6-0.4,1-1.1,1-1.8V17C59.3,16.6,59.2,16.3,59.1,16z M58.8,27.1c0,0.5-0.3,1-0.8,1.3l-8.7,5
+				c-0.5,0.3-1,0.3-1.5,0l-8.7-5c-0.3-0.1-0.5-0.4-0.6-0.6c-0.1-0.2-0.2-0.4-0.2-0.7V17c0-0.5,0.3-1,0.8-1.3l8.7-5
+				c0.2-0.1,0.5-0.2,0.8-0.2c0.3,0,0.5,0.1,0.8,0.2l8.7,5c0.2,0.1,0.4,0.3,0.5,0.5c0.1,0.2,0.2,0.5,0.2,0.8L58.8,27.1L58.8,27.1z"/>
+		</g>
+		<g>
+			<g class="st7">
+				<path class="st8" d="M32.1,11.9c-1.1,0.6-1.8,1.8-1.8,3.1l0,5.8c0.4-2.4,1-4.6,2-6.4c1.2-2.1,3.3-4.1,5.7-5.8L32.1,11.9z"/>
+			</g>
+			<g class="st9">
+				<path class="st8" d="M64.5,33.5c1.1-0.6,1.8-1.8,1.8-3.1l0-5.8c-0.3,2.4-1,4.6-2,6.4c-1.2,2.1-3.3,4.1-5.7,5.8L64.5,33.5z"/>
+			</g>
+			<g>
+				<path class="st10" d="M60.7,10.3l-6.1-3.5c-1.4-0.8-3-0.8-4.4,0l-6.1,3.5c-1.4,0.8-2.2,2.2-2.2,3.8v7c0,1.6,0.8,3,2.2,3.8
+					l6.1,3.5c1.4,0.8,3,0.8,4.4,0l6.1-3.5c1.4-0.8,2.2-2.2,2.2-3.8v-7C62.9,12.6,62.1,11.1,60.7,10.3z"/>
+				<g>
+					
+						<radialGradient id="SVGID_5_" cx="45.987" cy="33.3377" r="16.5914" fx="32.7819" fy="25.9964" gradientTransform="matrix(1 0 0 -1 0 46)" gradientUnits="userSpaceOnUse">
+						<stop  offset="0.7272" style="stop-color:#FDBE67"/>
+						<stop  offset="0.7668" style="stop-color:#F9A11B"/>
+					</radialGradient>
+					<path class="st11" d="M62,10.2L53,5c-0.4-0.2-0.9-0.2-1.3,0l-9.1,5.3c-0.4,0.2-0.7,0.7-0.7,1.2v10.5c0,0.5,0.3,0.9,0.7,1.2
+						l9.1,5.3c0.4,0.2,0.9,0.2,1.3,0l9.1-5.3c0.4-0.2,0.7-0.7,0.7-1.2V11.4C62.7,10.9,62.5,10.5,62,10.2z"/>
+					
+						<linearGradient id="SVGID_6_" gradientUnits="userSpaceOnUse" x1="42.6101" y1="22.2857" x2="63.3156" y2="37.4441" gradientTransform="matrix(1 0 0 -1 0 46)">
+						<stop  offset="0" style="stop-color:#FFDAA8"/>
+						<stop  offset="0.5053" style="stop-color:#FFF4E6"/>
+						<stop  offset="0.7884" style="stop-color:#FFE9CC"/>
+					</linearGradient>
+					<path class="st12" d="M52.3,28.6c-0.3,0-0.6-0.1-0.9-0.3l-8.7-5.1c-0.6-0.3-1-1-1-1.6V11.6c0-0.7,0.4-1.3,1-1.6l8.7-5.1
+						c0.6-0.3,1.3-0.3,1.9,0L62,9.9c0.6,0.3,1,1,1,1.6v10.1c0,0.7-0.4,1.3-1,1.6l-8.7,5C52.9,28.5,52.6,28.6,52.3,28.6z M52.3,5
+						c-0.3,0-0.5,0.1-0.8,0.2l-8.7,5.1c-0.5,0.3-0.8,0.8-0.8,1.3v10.1c0,0.5,0.3,1,0.8,1.3l8.7,5c0.5,0.3,1,0.3,1.5,0l8.7-5
+						c0.5-0.3,0.8-0.8,0.8-1.3V11.6c0-0.5-0.3-1-0.8-1.3L53,5.2C52.8,5.1,52.5,5,52.3,5z"/>
+				</g>
+				<g class="st7">
+					<path class="st8" d="M44.2,10.2c-0.5,0.3-0.9,0.9-0.9,1.5l0,2.8c0.2-1.2,0.5-2.3,1-3.1c0.6-1,1.6-2,2.8-2.8L44.2,10.2z"/>
+				</g>
+				<g class="st9">
+					<path class="st8" d="M61,21.9c0.5-0.3,0.9-0.9,0.9-1.5l0-2.8c-0.2,1.2-0.5,2.3-1,3.1c-0.6,1-1.6,2-2.8,2.8L61,21.9z"/>
+				</g>
+				<g>
+					<path class="st13" d="M48,44.6c-0.6,0-1.2-0.2-1.8-0.5l-16.3-9.4c-1.1-0.6-1.8-1.8-1.8-3V12.9c0-1.3,0.7-2.4,1.8-3.1l16.3-9.4
+						c1.1-0.6,2.5-0.6,3.5,0l16.3,9.4c1.1,0.6,1.8,1.8,1.8,3.1v18.8c0,1.3-0.7,2.4-1.8,3.1l-16.3,9.4C49.2,44.5,48.6,44.6,48,44.6z
+						 M48,0.7c-0.5,0-1,0.1-1.4,0.4l-16.3,9.4c-0.9,0.5-1.4,1.4-1.4,2.4v18.8c0,1,0.5,1.9,1.4,2.4l16.3,9.4c0.9,0.5,2,0.5,2.8,0
+						l16.3-9.4c0.9-0.5,1.4-1.4,1.4-2.4V12.9c0-1-0.5-1.9-1.4-2.4L49.4,1.1C49,0.9,48.5,0.7,48,0.7z"/>
+				</g>
+			</g>
+		</g>
+	</g>
+</g>
+</svg>
+
+            </div>
+            <p style="margin: 14px 0 0;">
+              این سند برای معرفی کامل پلتفرم دانگ شامل محصول، سیاست‌ها، معماری، فرآیندها و راهنمای استفاده تهیه شده است. وضعیت‌های «نمایشی» به معنی نبود تراکنش واقعی هستند.
+            </p>
+          </div>
+          <div class="footer-meta">
+            <strong>نسخه ۱.۰</strong>
+            <span>شهریور ۱۴۰۵</span>
+            <span>سند جامع برای کارفرما</span>
+          </div>
+        </div>
+      </footer>
+    </main>
+  </body>
+</html>

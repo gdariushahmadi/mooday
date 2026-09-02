@@ -20,6 +20,7 @@ function makeContext(overrides: Partial<AppContextType> = {}): AppContextType {
     updateQuantity: vi.fn(),
     clearCart: vi.fn(),
     chats: [],
+    setActiveChats: vi.fn(),
     sendChatMessage: vi.fn(),
     createChatThread: vi.fn(() => "test-thread"),
     markChatRead: vi.fn(),
@@ -113,16 +114,16 @@ async function fillForm(user: ReturnType<typeof userEvent.setup>) {
   await user.type(screen.getByPlaceholderText(/layla mansour/i), "Test User");
   await user.type(
     screen.getByPlaceholderText(/you@example.com/i),
-    "test@mooday.app",
+    "test@daneg.app",
   );
   await user.type(screen.getByPlaceholderText(/\+971/i), "+971 50 000 0000");
   await user.type(
     screen.getByPlaceholderText(/at least 8 characters/i),
-    "mooday-test",
+    "daneg-test",
   );
   await user.type(
     screen.getByPlaceholderText(/re-enter your password/i),
-    "mooday-test",
+    "daneg-test",
   );
   await user.click(screen.getByRole("checkbox", { name: /accept terms/i }));
 }
@@ -131,7 +132,7 @@ describe("SignUpView (A-02)", () => {
   it("renders the page title", () => {
     renderSignUp();
     expect(
-      screen.getByRole("heading", { name: /create your mooday/i }),
+      screen.getByRole("heading", { name: /create your daneg/i })
     ).toBeInTheDocument();
   });
 
@@ -161,15 +162,15 @@ describe("SignUpView (A-02)", () => {
     const { ctx, onSuccess } = renderSignUp();
     await user.type(
       screen.getByPlaceholderText(/you@example.com/i),
-      "test@mooday.app",
+      "test@daneg.app",
     );
     await user.type(
       screen.getByPlaceholderText(/at least 8 characters/i),
-      "mooday-test",
+      "daneg-test",
     );
     await user.type(
       screen.getByPlaceholderText(/re-enter your password/i),
-      "mooday-test",
+      "daneg-test",
     );
     await user.click(screen.getByRole("checkbox", { name: /accept terms/i }));
     await user.click(screen.getByRole("button", { name: /^create account$/i }));
@@ -184,15 +185,15 @@ describe("SignUpView (A-02)", () => {
     await user.type(screen.getByPlaceholderText(/layla mansour/i), "Test");
     await user.type(
       screen.getByPlaceholderText(/you@example.com/i),
-      "test@mooday.app",
+      "test@daneg.app",
     );
     await user.type(
       screen.getByPlaceholderText(/at least 8 characters/i),
-      "mooday-test",
+      "daneg-test",
     );
     await user.type(
       screen.getByPlaceholderText(/re-enter your password/i),
-      "mooday-OOPS",
+      "daneg-OOPS",
     );
     await user.click(screen.getByRole("checkbox", { name: /accept terms/i }));
     await user.click(screen.getByRole("button", { name: /^create account$/i }));
@@ -206,15 +207,15 @@ describe("SignUpView (A-02)", () => {
     await user.type(screen.getByPlaceholderText(/layla mansour/i), "Test");
     await user.type(
       screen.getByPlaceholderText(/you@example.com/i),
-      "test@mooday.app",
+      "test@daneg.app",
     );
     await user.type(
       screen.getByPlaceholderText(/at least 8 characters/i),
-      "mooday-test",
+      "daneg-test",
     );
     await user.type(
       screen.getByPlaceholderText(/re-enter your password/i),
-      "mooday-test",
+      "daneg-test",
     );
     await user.click(screen.getByRole("button", { name: /^create account$/i }));
     expect(ctx.signUp).not.toHaveBeenCalled();
@@ -228,9 +229,9 @@ describe("SignUpView (A-02)", () => {
     await user.click(screen.getByRole("button", { name: /^create account$/i }));
     expect(ctx.signUp).toHaveBeenCalledWith({
       name: "Test User",
-      email: "test@mooday.app",
+      email: "test@daneg.app",
       phone: "+971 50 000 0000",
-      password: "mooday-test",
+      password: "daneg-test",
     });
     expect(onSuccess).toHaveBeenCalledTimes(1);
   });

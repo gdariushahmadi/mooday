@@ -1,0 +1,4 @@
+- All source files resolve via the `@/*` path alias pointing at `./src/*` as declared in tsconfig.json.
+- Environment-driven configuration is read through `process.env` at runtime (Supabase URL, Sentry org/project/token) rather than hard-coded constants.
+- Security headers and CSP are enforced centrally in `next.config.ts` headers() so every route inherits the same policy.
+- Tests are split by scope: Vitest for unit tests and Playwright for browser-based E2E, both invoked from npm scripts under `test:*`.
