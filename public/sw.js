@@ -10,7 +10,7 @@
  * (component tree, route layout, etc.) to force clients to refetch.
  */
 
-const CACHE_VERSION = "daneg-v3";
+const CACHE_VERSION = "daneg-v4";
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 const IMAGE_CACHE = `${CACHE_VERSION}-images`;
@@ -93,6 +93,9 @@ function canCacheResponse(response) {
   const cacheControl = response.headers.get("cache-control") || "";
   return (
     response.ok &&
+    // 206 Partial Content (e.g. video/audio byte-range requests) cannot be
+    // stored via Cache.put() — the Cache API throws on partial responses.
+    response.status !== 206 &&
     !response.headers.has("set-cookie") &&
     !/private|no-store/i.test(cacheControl)
   );
@@ -144,8 +147,13 @@ self.addEventListener("fetch", (event) => {
         (cached) =>
           cached ||
           fetch(request).then((response) => {
-            const copy = response.clone();
-            caches.open(STATIC_CACHE).then((cache) => cache.put(request, copy));
+            if (canCacheResponse(response)) {
+              const copy = response.clone();
+              caches
+                .open(STATIC_CACHE)
+                .then((cache) => cache.put(request, copy))
+                .catch(() => {});
+            }
             return response;
           })
       )
@@ -160,7 +168,9 @@ self.addEventListener("fetch", (event) => {
         const cached = await cache.match(request);
         const network = fetch(request)
           .then((response) => {
-            if (canCacheResponse(response)) cache.put(request, response.clone());
+            if (canCacheResponse(response)) {
+              cache.put(request, response.clone()).catch(() => {});
+            }
             return response;
           })
           .catch(() => cached);
@@ -170,7 +180,15 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // 4) Everything else -> network-first with cache fallback.
+  // 4) Everything else -> network-first with cache fallback (same-origin
+  // only). Cross-origin resources (e.g. the Google Fonts CSS for Material
+  // Symbols) must be left to the browser's own fetch: once this handler
+  // calls fetch() from inside the service worker, the request is always
+  // checked against the page's connect-src, even though the browser would
+  // normally check it against style-src/font-src. Not intercepting lets
+  // the browser load it under its original, permitted directive.
+  if (url.origin !== self.location.origin) return;
+
   event.respondWith(
     (async () => {
       try {

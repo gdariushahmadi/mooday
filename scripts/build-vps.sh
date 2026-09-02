@@ -107,7 +107,12 @@ REMOTE_DIR="${DANEG_VPS_REMOTE_DIR:-/opt/mooday/app}"
 
 echo "==> uploading to ${SSH_HOST}:${REMOTE_DIR}"
 # Use rsync — scp truncates large tarballs over residential connections.
-rsync -av --delete -e "ssh -i ${SSH_KEY} -p ${SSH_PORT} -o ServerAliveInterval=15 -o TCPKeepAlive=yes" "${BUNDLE_DIR}/" "${SSH_HOST}:${REMOTE_DIR}/"
+# --delete removes anything on the server missing from the fresh build, but
+# the Next.js image-optimization cache (.next/standalone/.next/cache/) is a
+# runtime-only artifact this bundle never contains — exclude it so --delete
+# doesn't wipe it and force every visitor to re-pay the sharp-resize cost
+# right after each deploy.
+rsync -av --delete --exclude='.next/standalone/.next/cache/' -e "ssh -i ${SSH_KEY} -p ${SSH_PORT} -o ServerAliveInterval=15 -o TCPKeepAlive=yes" "${BUNDLE_DIR}/" "${SSH_HOST}:${REMOTE_DIR}/"
 
 
 ssh -i "${SSH_KEY}" -p "${SSH_PORT}" "${SSH_HOST}" \
