@@ -97,10 +97,21 @@ begin
 end;
 $$;
 
-drop trigger if exists listing_like_fanout on public.user_likes;
-create trigger listing_like_fanout
-  after insert on public.user_likes
-  for each row execute function public.fanout_listing_like();
+-- NOTE: `public.user_likes` is not a table in this schema — the likes
+-- table is `public.user_listing_likes` (202607150005). The guard keeps a
+-- fresh database from failing here; 202609100001 attaches the trigger to
+-- the real table and fixes the invalid `kind` / `target_kind` values this
+-- file writes.
+do $$
+begin
+  if to_regclass('public.user_likes') is not null then
+    execute 'drop trigger if exists listing_like_fanout on public.user_likes';
+    execute 'create trigger listing_like_fanout'
+      || ' after insert on public.user_likes'
+      || ' for each row execute function public.fanout_listing_like()';
+  end if;
+end
+$$;
 
 -- ---------- report fan-out ----------
 
