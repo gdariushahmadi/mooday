@@ -32,7 +32,7 @@ using (
   or (select is_admin from public.profiles p where p.id = auth.uid())
 )
 with check (
-  auth.uid() = id
+  (auth.uid() = id and is_admin = (select is_admin from public.profiles p where p.id = id))
   or (select is_admin from public.profiles p where p.id = auth.uid())
 );
 
