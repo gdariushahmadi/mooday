@@ -612,7 +612,8 @@ export function useChatNav(
         .then((threadId) => {
           setActiveChatThreadId(threadId);
         })
-        .catch(() => {
+        .catch((err) => {
+          console.error("Failed to start chat:", err);
         });
     },
     [createChatThread, currentUserId, setSelectedProduct, setActiveChatThreadId],
@@ -638,7 +639,8 @@ export function useChatNav(
             setSelectedProduct(null);
             setActiveChatThreadId(threadId);
           })
-          .catch(() => {
+          .catch((err) => {
+            console.error("Failed to start chat with seller:", err);
           });
         return;
       }
@@ -670,7 +672,8 @@ export function useChatNav(
           setSelectedProduct(null);
           setActiveChatThreadId(id);
         })
-        .catch(() => {
+        .catch((err) => {
+          console.error("Failed to start chat with seller:", err);
         });
     },
     [createChatThread, currentUserId, setSelectedProduct, setActiveChatThreadId, listings],
