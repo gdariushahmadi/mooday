@@ -612,7 +612,8 @@ export function useChatNav(
         .then((threadId) => {
           setActiveChatThreadId(threadId);
         })
-        .catch(() => {
+        .catch((error) => {
+          console.error("Failed to start chat:", error);
         });
     },
     [createChatThread, currentUserId, setSelectedProduct, setActiveChatThreadId],
@@ -638,7 +639,8 @@ export function useChatNav(
             setSelectedProduct(null);
             setActiveChatThreadId(threadId);
           })
-          .catch(() => {
+          .catch((error) => {
+            console.error("Failed to start chat with seller (existing match):", error);
           });
         return;
       }
@@ -670,7 +672,8 @@ export function useChatNav(
           setSelectedProduct(null);
           setActiveChatThreadId(id);
         })
-        .catch(() => {
+        .catch((error) => {
+          console.error("Failed to start chat with seller (synthetic):", error);
         });
     },
     [createChatThread, currentUserId, setSelectedProduct, setActiveChatThreadId, listings],

@@ -1,7 +1,7 @@
 begin;
 
 create extension if not exists pgtap with schema extensions;
-select plan(9);
+select plan(11);
 
 insert into auth.users (
   instance_id, id, aud, role, email, encrypted_password,
@@ -26,27 +26,27 @@ insert into auth.users (
 
 insert into public.listings (
   id, seller_id, title_en, title_ar, price_minor,
-  condition_en, condition_ar, category, status
+  condition_en, condition_ar, category, status, approved_at
 ) values
   (
     'aaaaaaaa-3333-4333-8333-333333333331',
     '33333333-3333-4333-8333-333333333333',
-    'A active', 'أ نشط', 12000, 'Excellent', 'ممتاز', 'Bags', 'active'
+    'A active', 'أ نشط', 12000, 'Excellent', 'ممتاز', 'Bags', 'active', timezone('utc', now())
   ),
   (
     'aaaaaaaa-3333-4333-8333-333333333332',
     '33333333-3333-4333-8333-333333333333',
-    'A draft', 'أ مسودة', 9000, 'Good', 'جيد', 'Bags', 'draft'
+    'A draft', 'أ مسودة', 9000, 'Good', 'جيد', 'Bags', 'draft', null
   ),
   (
     'bbbbbbbb-4444-4444-8444-444444444441',
     '44444444-4444-4444-8444-444444444444',
-    'B active', 'ب نشط', 15000, 'Excellent', 'ممتاز', 'Shoes', 'active'
+    'B active', 'ب نشط', 15000, 'Excellent', 'ممتاز', 'Shoes', 'active', timezone('utc', now())
   ),
   (
     'bbbbbbbb-4444-4444-8444-444444444442',
     '44444444-4444-4444-8444-444444444444',
-    'B draft', 'ب مسودة', 8000, 'Good', 'جيد', 'Shoes', 'draft'
+    'B draft', 'ب مسودة', 8000, 'Good', 'جيد', 'Shoes', 'draft', null
   );
 
 insert into public.listing_images (
