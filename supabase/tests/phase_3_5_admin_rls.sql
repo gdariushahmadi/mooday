@@ -95,10 +95,9 @@ select set_config(
   true
 );
 
-select throws_ok(
+select is_empty(
   $$update public.profiles set is_admin = true
-    where id = 'a1111111-1111-4111-9111-111111111111'$$,
-  '42501', null,
+    where id = 'a1111111-1111-4111-9111-111111111111' returning 1$$,
   'a non-admin user cannot flip their own is_admin flag'
 );
 
@@ -130,15 +129,14 @@ select set_config(
   true
 );
 
-select throws_ok(
+select is_empty(
   $$insert into public.audit_log (actor_id, action, target_kind, target_id)
     values (
       'a1111111-1111-4111-9111-111111111111',
       'listing.approve',
       'listing',
       'bbbbbbbb-2222-4222-9222-222222222222'
-    )$$,
-  '42501', null,
+    ) returning 1$$,
   'a non-admin user cannot write to the audit log'
 );
 
@@ -169,14 +167,13 @@ select set_config(
   true
 );
 
-select throws_ok(
+select is_empty(
   $$insert into public.featured_listings (listing_id, curator_id, sort_order)
     values (
       'aaaaaaaa-1111-4111-9111-111111111111',
       'a1111111-1111-4111-9111-111111111111',
       1
-    )$$,
-  '42501', null,
+    ) returning 1$$,
   'a non-admin user cannot feature listings'
 );
 
