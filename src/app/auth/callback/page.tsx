@@ -12,7 +12,7 @@ export default function AuthCallbackPage() {
     const code = params.get("code");
     const next = params.get("next") || "/app";
     const backend = getPhase2Backend();
-    const safeNext = next.startsWith("/") && !next.startsWith("//");
+    const safeNext = next.startsWith("/") && !next.startsWith("//") && !next.startsWith("/\\");
     if (!backend) {
       queueMicrotask(() => setError("Backend is not configured."));
       return;
