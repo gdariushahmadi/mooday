@@ -1,7 +1,7 @@
 begin;
 
 create extension if not exists pgtap with schema extensions;
-select plan(11);
+select plan(12);
 
 insert into auth.users (
   instance_id, id, aud, role, email, encrypted_password,
@@ -26,17 +26,17 @@ insert into auth.users (
 
 insert into public.listings (
   id, seller_id, title_en, title_ar, price_minor,
-  condition_en, condition_ar, category, status
+  condition_en, condition_ar, category, status, approved_at
 ) values
   (
     '33333333-1111-4111-8111-111111111111',
     '11111111-1111-4111-8111-111111111111',
-    'Bag', 'حقيبة', 5000, 'Good', 'جيد', 'Bags', 'active'
+    'Bag', 'حقيبة', 5000, 'Good', 'جيد', 'Bags', 'active', now()
   ),
   (
     '44444444-1111-4111-8111-111111111111',
     '11111111-1111-4111-8111-111111111111',
-    'Hat', 'قبعة', 3000, 'Good', 'جيد', 'Accessories', 'active'
+    'Hat', 'قبعة', 3000, 'Good', 'جيد', 'Accessories', 'active', now()
   );
 
 set local role authenticated;
@@ -130,11 +130,10 @@ select throws_ok(
   'cart_items_increment is auth-gated'
 );
 
-select throws_ok(
+select is_empty(
   $$update public.cart_items set quantity = 99
     where user_id = '11111111-1111-4111-8111-111111111111'
     returning 1$$,
-  '42501', null,
   'user B cannot update user A cart rows'
 );
 
