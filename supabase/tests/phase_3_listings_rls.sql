@@ -49,6 +49,10 @@ insert into public.listings (
     'B draft', 'ب مسودة', 8000, 'Good', 'جيد', 'Shoes', 'draft'
   );
 
+update public.listings
+  set approved_at = timezone('utc', now())
+  where status = 'active';
+
 insert into public.listing_images (
   listing_id, storage_path, sort_order
 ) values

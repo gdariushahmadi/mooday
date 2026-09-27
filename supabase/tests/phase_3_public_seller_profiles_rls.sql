@@ -63,6 +63,10 @@ insert into public.listings (
     'B active', 'ب نشط', 1000, 'Good', 'جيد', 'Shoes', 'active'
   );
 
+update public.listings
+  set approved_at = timezone('utc', now())
+  where status = 'active';
+
 -- Anonymous read of the public projection.
 
 set local role anon;
