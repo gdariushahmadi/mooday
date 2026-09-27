@@ -32,7 +32,13 @@ using (
   or (select is_admin from public.profiles p where p.id = auth.uid())
 )
 with check (
-  auth.uid() = id
+  (
+    auth.uid() = id
+    and is_admin = (select is_admin from public.profiles p where p.id = id)
+    and is_suspended = (select is_suspended from public.profiles p where p.id = id)
+    and suspended_reason is not distinct from (select suspended_reason from public.profiles p where p.id = id)
+    and suspended_at is not distinct from (select suspended_at from public.profiles p where p.id = id)
+  )
   or (select is_admin from public.profiles p where p.id = auth.uid())
 );
 
