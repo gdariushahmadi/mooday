@@ -81,4 +81,56 @@ describe("GET /go/[shortId]", () => {
     expect(response.headers.get("set-cookie")).toContain("m_aff_anon=");
     expect(supabaseInsertMock).toHaveBeenCalledTimes(1);
   });
+
+  it("returns 400 Bad Request if the affiliate URL protocol is invalid (e.g. javascript:)", async () => {
+    supabaseSelectMock.mockReturnValue({
+      eq: () => ({
+        maybeSingle: () =>
+          Promise.resolve({
+            data: {
+              id: "link-2",
+              listing_id: "listing-2",
+              partner_code: "amazon-ae",
+              affiliate_url: "javascript:alert('xss')",
+              is_active: true,
+            },
+            error: null,
+          }),
+      }),
+    });
+    supabaseInsertMock.mockReturnValue(Promise.resolve({ error: null }));
+    const { GET } = await import("./route");
+    const req = new Request("http://localhost/go/abc12345");
+    const ctx = { params: Promise.resolve({ shortId: "abc12345" }) };
+    const response = await GET(req as never, ctx);
+    expect(response.status).toBe(400);
+    const text = await response.text();
+    expect(text).toBe("Bad Request: Invalid URL");
+  });
+
+  it("returns 400 Bad Request if the affiliate URL is completely malformed", async () => {
+    supabaseSelectMock.mockReturnValue({
+      eq: () => ({
+        maybeSingle: () =>
+          Promise.resolve({
+            data: {
+              id: "link-3",
+              listing_id: "listing-3",
+              partner_code: "amazon-ae",
+              affiliate_url: "not-a-valid-url-at-all",
+              is_active: true,
+            },
+            error: null,
+          }),
+      }),
+    });
+    supabaseInsertMock.mockReturnValue(Promise.resolve({ error: null }));
+    const { GET } = await import("./route");
+    const req = new Request("http://localhost/go/abc12345");
+    const ctx = { params: Promise.resolve({ shortId: "abc12345" }) };
+    const response = await GET(req as never, ctx);
+    expect(response.status).toBe(400);
+    const text = await response.text();
+    expect(text).toBe("Bad Request: Invalid URL");
+  });
 });

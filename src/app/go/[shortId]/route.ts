@@ -114,7 +114,21 @@ export async function GET(
     Sentry.captureException(insertErr);
   }
 
-  const response = NextResponse.redirect(link.affiliate_url, 302);
+  // Validate URL to prevent Open Redirect / XSS vulnerabilities
+  let parsedUrl: URL;
+  try {
+    parsedUrl = new URL(link.affiliate_url);
+    if (parsedUrl.protocol !== "http:" && parsedUrl.protocol !== "https:") {
+      throw new Error(`Invalid protocol: ${parsedUrl.protocol}`);
+    }
+  } catch (err) {
+    Sentry.captureException(
+      new Error(`Invalid affiliate URL for shortId ${shortId}: ${link.affiliate_url}`, { cause: err })
+    );
+    return new NextResponse("Bad Request: Invalid URL", { status: 400 });
+  }
+
+  const response = NextResponse.redirect(parsedUrl.toString(), 302);
   if (setCookie) {
     response.cookies.set({
       name: ANON_COOKIE,
