@@ -1,7 +1,7 @@
 import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Product } from "@/context/AppContext";
-import { useAppNavigation } from "@/hooks/useAppNavigation";
+import { useAppNavigation } from "@/hooks/navigation/useAppNavigation";
 
 const mocks = vi.hoisted(() => ({
   useApp: vi.fn(),
