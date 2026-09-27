@@ -1127,10 +1127,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       }
       const threads = await phase2Backend.chats.listMine();
       const messageMap: Record<string, ChatMessage[]> = {};
-      for (const t of threads) {
-        const msgs = await phase2Backend.chats.listMessages(t.id);
-        messageMap[t.id] = msgs.map((m) => mapMessageFromRemote(m, auth.id));
+
+      const threadIds = threads.map(t => t.id);
+      if (threadIds.length > 0) {
+        const results = await Promise.all(threadIds.map(id => phase2Backend.chats.listMessages(id)));
+        threadIds.forEach((id, index) => {
+          messageMap[id] = results[index].map((m) => mapMessageFromRemote(m, auth.id));
+        });
       }
+
       const mapped = threads.map((t) => {
         const base = mapThreadFromRemote(t, auth.id, []);
         const messages = messageMap[t.id] ?? [];
