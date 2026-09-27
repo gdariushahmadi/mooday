@@ -1,0 +1,7 @@
+-- Let's see if we can check why `(select auth.uid())` doesn't work.
+-- Actually `(select auth.uid())` is valid.
+-- But wait!
+-- We have `using (exists (select 1 from public.profiles p where p.id = (select auth.uid()) and p.is_admin))`.
+-- If this fails, does it return false? Or does it throw an error?
+-- Infinite recursion in RLS policies!
+-- Because querying `public.profiles` triggers the `profiles_select_own` policy!

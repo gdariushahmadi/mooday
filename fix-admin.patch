@@ -1,0 +1,21 @@
+--- supabase/migrations/202607150008_phase_3_5_admin.sql
++++ supabase/migrations/202607150008_phase_3_5_admin.sql
+@@ -28,14 +28,16 @@
+ create policy "profiles_update_own_or_admin" on public.profiles
+ for update to authenticated
+ using (
+-  auth.uid() = id
+-  or (select is_admin from public.profiles p where p.id = auth.uid())
++  (auth.uid() = id and not is_admin)
++  or exists (
++    select 1 from public.profiles p where p.id = (select auth.uid()) and p.is_admin
++  )
+ )
+ with check (
+-  auth.uid() = id
+-  or (select is_admin from public.profiles p where p.id = auth.uid())
++  (auth.uid() = id and not is_admin)
++  or exists (
++    select 1 from public.profiles p where p.id = (select auth.uid()) and p.is_admin
++  )
+ );
