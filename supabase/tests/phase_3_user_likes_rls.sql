@@ -26,12 +26,12 @@ insert into auth.users (
 
 insert into public.listings (
   id, seller_id, title_en, title_ar, price_minor,
-  condition_en, condition_ar, category, status
+  condition_en, condition_ar, category, status, approved_at
 ) values
   (
     'cccccccc-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
     'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
-    'A likeable', 'أ تستحق', 5000, 'Good', 'جيد', 'Bags', 'active'
+    'A likeable', 'أ تستحق', 5000, 'Good', 'جيد', 'Bags', 'active', now()
   );
 
 set local role authenticated;

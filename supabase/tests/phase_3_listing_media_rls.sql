@@ -26,27 +26,27 @@ insert into auth.users (
 
 insert into public.listings (
   id, seller_id, title_en, title_ar, price_minor,
-  condition_en, condition_ar, category, status
+  condition_en, condition_ar, category, status, approved_at
 ) values
   (
     'aaaaaaaa-5555-4555-8555-555555555551',
     '55555555-5555-4555-8555-555555555555',
-    'A active', 'أ نشط', 1000, 'Good', 'جيد', 'Bags', 'active'
+    'A active', 'أ نشط', 1000, 'Good', 'جيد', 'Bags', 'active', now()
   ),
   (
     'aaaaaaaa-5555-4555-8555-555555555552',
     '55555555-5555-4555-8555-555555555555',
-    'A draft', 'أ مسودة', 1000, 'Good', 'جيد', 'Bags', 'draft'
+    'A draft', 'أ مسودة', 1000, 'Good', 'جيد', 'Bags', 'draft', null
   ),
   (
     'bbbbbbbb-6666-4666-8666-666666666661',
     '66666666-6666-4666-8666-666666666666',
-    'B active', 'ب نشط', 1000, 'Good', 'جيد', 'Bags', 'active'
+    'B active', 'ب نشط', 1000, 'Good', 'جيد', 'Bags', 'active', now()
   ),
   (
     'bbbbbbbb-6666-4666-8666-666666666662',
     '66666666-6666-4666-8666-666666666666',
-    'B draft', 'ب مسودة', 1000, 'Good', 'جيد', 'Bags', 'draft'
+    'B draft', 'ب مسودة', 1000, 'Good', 'جيد', 'Bags', 'draft', null
   );
 
 insert into storage.objects (bucket_id, name, owner_id) values
