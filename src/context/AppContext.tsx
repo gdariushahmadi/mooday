@@ -902,42 +902,36 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
         for (const f of files ?? []) {
           fileByUrl.set(URL.createObjectURL(f), f);
         }
-        const uploadPromises = [];
         for (let i = 0; i < photos.length; i += 1) {
           const path = photos[i];
           const stagedFile = fileByUrl.get(path);
           if (stagedFile) {
-            uploadPromises.push(
-              phase2Backend.media.upload(
-                created.id,
-                {
-                  filename:
-                    stagedFile.name ||
-                    `photo-${i}.${stagedFile.type.split("/")[1] ?? "jpg"}`,
-                  mimeType: stagedFile.type as never,
-                  sizeBytes: stagedFile.size,
-                  body: stagedFile,
-                },
-                i,
-              )
+            await phase2Backend.media.upload(
+              created.id,
+              {
+                filename:
+                  stagedFile.name ||
+                  `photo-${i}.${stagedFile.type.split("/")[1] ?? "jpg"}`,
+                mimeType: stagedFile.type as never,
+                sizeBytes: stagedFile.size,
+                body: stagedFile,
+              },
+              i,
             );
             continue;
           }
           if (!isPublicImageUrl(path)) continue;
-          uploadPromises.push(
-            phase2Backend.media.upload(
-              created.id,
-              {
-                filename: path.split("/").pop() || `photo-${i}`,
-                mimeType: "image/jpeg",
-                sizeBytes: 1,
-                body: new Blob([]),
-              },
-              i,
-            )
+          await phase2Backend.media.upload(
+            created.id,
+            {
+              filename: path.split("/").pop() || `photo-${i}`,
+              mimeType: "image/jpeg",
+              sizeBytes: 1,
+              body: new Blob([]),
+            },
+            i,
           );
         }
-        await Promise.all(uploadPromises);
         await refreshListings();
         return;
       }
