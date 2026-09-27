@@ -670,7 +670,8 @@ export function useChatNav(
           setSelectedProduct(null);
           setActiveChatThreadId(id);
         })
-        .catch(() => {
+        .catch((error) => {
+          console.error("Failed to create chat thread:", error);
         });
     },
     [createChatThread, currentUserId, setSelectedProduct, setActiveChatThreadId, listings],
