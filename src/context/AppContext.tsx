@@ -1530,11 +1530,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
         if (method.isDefault) {
           // Clear current defaults first so the new card becomes the unique default.
           const current = await phase2Backend.paymentMethods.listMine();
-          for (const m of current) {
-            if (m.isDefault) {
-              await phase2Backend.paymentMethods.update(m.id, { isDefault: false });
-            }
-          }
+          const updatePromises = current
+            .filter((m) => m.isDefault)
+            .map((m) =>
+              phase2Backend.paymentMethods.update(m.id, { isDefault: false })
+            );
+          await Promise.all(updatePromises);
         }
         await phase2Backend.paymentMethods.create({
           labelEn: method.labelEn,
