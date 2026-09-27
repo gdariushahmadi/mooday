@@ -690,22 +690,50 @@ class SupabaseListingMediaService implements ListingMediaService {
     url: string;
     expiresAt?: number;
   }> {
-    if (isPublicImageUrl(storagePath)) {
-      return { url: storagePath };
-    }
+    const [resolved] = await this.resolveUrls([storagePath]);
+    return resolved;
+  }
+
+  private async resolveUrls(storagePaths: string[]): Promise<Array<{
+    url: string;
+    expiresAt?: number;
+  }>> {
+    const privatePaths = Array.from(new Set(
+      storagePaths.filter((path) => !isPublicImageUrl(path))
+    ));
+
+    const signedUrlMap = new Map<string, string>();
     const expiresIn = 60 * 60; // 1 hour
-    const { data, error } = await this.client.storage
-      .from("listing-media")
-      .createSignedUrl(storagePath, expiresIn);
-    if (error || !data?.signedUrl) {
-      throw (
-        error ?? new Error(`Unable to resolve signed URL for ${storagePath}`)
-      );
+    let expiresAt: number | undefined;
+
+    if (privatePaths.length > 0) {
+      const { data, error } = await this.client.storage
+        .from("listing-media")
+        .createSignedUrls(privatePaths, expiresIn);
+
+      if (error) {
+        throw (
+          error ?? new Error(`Unable to resolve signed URLs`)
+        );
+      }
+
+      expiresAt = Date.now() + expiresIn * 1000;
+      for (const item of data ?? []) {
+        if (item.signedUrl && item.path) {
+          signedUrlMap.set(item.path as string, item.signedUrl as string);
+        }
+      }
     }
-    return {
-      url: data.signedUrl,
-      expiresAt: Date.now() + expiresIn * 1000,
-    };
+
+    return storagePaths.map((path) => {
+      if (isPublicImageUrl(path)) {
+        return { url: path };
+      }
+      return {
+        url: signedUrlMap.get(path) ?? path,
+        expiresAt,
+      };
+    });
   }
 
   async upload(
@@ -768,12 +796,15 @@ class SupabaseListingMediaService implements ListingMediaService {
       .eq("listing_id", listingId)
       .order("sort_order", { ascending: true });
     if (error) throw error;
-    return Promise.all(
-      (data ?? []).map(async (row) => {
-        const resolved = await this.resolveUrl(String(row.storage_path));
-        return listingImageFromRow(row, resolved.url, resolved.expiresAt);
-      }),
-    );
+
+    const rows = data ?? [];
+    const storagePaths = rows.map(r => String(r.storage_path));
+    const resolvedUrls = await this.resolveUrls(storagePaths);
+
+    return rows.map((row, index) => {
+      const resolved = resolvedUrls[index];
+      return listingImageFromRow(row, resolved.url, resolved.expiresAt);
+    });
   }
 
   async listForListings(
@@ -790,44 +821,12 @@ class SupabaseListingMediaService implements ListingMediaService {
     for (const id of listingIds) grouped[id] = [];
 
     const rows = data ?? [];
-    const privatePaths = Array.from(new Set(
-      rows
-        .map((row) => String(row.storage_path))
-        .filter((path) => !isPublicImageUrl(path))
-    ));
+    const storagePaths = rows.map(r => String(r.storage_path));
+    const resolvedUrls = await this.resolveUrls(storagePaths);
 
-    const signedUrlMap = new Map<string, string>();
-    const expiresIn = 60 * 60; // 1 hour
-    let expiresAt: number | undefined;
-
-    if (privatePaths.length > 0) {
-      const { data: signedUrlsData, error: signedUrlsError } =
-        await this.client.storage
-          .from("listing-media")
-          .createSignedUrls(privatePaths, expiresIn);
-
-      if (signedUrlsError) {
-        throw (
-          signedUrlsError ??
-          new Error(`Unable to resolve signed URLs for listings`)
-        );
-      }
-
-      expiresAt = Date.now() + expiresIn * 1000;
-      for (const item of signedUrlsData ?? []) {
-        if (item.signedUrl && item.path) {
-          signedUrlMap.set(item.path as string, item.signedUrl as string);
-        }
-      }
-    }
-
-    const resolved = rows.map((row) => {
-      const path = String(row.storage_path);
-      if (isPublicImageUrl(path)) {
-        return listingImageFromRow(row, path);
-      }
-      const url = signedUrlMap.get(path) ?? path;
-      return listingImageFromRow(row, url, expiresAt);
+    const resolved = rows.map((row, index) => {
+      const resolvedUrl = resolvedUrls[index];
+      return listingImageFromRow(row, resolvedUrl.url, resolvedUrl.expiresAt);
     });
 
     for (const record of resolved) {
