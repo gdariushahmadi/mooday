@@ -218,11 +218,11 @@ describe("SearchFiltersView", () => {
     expect(toggle).toHaveTextContent("2");
 
     const activeFilters = screen.getByLabelText("Filters");
-    await user.click(within(activeFilters).getByRole("button", { name: "Bags" }));
+    await user.click(within(activeFilters).getByRole("button", { name: "Remove Bags" }));
 
     expect(screen.getByText(/Found 2 items/)).toBeInTheDocument();
     expect(toggle).toHaveTextContent("1");
-    expect(within(activeFilters).getByRole("button", { name: "OS" })).toBeInTheDocument();
+    expect(within(activeFilters).getByRole("button", { name: "Remove OS" })).toBeInTheDocument();
   });
 
   it("restores valid shared filters and discards invalid or deferred URL state", async () => {

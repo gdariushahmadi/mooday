@@ -1,0 +1,3 @@
+## 2024-09-30 - Descriptive aria-labels for chip removal buttons
+**Learning:** Interactive chips (like selected tags in profile editing or active filters in search) that display textual content and a removal icon without an explicitly defined `aria-label` pose accessibility challenges. Screen readers only read the inner text, so users don't realize the action tied to the button is destructive (removing the item). Relying on visual icons like 'X' is insufficient.
+**Action:** When creating chips or pill buttons that serve a removal action, always include a descriptive `aria-label` (e.g., `Remove [item]`) that makes the destructive action explicit to screen reader users.
