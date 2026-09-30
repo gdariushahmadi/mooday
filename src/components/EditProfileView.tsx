@@ -295,6 +295,7 @@ export const EditProfileView: React.FC<EditProfileViewProps> = ({
                 key={tag}
                 type="button"
                 onClick={() => removeTag(tag)}
+                aria-label={isAr ? `إزالة ${tag}` : `Remove ${tag}`}
                 className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-label-sm font-bold border border-primary active:scale-95 transition-transform"
               >
                 {tag}

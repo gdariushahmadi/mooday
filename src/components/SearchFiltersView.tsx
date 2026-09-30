@@ -494,6 +494,7 @@ export const SearchFiltersView: React.FC<SearchFiltersViewProps> = ({
               key={filter.key}
               type="button"
               onClick={filter.clear}
+              aria-label={isAr ? `إزالة ${filter.label}` : `Remove ${filter.label}`}
               className="shrink-0 min-h-9 flex items-center gap-1 rounded-full bg-primary-container px-3 text-label-sm font-bold text-on-primary-container"
             >
               {filter.label}
