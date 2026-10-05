@@ -60,6 +60,48 @@ using (
   or (select auth.uid()) = seller_id
 );
 
+-- Add a trigger to prevent non-admins from modifying admin fields via RLS
+create or replace function public.check_profile_admin_update()
+returns trigger as $$
+declare
+  is_admin_actor boolean;
+  current_uid uuid;
+begin
+  if new.is_admin = old.is_admin
+     and new.is_suspended = old.is_suspended
+     and new.suspended_reason is not distinct from old.suspended_reason
+     and new.suspended_at is not distinct from old.suspended_at
+  then
+    return new;
+  end if;
+
+  -- Instead of auth.uid() which might not work in pgtap tests that mock using request.jwt.claims
+  -- We will explicitly parse the JWT claims setting like auth.uid() does
+  current_uid := nullif(current_setting('request.jwt.claims', true), '')::jsonb ->> 'sub';
+  if current_uid is not null then
+    if current_uid = old.id then
+      is_admin_actor := old.is_admin;
+    else
+      select is_admin into is_admin_actor
+      from public.profiles
+      where id = current_uid;
+    end if;
+
+    if not coalesce(is_admin_actor, false) then
+      raise exception using errcode = 'insufficient_privilege', message = 'a non-admin user cannot flip their own is_admin flag';
+    end if;
+  end if;
+
+  return new;
+end;
+$$ language plpgsql security definer;
+
+drop trigger if exists enforce_profile_admin_update on public.profiles;
+create trigger enforce_profile_admin_update
+  before update on public.profiles
+  for each row
+  execute function public.check_profile_admin_update();
+
 -- ---------- audit log ----------
 
 create table public.audit_log (
