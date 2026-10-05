@@ -60,6 +60,41 @@ using (
   or (select auth.uid()) = seller_id
 );
 
+-- Add a trigger to prevent non-admins from modifying admin fields via RLS
+create or replace function public.check_profile_admin_update()
+returns trigger as $$
+declare
+  is_admin_actor boolean;
+begin
+  if new.is_admin = old.is_admin
+     and new.is_suspended = old.is_suspended
+     and new.suspended_reason is not distinct from old.suspended_reason
+     and new.suspended_at is not distinct from old.suspended_at
+  then
+    return new;
+  end if;
+
+  -- Instead of checking role string exactly, check if auth.uid() is not null (which means it is a JWT request)
+  if auth.uid() is not null then
+    select is_admin into is_admin_actor
+    from public.profiles
+    where id = auth.uid();
+
+    if not coalesce(is_admin_actor, false) then
+      raise exception using errcode = 'insufficient_privilege', message = 'a non-admin user cannot flip their own is_admin flag';
+    end if;
+  end if;
+
+  return new;
+end;
+$$ language plpgsql security definer;
+
+drop trigger if exists enforce_profile_admin_update on public.profiles;
+create trigger enforce_profile_admin_update
+  before update on public.profiles
+  for each row
+  execute function public.check_profile_admin_update();
+
 -- ---------- audit log ----------
 
 create table public.audit_log (
