@@ -1,0 +1,3 @@
+## 2024-05-18 - Visual Loading Feedback for Auth Forms
+**Learning:** Auth forms (sign up, sign in, OTP) are high-friction touchpoints that often involve async backend calls. Not providing immediate visual loading feedback on the primary CTA when these forms are submitting leads to a poor user experience, as users might double-click or feel the app is unresponsive. The existing buttons disabled the CTA and changed the text to "submitting..." but lacked an animating indicator.
+**Action:** When creating or updating form submission buttons, always include an animating visual indicator (like a spinning progress_activity icon) to clearly signal background processing, rather than relying solely on text changes and disabled states.
