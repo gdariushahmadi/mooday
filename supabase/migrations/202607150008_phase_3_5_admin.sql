@@ -75,7 +75,9 @@ begin
     return new;
   end if;
 
-  current_uid := auth.uid();
+  -- Instead of auth.uid() which might not work in pgtap tests that mock using request.jwt.claims
+  -- We will explicitly parse the JWT claims setting like auth.uid() does
+  current_uid := nullif(current_setting('request.jwt.claims', true), '')::jsonb ->> 'sub';
   if current_uid is not null then
     if current_uid = old.id then
       is_admin_actor := old.is_admin;
