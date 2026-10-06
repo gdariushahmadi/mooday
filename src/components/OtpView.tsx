@@ -226,8 +226,13 @@ export const OtpView: React.FC<OtpViewProps> = ({
         <button
           type="submit"
           disabled={!isComplete || submitting}
-          className="btn-primary w-full py-4 rounded-xl text-label-md uppercase tracking-widest font-bold shadow-lg btn-tactile text-center active:scale-[0.98] transition-transform mt-md disabled:opacity-60 disabled:cursor-not-allowed"
+          className="btn-primary w-full py-4 rounded-xl text-label-md uppercase tracking-widest font-bold shadow-lg btn-tactile flex items-center justify-center gap-2 active:scale-[0.98] transition-transform mt-md disabled:opacity-60 disabled:cursor-not-allowed"
         >
+          {submitting && (
+            <span className="material-symbols-outlined animate-spin" aria-hidden="true">
+              progress_activity
+            </span>
+          )}
           {submitting ? t.submitting : t.submit}
         </button>
       </form>
