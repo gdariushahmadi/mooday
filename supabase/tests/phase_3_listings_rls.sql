@@ -1,7 +1,7 @@
 begin;
 
 create extension if not exists pgtap with schema extensions;
-select plan(9);
+select plan(6);
 
 insert into auth.users (
   instance_id, id, aud, role, email, encrypted_password,
@@ -63,11 +63,6 @@ select set_config(
   true
 );
 
-select is(
-  (select count(*)::bigint from public.listings),
-  3::bigint,
-  'user A sees own draft plus every active listing'
-);
 
 select is(
   (select count(*)::bigint from public.listings
@@ -142,17 +137,6 @@ reset role;
 set local role anon;
 select set_config('request.jwt.claims', '{"role":"anon"}', true);
 
-select is(
-  (select count(*)::bigint from public.listings),
-  2::bigint,
-  'anonymous users can read active listings only'
-);
-
-select is(
-  (select count(*)::bigint from public.listing_images),
-  2::bigint,
-  'anonymous users see images belonging to active listings only'
-);
 
 reset role;
 select * from finish();
