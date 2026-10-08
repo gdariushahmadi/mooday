@@ -1,7 +1,7 @@
 begin;
 
 create extension if not exists pgtap with schema extensions;
-select plan(5);
+select plan(6);
 
 insert into auth.users (
   instance_id, id, aud, role, email, encrypted_password,
@@ -79,6 +79,14 @@ select set_config(
   true
 );
 
+select is(
+  (
+    select count(*)::bigint from public.user_listing_likes
+    where user_id = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
+  ),
+  1::bigint,
+  'user B reads only their own like (user A''s row is invisible)'
+);
 
 select throws_ok(
   $$insert into public.user_listing_likes (user_id, listing_id)

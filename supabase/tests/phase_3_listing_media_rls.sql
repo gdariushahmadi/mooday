@@ -1,7 +1,7 @@
 begin;
 
 create extension if not exists pgtap with schema extensions;
-select plan(4);
+select plan(5);
 
 insert into auth.users (
   instance_id, id, aud, role, email, encrypted_password,
@@ -109,6 +109,13 @@ select is_empty(
 reset role;
 set local role anon;
 select set_config('request.jwt.claims', '{"role":"anon"}', true);
+
+select is(
+  (select count(*)::bigint from storage.objects
+    where bucket_id = 'listing-media'),
+  1::bigint,
+  'anonymous users see active listing media only'
+);
 
 select throws_ok(
   $$insert into storage.objects (bucket_id, name) values (
