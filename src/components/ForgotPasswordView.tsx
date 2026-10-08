@@ -39,6 +39,7 @@ const COPY = {
     newPassword: "New password",
     confirm: "Confirm password",
     submit: "Reset password",
+    submitting: "Submitting…",
     mismatch: "Passwords don't match.",
     tooShort: "Password must be at least 8 characters.",
     success: "Password reset!",
@@ -62,6 +63,7 @@ const COPY = {
     newPassword: "كلمة المرور الجديدة",
     confirm: "تأكيد كلمة المرور",
     submit: "تعيين كلمة المرور",
+    submitting: "جارٍ الإرسال…",
     mismatch: "كلمتا المرور غير متطابقتين.",
     tooShort: "يجب أن تكون ٨ أحرف على الأقل.",
     success: "تمت إعادة التعيين!",
@@ -90,6 +92,7 @@ export const ForgotPasswordView: React.FC<ForgotPasswordViewProps> = ({
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
   const codeRefs = useRef<(HTMLInputElement | null)[]>([]);
 
@@ -134,16 +137,21 @@ export const ForgotPasswordView: React.FC<ForgotPasswordViewProps> = ({
   const submitStep2 = async (e: React.FormEvent) => {
     e.preventDefault();
     const code = digits.join("");
-    if (
-      await Promise.resolve(
-        authMode === "supabase"
-          ? verifyOtp(email, code, "recovery")
-          : verifyOtp(email, code),
-      )
-    ) {
-      setStep(3);
-    } else {
-      setCodeError(true);
+    setSubmitting(true);
+    try {
+      if (
+        await Promise.resolve(
+          authMode === "supabase"
+            ? verifyOtp(email, code, "recovery")
+            : verifyOtp(email, code),
+        )
+      ) {
+        setStep(3);
+      } else {
+        setCodeError(true);
+      }
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -158,9 +166,14 @@ export const ForgotPasswordView: React.FC<ForgotPasswordViewProps> = ({
       setPasswordError(t.mismatch);
       return;
     }
-    // Update the user record. The mock allows any email.
-    const ok = await Promise.resolve(resetPassword(email, password));
-    if (ok) onSuccess();
+    setSubmitting(true);
+    try {
+      // Update the user record. The mock allows any email.
+      const ok = await Promise.resolve(resetPassword(email, password));
+      if (ok) onSuccess();
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -275,9 +288,19 @@ export const ForgotPasswordView: React.FC<ForgotPasswordViewProps> = ({
             )}
             <button
               type="submit"
-              className="btn-primary w-full py-4 rounded-xl text-label-md uppercase tracking-widest font-bold shadow-lg btn-tactile text-center active:scale-[0.98] transition-transform"
+              disabled={submitting}
+              className="btn-primary flex items-center justify-center gap-2 w-full py-4 rounded-xl text-label-md uppercase tracking-widest font-bold shadow-lg btn-tactile text-center active:scale-[0.98] transition-transform disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              {t.verify}
+              {submitting ? (
+                <>
+                  <span className="material-symbols-outlined animate-spin" aria-hidden="true">
+                    progress_activity
+                  </span>
+                  {t.submitting}
+                </>
+              ) : (
+                t.verify
+              )}
             </button>
             <button
               type="button"
@@ -334,9 +357,19 @@ export const ForgotPasswordView: React.FC<ForgotPasswordViewProps> = ({
             )}
             <button
               type="submit"
-              className="btn-primary w-full py-4 rounded-xl text-label-md uppercase tracking-widest font-bold shadow-lg btn-tactile text-center active:scale-[0.98] transition-transform"
+              disabled={submitting}
+              className="btn-primary flex items-center justify-center gap-2 w-full py-4 rounded-xl text-label-md uppercase tracking-widest font-bold shadow-lg btn-tactile text-center active:scale-[0.98] transition-transform disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              {t.submit}
+              {submitting ? (
+                <>
+                  <span className="material-symbols-outlined animate-spin" aria-hidden="true">
+                    progress_activity
+                  </span>
+                  {t.submitting}
+                </>
+              ) : (
+                t.submit
+              )}
             </button>
           </form>
         </>
