@@ -1,0 +1,3 @@
+## 2024-03-22 - Add ARIA Labels to Removal Chips
+**Learning:** When testing UI with React Testing Library, updating an element's `aria-label` can break existing tests if they query elements by their text content or a vague accessible name. Buttons used to clear filters or tags only had their values (e.g., "Bags") as their accessible names. A screen-reader user tabbing through would just hear "Bags, button" instead of understanding what clicking the button actually does.
+**Action:** When updating `aria-label`s for accessibility, always run associated UI tests to catch regressions. If tests fail because the accessible name changed, update the test queries (e.g., `getByRole('button', { name: 'Remove Bags filter' })`) to reflect the new accessible name.
