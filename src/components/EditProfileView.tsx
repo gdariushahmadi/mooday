@@ -30,6 +30,7 @@ interface ProfileCopy {
   styleTagPh: string;
   styleTagHelp: string;
   required: string;
+  removeTag: (tag: string) => string;
 }
 
 const COPY: Record<"en" | "ar", ProfileCopy> = {
@@ -56,6 +57,7 @@ const COPY: Record<"en" | "ar", ProfileCopy> = {
     styleTagHelp:
       "Up to 5 tags help the Discover feed surface your listings to the right audience.",
     required: "Please add a display name and handle.",
+    removeTag: (tag) => `Remove ${tag}`,
   },
   ar: {
     title: "تعديل الملف الشخصي",
@@ -80,6 +82,7 @@ const COPY: Record<"en" | "ar", ProfileCopy> = {
     styleTagHelp:
       "حتى 5 كلمات تساعد في اقتراح منتجاتك في صفحة الاكتشاف.",
     required: "يرجى إضافة الاسم والمعرّف.",
+    removeTag: (tag) => `إزالة ${tag}`,
   },
 };
 
@@ -294,6 +297,7 @@ export const EditProfileView: React.FC<EditProfileViewProps> = ({
               <button
                 key={tag}
                 type="button"
+                aria-label={t.removeTag(tag)}
                 onClick={() => removeTag(tag)}
                 className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-label-sm font-bold border border-primary active:scale-95 transition-transform"
               >

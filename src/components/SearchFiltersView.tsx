@@ -48,6 +48,7 @@ const COPY = {
     found: (n: number) => `Found ${n} item${n === 1 ? "" : "s"}`,
     noResults: "We couldn't find any items matching your search.",
     clearAll: "Clear all filters",
+    removeFilter: (label: string) => `Remove ${label} filter`,
     apply: "Apply",
     price: "Price",
   },
@@ -79,6 +80,7 @@ const COPY = {
     found: (n: number) => `تم العثور على ${n} منتج`,
     noResults: "لم نجد أي منتجات تطابق بحثك.",
     clearAll: "مسح كل الفلاتر",
+    removeFilter: (label: string) => `إزالة تصفية ${label}`,
     apply: "تطبيق",
     price: "السعر",
   },
@@ -493,6 +495,7 @@ export const SearchFiltersView: React.FC<SearchFiltersViewProps> = ({
             <button
               key={filter.key}
               type="button"
+              aria-label={t.removeFilter(filter.label)}
               onClick={filter.clear}
               className="shrink-0 min-h-9 flex items-center gap-1 rounded-full bg-primary-container px-3 text-label-sm font-bold text-on-primary-container"
             >
