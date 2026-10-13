@@ -204,11 +204,12 @@ export const NotificationsCentreView: React.FC<
             const body = isAr ? n.bodyAr : n.bodyEn;
             const time = formatRelativeTime(n.date, isAr);
             const clickable = Boolean(n.target);
+            const unreadPrefix = n.isUnread ? (isAr ? "غير مقروء: " : "Unread: ") : "";
             return (
               <ClickableCard
                 key={n.id}
                 onClick={() => openTarget(n)}
-                ariaLabel={clickable ? `${title} — ${time}` : undefined}
+                ariaLabel={clickable ? `${unreadPrefix}${title} — ${time}` : undefined}
                 className={`border rounded-xl p-md flex items-start gap-md transition-colors ${
                   n.isUnread
                     ? "bg-primary/5 border-primary/20"
