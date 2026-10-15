@@ -1,0 +1,3 @@
+## 2024-05-18 - Visual State Indicators Require Accessible Equivalents
+**Learning:** When using visual cues (like an "unread" dot or badge) to convey the state of a clickable element (such as a notification card), this state change is often missed by screen readers unless explicitly added to the element's accessible name or description. Relying only on color or a non-semantic visual marker creates an accessibility gap.
+**Action:** Always ensure that any interactive element with a visual status indicator has its `aria-label` or `aria-description` updated to include that status text (e.g., prepending "Unread: " to a notification card's `aria-label`).
