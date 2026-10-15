@@ -1,7 +1,7 @@
 begin;
 
 create extension if not exists pgtap with schema extensions;
-select plan(9);
+select plan(11);
 
 insert into auth.users (
   instance_id, id, aud, role, email, encrypted_password,
@@ -26,7 +26,7 @@ insert into auth.users (
 
 insert into public.listings (
   id, seller_id, title_en, title_ar, price_minor,
-  condition_en, condition_ar, category, status
+  condition_en, condition_ar, category, status, approved_at
 ) values
   (
     'aaaaaaaa-3333-4333-8333-333333333331',
