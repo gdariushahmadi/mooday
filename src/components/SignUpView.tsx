@@ -266,7 +266,16 @@ export const SignUpView: React.FC<SignUpViewProps> = ({
           disabled={submitting}
           className="btn-primary w-full py-4 rounded-xl text-label-md uppercase tracking-widest font-bold shadow-lg btn-tactile text-center active:scale-[0.98] transition-transform mt-sm disabled:opacity-60 disabled:cursor-not-allowed"
         >
-          {submitting ? t.submitting : t.submit}
+          {submitting ? (
+            <span className="flex items-center justify-center gap-2">
+              <span className="material-symbols-outlined animate-spin" aria-hidden="true">
+                progress_activity
+              </span>
+              {t.submitting}
+            </span>
+          ) : (
+            t.submit
+          )}
         </button>
       </form>
 

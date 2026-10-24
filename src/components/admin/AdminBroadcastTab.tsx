@@ -193,7 +193,13 @@ export function AdminBroadcastTab({
           disabled={sending}
           className="w-full flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-bold text-on-primary hover:bg-primary/90 transition shadow-sm disabled:opacity-50"
         >
-          <span className="material-symbols-outlined text-[20px]">campaign</span>
+          {sending ? (
+            <span className="material-symbols-outlined text-[20px] animate-spin" aria-hidden="true">
+              progress_activity
+            </span>
+          ) : (
+            <span className="material-symbols-outlined text-[20px]">campaign</span>
+          )}
           <span>{isAr ? "إرسال الإشعار لجميع کاربران" : "Broadcast Notification"}</span>
         </button>
       </form>
