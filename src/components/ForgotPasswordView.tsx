@@ -45,6 +45,8 @@ const COPY = {
     back: "Back",
     backToSignIn: "Back to sign in",
     codePlaceholder: "6-digit code",
+    verifying: "Verifying…",
+    submitting: "Resetting…",
   },
   ar: {
     title1: "إعادة تعيين كلمة المرور",
@@ -68,6 +70,8 @@ const COPY = {
     back: "رجوع",
     backToSignIn: "العودة لتسجيل الدخول",
     codePlaceholder: "رمز من ٦ أرقام",
+    verifying: "جارٍ التحقق…",
+    submitting: "جارٍ إعادة التعيين…",
   },
 } as const;
 
@@ -90,6 +94,7 @@ export const ForgotPasswordView: React.FC<ForgotPasswordViewProps> = ({
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
   const codeRefs = useRef<(HTMLInputElement | null)[]>([]);
 
@@ -125,25 +130,37 @@ export const ForgotPasswordView: React.FC<ForgotPasswordViewProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step]);
 
-  const submitStep1 = (e: React.FormEvent) => {
+  const submitStep1 = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email.trim()) return;
-    setStep(2);
+    setSubmitting(true);
+    try {
+      // In phase 1 this is synchronous, but phase 2 will be async
+      await Promise.resolve();
+      setStep(2);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const submitStep2 = async (e: React.FormEvent) => {
     e.preventDefault();
     const code = digits.join("");
-    if (
-      await Promise.resolve(
-        authMode === "supabase"
-          ? verifyOtp(email, code, "recovery")
-          : verifyOtp(email, code),
-      )
-    ) {
-      setStep(3);
-    } else {
-      setCodeError(true);
+    setSubmitting(true);
+    try {
+      if (
+        await Promise.resolve(
+          authMode === "supabase"
+            ? verifyOtp(email, code, "recovery")
+            : verifyOtp(email, code),
+        )
+      ) {
+        setStep(3);
+      } else {
+        setCodeError(true);
+      }
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -158,9 +175,14 @@ export const ForgotPasswordView: React.FC<ForgotPasswordViewProps> = ({
       setPasswordError(t.mismatch);
       return;
     }
-    // Update the user record. The mock allows any email.
-    const ok = await Promise.resolve(resetPassword(email, password));
-    if (ok) onSuccess();
+    setSubmitting(true);
+    try {
+      // Update the user record. The mock allows any email.
+      const ok = await Promise.resolve(resetPassword(email, password));
+      if (ok) onSuccess();
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -223,9 +245,19 @@ export const ForgotPasswordView: React.FC<ForgotPasswordViewProps> = ({
             </label>
             <button
               type="submit"
-              className="btn-primary w-full py-4 rounded-xl text-label-md uppercase tracking-widest font-bold shadow-lg btn-tactile text-center active:scale-[0.98] transition-transform"
+              disabled={submitting}
+              className="btn-primary w-full py-4 rounded-xl text-label-md uppercase tracking-widest font-bold shadow-lg btn-tactile text-center flex items-center justify-center gap-2 active:scale-[0.98] transition-transform disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              {t.next1}
+              {submitting ? (
+                <>
+                  <span className="material-symbols-outlined animate-spin text-[20px]">
+                    progress_activity
+                  </span>
+                  {t.next1}
+                </>
+              ) : (
+                t.next1
+              )}
             </button>
           </form>
         </>
@@ -275,9 +307,19 @@ export const ForgotPasswordView: React.FC<ForgotPasswordViewProps> = ({
             )}
             <button
               type="submit"
-              className="btn-primary w-full py-4 rounded-xl text-label-md uppercase tracking-widest font-bold shadow-lg btn-tactile text-center active:scale-[0.98] transition-transform"
+              disabled={submitting}
+              className="btn-primary w-full py-4 rounded-xl text-label-md uppercase tracking-widest font-bold shadow-lg btn-tactile text-center flex items-center justify-center gap-2 active:scale-[0.98] transition-transform disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              {t.verify}
+              {submitting ? (
+                <>
+                  <span className="material-symbols-outlined animate-spin text-[20px]">
+                    progress_activity
+                  </span>
+                  {t.verifying}
+                </>
+              ) : (
+                t.verify
+              )}
             </button>
             <button
               type="button"
@@ -334,9 +376,19 @@ export const ForgotPasswordView: React.FC<ForgotPasswordViewProps> = ({
             )}
             <button
               type="submit"
-              className="btn-primary w-full py-4 rounded-xl text-label-md uppercase tracking-widest font-bold shadow-lg btn-tactile text-center active:scale-[0.98] transition-transform"
+              disabled={submitting}
+              className="btn-primary w-full py-4 rounded-xl text-label-md uppercase tracking-widest font-bold shadow-lg btn-tactile text-center flex items-center justify-center gap-2 active:scale-[0.98] transition-transform disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              {t.submit}
+              {submitting ? (
+                <>
+                  <span className="material-symbols-outlined animate-spin text-[20px]">
+                    progress_activity
+                  </span>
+                  {t.submitting}
+                </>
+              ) : (
+                t.submit
+              )}
             </button>
           </form>
         </>
