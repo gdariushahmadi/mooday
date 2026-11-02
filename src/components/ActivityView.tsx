@@ -291,7 +291,7 @@ const NotificationRow: React.FC<{
   return (
     <ClickableCard
       onClick={onOpen}
-      ariaLabel={`${title} — ${time}`}
+      ariaLabel={`${notif.isUnread ? (isAr ? 'غير مقروء: ' : 'Unread: ') : ''}${title} — ${time}`}
       className={`border border-surface-container-high rounded-xl p-md flex items-start gap-md transition-colors ${
         notif.isUnread
           ? "bg-primary/5 hover:bg-primary/10"
