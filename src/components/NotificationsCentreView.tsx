@@ -208,7 +208,7 @@ export const NotificationsCentreView: React.FC<
               <ClickableCard
                 key={n.id}
                 onClick={() => openTarget(n)}
-                ariaLabel={clickable ? `${title} — ${time}` : undefined}
+                ariaLabel={clickable ? `${n.isUnread ? (isAr ? 'غير مقروء: ' : 'Unread: ') : ''}${title} — ${time}` : undefined}
                 className={`border rounded-xl p-md flex items-start gap-md transition-colors ${
                   n.isUnread
                     ? "bg-primary/5 border-primary/20"
